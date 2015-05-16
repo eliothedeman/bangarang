@@ -4,32 +4,21 @@ import (
 	"log"
 
 	"github.com/eliothedeman/bangarang/alarm"
-	"github.com/eliothedeman/bangarang/alarm/console"
 	"github.com/eliothedeman/bangarang/event"
 )
 
 type Pipeline struct {
 	port        int
 	escalations []*alarm.Escalation
+	index       *event.Index
 }
 
-func newTestPipeline() *Pipeline {
-	return &Pipeline{
-		escalations: []*alarm.Escalation{
-			&alarm.Escalation{
-				Policy: alarm.Policy{
-					Match:    make(map[string]string),
-					NotMatch: make(map[string]string),
-				},
-				Alarms: []alarm.Alarm{
-					console.NewConsole(),
-				},
-			},
-		},
+func (p *Pipeline) Process(e *event.Event) int {
+	if p.index == nil {
+		p.index = event.NewIndex()
 	}
-}
 
-func (p *Pipeline) Process(e *event.Event) {
+	p.index.Put(e)
 	for _, v := range p.escalations {
 		if v.Match(e) {
 			if v.StatusOf(e) != event.OK {
@@ -39,7 +28,9 @@ func (p *Pipeline) Process(e *event.Event) {
 						log.Println(err)
 					}
 				}
+				return e.Status
 			}
 		}
 	}
+	return e.Status
 }

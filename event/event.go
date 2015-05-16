@@ -53,6 +53,12 @@ type Index struct {
 	sync.RWMutex
 }
 
+func NewIndex() *Index {
+	return &Index{
+		events: make(map[string]*Event),
+	}
+}
+
 func (i *Index) Put(e *Event) {
 	name := e.IndexName()
 	e.LastEvent = i.Get(name)
