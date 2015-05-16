@@ -18,12 +18,19 @@ type Escalation struct {
 	Alarms []Alarm
 }
 
+func (e *Escalation) Match(ev *event.Event) bool {
+	return e.Policy.match(ev) && e.Policy.matchNots(ev)
+}
+
+func (e *Escalation) StatusOf(ev *event.Event) int {
+	return e.Policy.StatusOf(ev)
+}
+
 type Policy struct {
 	Match       map[string]string `match`
 	NotMatch    map[string]string `not_match`
 	Crit        *Condition        `crit`
 	Warn        *Condition        `warn`
-	Ok          *Condition        `ok`
 	r_match     map[string]*regexp.Regexp
 	r_not_match map[string]*regexp.Regexp
 }
@@ -56,11 +63,38 @@ func formatFiledName(n string) string {
 	return a
 }
 
-// check if any of p's matches are satisfied by the event
-func (p *Policy) MatchAny(e *event.Event) bool {
-	v := reflect.ValueOf(e).Elem()
+func (p *Policy) StatusOf(e *event.Event) int {
+	if p.Crit.Satisfies(e) {
+		e.Status = event.CRITICAL
+		if e.LastEvent != nil {
+			e.Occurences = e.LastEvent.Occurences
+		}
+		e.Occurences += 1
+		if e.Occurences >= p.Crit.Occurences {
+			return event.CRITICAL
+		}
+		return event.OK
+	}
 
-	// check the not matches first
+	if p.Warn.Satisfies(e) {
+		e.Status = event.WARNING
+		if e.LastEvent != nil {
+			e.Occurences = e.LastEvent.Occurences
+		}
+		e.Occurences += 1
+		if e.Occurences >= p.Warn.Occurences {
+			return event.WARNING
+		}
+		return event.OK
+	}
+
+	e.Status = event.OK
+	e.Occurences = 0
+	return event.OK
+}
+
+func (p *Policy) matchNots(e *event.Event) bool {
+	v := reflect.ValueOf(e).Elem()
 	for k, m := range p.r_not_match {
 		elem := v.FieldByName(formatFiledName(k))
 		if m.MatchString(elem.String()) {
@@ -68,6 +102,12 @@ func (p *Policy) MatchAny(e *event.Event) bool {
 		}
 	}
 
+	return true
+}
+
+// check if any of p's matches are satisfied by the event
+func (p *Policy) match(e *event.Event) bool {
+	v := reflect.ValueOf(e).Elem()
 	for k, m := range p.r_match {
 		elem := v.FieldByName(formatFiledName(k))
 		if m.MatchString(elem.String()) {
@@ -76,11 +116,4 @@ func (p *Policy) MatchAny(e *event.Event) bool {
 	}
 
 	return false
-}
-
-type Condition struct {
-	Greater    *float64 `greater`
-	Less       *float64 `less`
-	Exactly    *float64 `exactly`
-	Occurences *int     `occurences`
 }

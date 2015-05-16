@@ -26,10 +26,26 @@ type Event struct {
 	Tags       map[string]string `json:"tags"`
 	TTL        time.Duration     `json:"-"`
 	Status     int               `json:"status"`
+	LastEvent  *Event            `json:"-"`
 }
 
 func (e *Event) IndexName() string {
 	return fmt.Sprintf("%s:%s:%s", e.Host, e.Service, e.SubService)
+}
+
+func status(code int) string {
+	switch code {
+	case WARNING:
+		return "warning"
+	case CRITICAL:
+		return "critical"
+	default:
+		return "ok"
+	}
+}
+
+func (e *Event) FormatDescription() string {
+	return fmt.Sprintf("%s! %s.%s on %s is %.2f", status(e.Status), e.Service, e.SubService, e.Host, e.Metric)
 }
 
 type Index struct {
@@ -38,8 +54,10 @@ type Index struct {
 }
 
 func (i *Index) Put(e *Event) {
+	name := e.IndexName()
+	e.LastEvent = i.Get(name)
 	i.Lock()
-	i.events[e.IndexName()] = e
+	i.events[name] = e
 	i.Unlock()
 }
 

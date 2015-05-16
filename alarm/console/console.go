@@ -15,7 +15,7 @@ type Console struct {
 }
 
 func (c *Console) Send(e *event.Event) error {
-	log.Println("%+v", *e)
+	log.Println(e.FormatDescription())
 	return nil
 }
 

@@ -16,6 +16,13 @@ var (
 	}
 )
 
+func GetFactory(name string) AlarmFactory {
+	alarms.Lock()
+	a := alarms.factories[name]
+	alarms.Unlock()
+	return a
+}
+
 func LoadFactory(name string, f AlarmFactory) {
 	alarms.Lock()
 	alarms.factories[name] = f
