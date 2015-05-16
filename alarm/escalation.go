@@ -47,20 +47,29 @@ func (p *Policy) Compile() {
 	}
 }
 
+func formatFiledName(n string) string {
+	s := strings.Split(n, "_")
+	a := ""
+	for _, k := range s {
+		a = a + strings.Title(k)
+	}
+	return a
+}
+
 // check if any of p's matches are satisfied by the event
 func (p *Policy) MatchAny(e *event.Event) bool {
 	v := reflect.ValueOf(e).Elem()
 
 	// check the not matches first
 	for k, m := range p.r_not_match {
-		elem := v.FieldByName(strings.ToLower(k))
+		elem := v.FieldByName(formatFiledName(k))
 		if m.MatchString(elem.String()) {
 			return false
 		}
 	}
 
 	for k, m := range p.r_match {
-		elem := v.FieldByName(strings.ToLower(s))
+		elem := v.FieldByName(formatFiledName(k))
 		if m.MatchString(elem.String()) {
 			return true
 		}

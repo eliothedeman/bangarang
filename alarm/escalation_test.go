@@ -6,16 +6,27 @@ import (
 	"github.com/eliothedeman/bangarang/event"
 )
 
-func TestMatchAll(t *testing.T) {
+func TestMatchAny(t *testing.T) {
 	e := &event.Event{
-		Host: "elioasdft.elasdfiothedmen.com",
+		Host: "eliot.com",
 	}
 	p := &Policy{}
 	p.Match = map[string]string{
-		"Host": "eliot.*",
+		"host": "eliot.*",
+	}
+	p.NotMatch = map[string]string{
+		"sub_service": "testing",
 	}
 	p.Compile()
 
-	t.Error(p.MatchAny(e))
+	if !p.MatchAny(e) {
+		t.Fail()
+	}
+
+	e.SubService = "testing"
+
+	if p.MatchAny(e) {
+		t.Fail()
+	}
 
 }
