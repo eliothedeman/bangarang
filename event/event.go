@@ -33,6 +33,14 @@ func (e *Event) IndexName() string {
 	return fmt.Sprintf("%s:%s:%s", e.Host, e.Service, e.SubService)
 }
 
+func (e *Event) StatusChanged() bool {
+	if e.LastEvent == nil {
+		return e.Status != OK
+	}
+
+	return e.LastEvent.Status == e.Status
+}
+
 func status(code int) string {
 	switch code {
 	case WARNING:

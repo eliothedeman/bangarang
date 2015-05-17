@@ -66,33 +66,24 @@ func formatFiledName(n string) string {
 func (p *Policy) StatusOf(e *event.Event) int {
 	if p.Crit != nil {
 		if p.Crit.Satisfies(e) {
-			if e.LastEvent != nil {
-				e.Occurences = e.LastEvent.Occurences
-			}
-			e.Occurences += 1
-			if e.Occurences >= p.Crit.Occurences {
+			if p.Crit.TrackEvent(e) {
 				e.Status = event.CRITICAL
 				return event.CRITICAL
 			}
-			return event.OK
 		}
+		p.Crit.CleanEvent(e)
 	}
 	if p.Warn != nil {
 		if p.Warn.Satisfies(e) {
-			if e.LastEvent != nil {
-				e.Occurences = e.LastEvent.Occurences
-			}
-			e.Occurences += 1
-			if e.Occurences >= p.Warn.Occurences {
+			if p.Warn.TrackEvent(e) {
 				e.Status = event.WARNING
 				return event.WARNING
 			}
-			return event.OK
 		}
+		p.Warn.CleanEvent(e)
 	}
 
 	e.Status = event.OK
-	e.Occurences = 0
 	return event.OK
 }
 
