@@ -1,0 +1,9 @@
+#!/bin/bash
+go build -a -o bangarang
+mkdir -p opt/bangarang
+mkdir -p etc/bangarang
+mv bangarang opt/bangarang/bangarang
+
+fpm -s dir -t deb --name bangarang -v $1 etc opt
+
+rm -r opt etc
