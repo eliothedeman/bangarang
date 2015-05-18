@@ -109,8 +109,9 @@ func (p *Pipeline) Process(e *event.Event) int {
 	p.index.Put(e)
 	for _, v := range p.escalations {
 		if v.Match(e) {
-			log.Println("here")
-			if v.StatusOf(e) != event.OK && e.StatusChanged() {
+			v.StatusOf(e)
+			log.Println(e.StatusChanged())
+			if e.StatusChanged() {
 				for _, a := range v.Alarms {
 					err := a.Send(e)
 					if err != nil {

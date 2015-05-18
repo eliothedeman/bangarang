@@ -2,6 +2,7 @@ package event
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"time"
 )
@@ -37,8 +38,9 @@ func (e *Event) StatusChanged() bool {
 	if e.LastEvent == nil {
 		return e.Status != OK
 	}
+	log.Printf("%+v\n %+v", *e, *e.LastEvent)
 
-	return e.LastEvent.Status == e.Status
+	return !(e.LastEvent.Status == e.Status)
 }
 
 func status(code int) string {
