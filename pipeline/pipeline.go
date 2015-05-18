@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/eliothedeman/bangarang/alarm"
+	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/event"
 )
 
@@ -18,11 +19,12 @@ type Pipeline struct {
 	index             *event.Index
 }
 
-func NewPipeline(tcpPort, httpPort *int) *Pipeline {
+func NewPipeline(conf *config.AppConfig) *Pipeline {
 	return &Pipeline{
-		tcpPort:  tcpPort,
-		httpPort: httpPort,
-		index:    event.NewIndex(),
+		tcpPort:     conf.TcpPort,
+		httpPort:    conf.HttpPort,
+		escalations: conf.Escalations,
+		index:       event.NewIndex(),
 	}
 }
 
@@ -59,7 +61,6 @@ func (p *Pipeline) consumeTcp(c *net.TCPConn) {
 	buff := make([]byte, 1024*200)
 	for {
 		n, err := c.Read(buff)
-		log.Println(string(buff))
 		if err != nil {
 			log.Println(err)
 			c.Close()
@@ -108,6 +109,7 @@ func (p *Pipeline) Process(e *event.Event) int {
 	p.index.Put(e)
 	for _, v := range p.escalations {
 		if v.Match(e) {
+			log.Println("here")
 			if v.StatusOf(e) != event.OK && e.StatusChanged() {
 				for _, a := range v.Alarms {
 					err := a.Send(e)

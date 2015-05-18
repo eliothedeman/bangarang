@@ -1,0 +1,12 @@
+{
+	"policy": {
+		"match": {
+			"host": "test"
+		},
+		"crit": {
+			"greater": 0.0
+		}
+	},
+	"escalation": "test"
+
+}

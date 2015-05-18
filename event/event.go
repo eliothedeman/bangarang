@@ -18,7 +18,7 @@ var (
 
 type Event struct {
 	Host       string            `json:"host"`
-	Service    string            `json:"host"`
+	Service    string            `json:"service"`
 	SubService string            `json:"sub_type"`
 	Metric     float64           `json:"metric"`
 	Time       time.Time         `json:"time"`

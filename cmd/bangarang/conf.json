@@ -1,0 +1,11 @@
+{
+    "tcp_port": 8080,
+    "alarms": {
+        "test": [
+            {
+                "type":"console"
+            }
+        ]
+    },
+    "escalations_dir": "alerts/"
+}

@@ -1,6 +1,8 @@
 package alarm
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"reflect"
 	"regexp"
@@ -14,8 +16,17 @@ func init() {
 }
 
 type Escalation struct {
-	Policy Policy
-	Alarms []Alarm
+	Policy           Policy  `json:"policy"`
+	EscalationPolicy string  `json:"escalation"`
+	Alarms           []Alarm `-`
+}
+
+func (e *Escalation) LoadAlarms() error {
+	e.Alarms = GetCollection(e.EscalationPolicy)
+	if e.Alarms == nil {
+		return errors.New(fmt.Sprintf("escalation policy %s not found", e.EscalationPolicy))
+	}
+	return nil
 }
 
 func (e *Escalation) Match(ev *event.Event) bool {
@@ -27,10 +38,10 @@ func (e *Escalation) StatusOf(ev *event.Event) int {
 }
 
 type Policy struct {
-	Match       map[string]string `match`
-	NotMatch    map[string]string `not_match`
-	Crit        *Condition        `crit`
-	Warn        *Condition        `warn`
+	Match       map[string]string `json:"match"`
+	NotMatch    map[string]string `json:"not_match"`
+	Crit        *Condition        `json:"crit"`
+	Warn        *Condition        `json:"warn"`
 	r_match     map[string]*regexp.Regexp
 	r_not_match map[string]*regexp.Regexp
 }

@@ -1,6 +1,7 @@
 package alarm
 
 import (
+	"encoding/json"
 	"sync"
 
 	"github.com/eliothedeman/bangarang/event"
@@ -9,13 +10,65 @@ import (
 
 var (
 	alarms = &alarmCollection{
-		// maps an instance name to an alarm
-		alarms: make(map[string]Alarm),
 		// maps an alarm type name to an alarm
-		factories: make(map[string]AlarmFactory),
+		factories:   make(map[string]AlarmFactory),
+		collections: AlarmCollection{},
 	}
 )
 
+type AlarmCollection map[string][]Alarm
+
+func (a AlarmCollection) UnmarshalJSON(buff []byte) error {
+	b := map[string][]json.RawMessage{}
+	name := &struct {
+		Type *string `json:"type"`
+		Name *string `json:"name"`
+	}{}
+
+	err := json.Unmarshal(buff, &b)
+	if err != nil {
+		return err
+	}
+
+	for k, v := range b {
+		a[k] = make([]Alarm, 0)
+		for _, raw := range v {
+			name.Name = nil
+			name.Type = nil
+			json.Unmarshal(raw, name)
+
+			fact := GetFactory(*name.Type)
+			new_alarm := fact()
+			conf := new_alarm.ConfigStruct()
+			json.Unmarshal(raw, conf)
+			err := new_alarm.Init(conf)
+			if err != nil {
+				return err
+			}
+			a[k] = append(a[k], new_alarm)
+
+		}
+		LoadCollection(k, a[k])
+	}
+
+	return nil
+}
+
+func LoadCollection(name string, coll []Alarm) {
+	alarms.Lock()
+	alarms.collections[name] = coll
+	alarms.Unlock()
+}
+
+func GetCollection(name string) []Alarm {
+	alarms.Lock()
+	a, ok := alarms.collections[name]
+	alarms.Unlock()
+	if !ok {
+		return nil
+	}
+	return a
+}
 func GetFactory(name string) AlarmFactory {
 	alarms.Lock()
 	a := alarms.factories[name]
@@ -37,7 +90,7 @@ type Alarm interface {
 type AlarmFactory func() Alarm
 
 type alarmCollection struct {
-	alarms    map[string]Alarm
-	factories map[string]AlarmFactory
+	collections AlarmCollection
+	factories   map[string]AlarmFactory
 	sync.Mutex
 }

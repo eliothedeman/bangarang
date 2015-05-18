@@ -8,10 +8,10 @@ import (
 )
 
 type Condition struct {
-	Greater      *float64                 `greater`
-	Less         *float64                 `less`
-	Exactly      *float64                 `exactly`
-	Occurences   int                      `occurences`
+	Greater      *float64                 `json:"greater"`
+	Less         *float64                 `json:"less"`
+	Exactly      *float64                 `json:"exactly"`
+	Occurences   int                      `json:"occurences"`
 	tracker      map[string]*EventTracker `-`
 	trackerMutex sync.RWMutex
 }
