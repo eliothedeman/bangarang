@@ -15,6 +15,7 @@ var (
 )
 
 func main() {
+	flag.Parse()
 	ac, err := config.LoadConfigFile(*confFile)
 	if err != nil {
 		log.Fatal(err)

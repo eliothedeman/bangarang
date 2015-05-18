@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -59,6 +60,7 @@ func (p *Pipeline) IngestHttp() {
 
 func (p *Pipeline) consumeTcp(c *net.TCPConn) {
 	buff := make([]byte, 1024*200)
+	term := []byte{byte(0)}
 	for {
 		n, err := c.Read(buff)
 		if err != nil {
@@ -66,14 +68,24 @@ func (p *Pipeline) consumeTcp(c *net.TCPConn) {
 			c.Close()
 			return
 		}
-		e := &event.Event{}
-		err = json.Unmarshal(buff[:n], e)
-		if err != nil {
-			log.Println(err)
-		} else {
-			p.Process(e)
-		}
 
+		buffs := bytes.Split(buff[:n], term)
+		for _, b := range buffs {
+			p.consume(b)
+		}
+	}
+}
+
+func (p *Pipeline) consume(buff []byte) {
+	if len(buff) < 2 {
+		return
+	}
+	e := &event.Event{}
+	err := json.Unmarshal(buff, e)
+	if err != nil {
+		log.Println(err)
+	} else {
+		p.Process(e)
 	}
 }
 
@@ -110,7 +122,6 @@ func (p *Pipeline) Process(e *event.Event) int {
 	for _, v := range p.escalations {
 		if v.Match(e) {
 			v.StatusOf(e)
-			log.Println(e.StatusChanged())
 			if e.StatusChanged() {
 				for _, a := range v.Alarms {
 					err := a.Send(e)
