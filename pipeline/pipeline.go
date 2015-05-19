@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/config"
@@ -17,21 +18,40 @@ import (
 type Pipeline struct {
 	tcpPort, httpPort *int
 	escalations       []*alarm.Escalation
+	keepAliveAge      time.Duration
 	index             *event.Index
 }
 
 func NewPipeline(conf *config.AppConfig) *Pipeline {
 	return &Pipeline{
-		tcpPort:     conf.TcpPort,
-		httpPort:    conf.HttpPort,
-		escalations: conf.Escalations,
-		index:       event.NewIndex(),
+		tcpPort:      conf.TcpPort,
+		httpPort:     conf.HttpPort,
+		keepAliveAge: conf.KeepAliveAge,
+		escalations:  conf.Escalations,
+		index:        event.NewIndex(),
+	}
+}
+
+func (p *Pipeline) checkExpired() {
+	for {
+		time.Sleep(30 * time.Second)
+
+		hosts := p.index.GetExpired(p.keepAliveAge)
+		for _, host := range hosts {
+			e := &event.Event{
+				Host:    host,
+				Service: "Keepalive",
+				Metric:  float64(p.keepAliveAge),
+			}
+			p.Process(e)
+		}
 	}
 }
 
 func (p *Pipeline) Start() {
 	go p.IngestHttp()
 	go p.IngestTcp()
+	go p.checkExpired()
 }
 
 func (p *Pipeline) IngestHttp() {

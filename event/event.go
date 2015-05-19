@@ -2,7 +2,6 @@ package event
 
 import (
 	"fmt"
-	"log"
 	"sync"
 	"time"
 )
@@ -38,7 +37,6 @@ func (e *Event) StatusChanged() bool {
 	if e.LastEvent == nil {
 		return e.Status != OK
 	}
-	log.Printf("%+v\n %+v", *e, *e.LastEvent)
 
 	return !(e.LastEvent.Status == e.Status)
 }
@@ -59,14 +57,30 @@ func (e *Event) FormatDescription() string {
 }
 
 type Index struct {
-	events map[string]*Event
+	events     map[string]*Event
+	keepAlives map[string]time.Time
 	sync.RWMutex
 }
 
 func NewIndex() *Index {
 	return &Index{
-		events: make(map[string]*Event),
+		events:     make(map[string]*Event),
+		keepAlives: make(map[string]time.Time),
 	}
+}
+
+// get all of the hosts that have missed their keepalives
+func (i *Index) GetExpired(age time.Duration) []string {
+	hosts := make([]string, 0, 10)
+	n := time.Now()
+	i.RLock()
+	for host, t := range i.keepAlives {
+		if n.Sub(t) > age {
+			hosts = append(hosts, host)
+		}
+	}
+	i.RUnlock()
+	return hosts
 }
 
 func (i *Index) Put(e *Event) {
@@ -74,6 +88,7 @@ func (i *Index) Put(e *Event) {
 	e.LastEvent = i.Get(name)
 	i.Lock()
 	i.events[name] = e
+	i.keepAlives[e.Host] = time.Now()
 	i.Unlock()
 }
 

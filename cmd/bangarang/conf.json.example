@@ -7,5 +7,6 @@
             }
         ]
     },
+	"keep_alive_age": "10s",
     "escalations_dir": "alerts/"
 }
