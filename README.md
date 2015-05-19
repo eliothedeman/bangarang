@@ -6,6 +6,23 @@ A stupid simple stream processor for monitoring applications.
 go get github.com/eliothedeman/bangarang/cmd/...
 ```
 
+Or if you are on a linux system and have fpm installed.
+
+```bash
+go get github.com/eliothedeman/bangarang/cmd/...
+cd $GOPATH/github.com/eliothedeman/bangarang/cmd/bangarang
+./mkdeb  
+```
+
+Which will make a debian package which you can install via dpkg or your favorite package manager.
+
+## Run
+```bash
+cd $GOPATH/github.com/eliothedeman/bangarang/cmd/bangarang
+go build -o bangarang
+./bangarang -conf="/path/to/conf.json"
+```
+
 ## Configuration
 bangarang uses two configurations. One main config, and a series of files that define conditions to alert on.
 
@@ -59,3 +76,9 @@ The "escalations_dir" spesified above will be filled with seperate
 
 }
 ```
+
+## Goals
+A simple stream processor for matching incoming metrics, to predefined alert conditions.
+
+## Antigoals
+Anything else.
