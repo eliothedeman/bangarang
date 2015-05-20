@@ -9,9 +9,15 @@ import (
 	"github.com/eliothedeman/bangarang/event"
 )
 
+var (
+	tests_ran = 0
+)
+
 func testPipeline(e []*alarm.Escalation) *Pipeline {
+	tests_ran += 1
 	return &Pipeline{
 		escalations: e,
+		index:       event.NewIndex(fmt.Sprintf("test%d.db", tests_ran)),
 	}
 }
 
@@ -121,6 +127,16 @@ func TestProcess(t *testing.T) {
 	}
 
 	if p.Process(e) != event.CRITICAL {
+		t.Fail()
+	}
+
+	e = &event.Event{
+		Host:    "testok",
+		Service: "testok",
+		Metric:  -1.0,
+	}
+
+	if p.Process(e) != event.OK {
 		t.Fail()
 	}
 

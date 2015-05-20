@@ -13,6 +13,7 @@ import (
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/event"
+	"github.com/pquerna/ffjson/ffjson"
 )
 
 type Pipeline struct {
@@ -28,7 +29,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		httpPort:     conf.HttpPort,
 		keepAliveAge: conf.KeepAliveAge,
 		escalations:  conf.Escalations,
-		index:        event.NewIndex(),
+		index:        event.NewIndex(conf.DbPath),
 	}
 }
 
@@ -101,7 +102,7 @@ func (p *Pipeline) consume(buff []byte) {
 		return
 	}
 	e := &event.Event{}
-	err := json.Unmarshal(buff, e)
+	err := ffjson.UnmarshalFast(buff, e)
 	if err != nil {
 		log.Println(err)
 	} else {
@@ -135,7 +136,7 @@ func (p *Pipeline) IngestTcp() {
 
 func (p *Pipeline) Process(e *event.Event) int {
 	if p.index == nil {
-		p.index = event.NewIndex()
+		p.index = event.NewIndex("test")
 	}
 
 	p.index.Put(e)

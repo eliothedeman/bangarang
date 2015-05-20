@@ -1,5 +1,7 @@
 #!/bin/bash
+go generate ../../...
 go build -a -o bangarang
+
 mkdir -p opt/bangarang
 mkdir -p etc/bangarang
 mv bangarang opt/bangarang/bangarang

@@ -1,10 +1,6 @@
 package event
 
-import (
-	"fmt"
-	"sync"
-	"time"
-)
+import "fmt"
 
 const (
 	OK       = 0
@@ -12,25 +8,25 @@ const (
 	CRITICAL = 2
 )
 
-var (
-	DEFAULT_TTL = time.Minute * 10
-)
+//go:generate ffjson $GOFILE
 
 type Event struct {
 	Host       string            `json:"host"`
 	Service    string            `json:"service"`
 	SubService string            `json:"sub_type"`
 	Metric     float64           `json:"metric"`
-	Time       time.Time         `json:"time"`
 	Occurences int               `json:"occurences"`
 	Tags       map[string]string `json:"tags"`
-	TTL        time.Duration     `json:"-"`
 	Status     int               `json:"status"`
-	LastEvent  *Event            `json:"-"`
+	LastEvent  *Event            `json:"last_event,omitempty"`
+	indexName  string            `json:"index_name"`
 }
 
 func (e *Event) IndexName() string {
-	return fmt.Sprintf("%s:%s:%s", e.Host, e.Service, e.SubService)
+	if len(e.indexName) == 0 {
+		e.indexName = fmt.Sprintf("%s:%s:%s", e.Host, e.Service, e.SubService)
+	}
+	return e.indexName
 }
 
 func (e *Event) StatusChanged() bool {
@@ -54,63 +50,4 @@ func status(code int) string {
 
 func (e *Event) FormatDescription() string {
 	return fmt.Sprintf("%s! %s.%s on %s is %.2f", status(e.Status), e.Service, e.SubService, e.Host, e.Metric)
-}
-
-type Index struct {
-	events     map[string]*Event
-	keepAlives map[string]time.Time
-	sync.RWMutex
-}
-
-func NewIndex() *Index {
-	return &Index{
-		events:     make(map[string]*Event),
-		keepAlives: make(map[string]time.Time),
-	}
-}
-
-// get all of the hosts that have missed their keepalives
-func (i *Index) GetExpired(age time.Duration) []string {
-	hosts := make([]string, 0, 10)
-	n := time.Now()
-	i.RLock()
-	for host, t := range i.keepAlives {
-		if n.Sub(t) > age {
-			hosts = append(hosts, host)
-		}
-	}
-	i.RUnlock()
-	return hosts
-}
-
-func (i *Index) Put(e *Event) {
-	name := e.IndexName()
-	e.LastEvent = i.Get(name)
-	i.Lock()
-	i.events[name] = e
-	i.keepAlives[e.Host] = time.Now()
-	i.Unlock()
-}
-
-func (i *Index) Get(n string) *Event {
-	i.RLock()
-	e, ok := i.events[n]
-	i.RUnlock()
-	if !ok {
-		return nil
-	}
-	return e
-}
-
-func (i *Index) GetByAge(age time.Duration) []*Event {
-	now := time.Now()
-	i.RLock()
-	events := make([]*Event, 0, len(i.events)/10)
-	for _, e := range i.events {
-		if now.Sub(e.Time) > age {
-			events = append(events, e)
-		}
-	}
-	i.RUnlock()
-	return events
 }

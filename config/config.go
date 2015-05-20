@@ -14,11 +14,17 @@ type Configer interface {
 	Init(interface{}) error
 }
 
+const (
+	DEFAULT_DB_PATH       = "event.db"
+	DEFAULT_KEEPALIVE_AGE = "25m"
+)
+
 type AppConfig struct {
 	Escalations      []*alarm.Escalation    `json:"-"`
 	EscalationsDir   string                 `json:"escalations_dir"`
 	KeepAliveAge     time.Duration          `json:"-"`
 	Raw_KeepAliveAge string                 `json:"keep_alive_age"`
+	DbPath           string                 `json:"db_path"`
 	TcpPort          *int                   `json:"tcp_port"`
 	HttpPort         *int                   `json:"http_port"`
 	Alarms           *alarm.AlarmCollection `json:"alarms"`
@@ -31,7 +37,8 @@ func LoadConfigFile(fileName string) (*AppConfig, error) {
 	}
 
 	ac := &AppConfig{
-		Raw_KeepAliveAge: "25m",
+		Raw_KeepAliveAge: DEFAULT_KEEPALIVE_AGE,
+		DbPath:           DEFAULT_DB_PATH,
 	}
 	ac.Alarms = &alarm.AlarmCollection{}
 
