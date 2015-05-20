@@ -2,6 +2,7 @@ package event
 
 import (
 	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -15,6 +16,7 @@ var (
 
 type Index struct {
 	db         *bolt.DB
+	dbFileName string
 	keepAlives map[string]time.Time
 	ka_lock    sync.RWMutex
 }
@@ -52,8 +54,27 @@ func NewIndex(dbName string) *Index {
 
 	return &Index{
 		db:         db,
+		dbFileName: dbName,
 		keepAlives: make(map[string]time.Time),
 	}
+}
+
+// close out the index
+func (i *Index) Close() error {
+	i.ka_lock.Lock()
+	i.keepAlives = make(map[string]time.Time)
+	i.ka_lock.Unlock()
+	return i.db.Close()
+}
+
+// delete any psersistants associated with the index
+func (i *Index) Delete() error {
+	err := i.Close()
+	if err != nil {
+		log.Println(err)
+	}
+
+	return os.Remove(i.dbFileName)
 }
 
 // get all of the hosts that have missed their keepalives
