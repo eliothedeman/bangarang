@@ -31,6 +31,24 @@ func TestPolicyRegexParsing(t *testing.T) {
 
 }
 
+func TestMatchOr(t *testing.T) {
+	p := &Policy{}
+	e := &event.Event{}
+	e.Tags = map[string]string{
+		"test_tag": "unknown",
+	}
+
+	p.Match = map[string]string{
+		"test_tag": "unknown|shadow|telarg",
+	}
+	p.Compile()
+
+	if !p.CheckMatch(e) {
+		t.Fail()
+	}
+
+}
+
 func TestMatchTags(t *testing.T) {
 	p := &Policy{}
 	e := &event.Event{}

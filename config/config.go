@@ -67,6 +67,8 @@ func LoadConfigFile(fileName string) (*AppConfig, error) {
 		ac.Escalations = append(ac.Escalations, e)
 	}
 
+	ac.GlobalPolicy.Compile()
+
 	return ac, nil
 }
 
