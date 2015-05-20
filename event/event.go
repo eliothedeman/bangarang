@@ -1,9 +1,6 @@
 package event
 
-import (
-	"fmt"
-	"log"
-)
+import "fmt"
 
 const (
 	OK       = 0
@@ -36,7 +33,6 @@ func (e *Event) StatusChanged() bool {
 	if e.LastEvent == nil {
 		return e.Status != OK
 	}
-	log.Println(*e, *e.LastEvent)
 
 	return !(e.LastEvent.Status == e.Status)
 }
