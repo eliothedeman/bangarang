@@ -151,16 +151,17 @@ func (p *Pipeline) Process(e *event.Event) int {
 		if v.Match(e) {
 			v.StatusOf(e)
 			if e.StatusChanged() {
-				p.index.Update(e)
 				for _, a := range v.Alarms {
 					err := a.Send(e)
 					if err != nil {
 						log.Println(err)
 					}
 				}
+				p.index.Update(e)
 				return e.Status
 			}
 		}
 	}
+	p.index.Update(e)
 	return e.Status
 }

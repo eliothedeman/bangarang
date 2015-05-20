@@ -55,6 +55,7 @@ func TestOccurences(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 2)
 	esc := testEscalation(c, nil, map[string]string{"host": "test"}, nil)
 	p := testPipeline([]*alarm.Escalation{esc})
+	defer p.index.Delete()
 
 	e := &event.Event{
 		Host:    "test",
@@ -81,6 +82,7 @@ func BenchmarkProcessOk(b *testing.B) {
 	c := testCondition(test_f(0), nil, nil, 0)
 	esc := testEscalation(c, nil, map[string]string{"host": "test"}, nil)
 	p := testPipeline([]*alarm.Escalation{esc})
+	defer p.index.Delete()
 
 	e := &event.Event{
 		Host:    "test",
@@ -99,6 +101,7 @@ func BenchmarkIndex(b *testing.B) {
 	c := testCondition(test_f(0), nil, nil, 0)
 	esc := testEscalation(c, nil, map[string]string{"host": "test"}, nil)
 	p := testPipeline([]*alarm.Escalation{esc})
+	defer p.index.Delete()
 
 	e := &event.Event{
 		Host:    "test",
@@ -119,6 +122,7 @@ func TestProcess(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 0)
 	esc := testEscalation(c, nil, map[string]string{"host": "test"}, nil)
 	p := testPipeline([]*alarm.Escalation{esc})
+	defer p.index.Delete()
 
 	e := &event.Event{
 		Host:    "test",
@@ -140,4 +144,29 @@ func TestProcess(t *testing.T) {
 		t.Fail()
 	}
 
+}
+
+func TestProcessDedupe(t *testing.T) {
+	c := testCondition(test_f(0), nil, nil, 0)
+	esc := testEscalation(c, nil, map[string]string{"host": "test"}, nil)
+	p := testPipeline([]*alarm.Escalation{esc})
+	defer p.index.Delete()
+
+	events := make([]*event.Event, 100)
+
+	for i := 0; i < len(events); i++ {
+		events[i] = &event.Event{
+			Host:   "test",
+			Metric: 1.0,
+		}
+	}
+
+	p.Process(events[0])
+
+	for i := 1; i < len(events); i++ {
+		p.Process(events[i])
+		if events[i].StatusChanged() {
+			t.Fail()
+		}
+	}
 }
