@@ -104,6 +104,15 @@ func (p *Policy) CheckNotMatch(e *event.Event) bool {
 		elem := v.FieldByName(formatFiledName(k))
 		if m.MatchString(elem.String()) {
 			return false
+
+			// check againt the element's tags
+			if e.Tags != nil {
+				if against, inMap := e.Tags[k]; inMap {
+					if m.MatchString(against) {
+						return false
+					}
+				}
+			}
 		}
 	}
 
@@ -115,10 +124,23 @@ func (p *Policy) CheckMatch(e *event.Event) bool {
 	v := reflect.ValueOf(e).Elem()
 	for k, m := range p.r_match {
 		elem := v.FieldByName(formatFiledName(k))
-		if m.MatchString(elem.String()) {
-			return true
+
+		// if the element does not match the regex pattern, the event does not fully match
+		if !m.MatchString(elem.String()) {
+
+			// check againt the element's tags
+			if e.Tags == nil {
+				return false
+			}
+			if against, inMap := e.Tags[k]; inMap {
+				if !m.MatchString(against) {
+					return false
+				}
+			} else {
+				return false
+			}
 		}
 	}
 
-	return false
+	return true
 }
