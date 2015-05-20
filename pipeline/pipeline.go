@@ -19,6 +19,7 @@ type Pipeline struct {
 	tcpPort, httpPort *int
 	escalations       []*alarm.Escalation
 	keepAliveAge      time.Duration
+	globalPolicy      *alarm.Policy
 	index             *event.Index
 }
 
@@ -28,6 +29,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		httpPort:     conf.HttpPort,
 		keepAliveAge: conf.KeepAliveAge,
 		escalations:  conf.Escalations,
+		globalPolicy: conf.GlobalPolicy,
 		index:        event.NewIndex(),
 	}
 }
@@ -139,6 +141,11 @@ func (p *Pipeline) Process(e *event.Event) int {
 	}
 
 	p.index.Put(e)
+	if p.globalPolicy != nil {
+		if !p.globalPolicy.CheckMatch(e) || !p.globalPolicy.CheckNotMatch(e) {
+			return event.OK
+		}
+	}
 	for _, v := range p.escalations {
 		if v.Match(e) {
 			v.StatusOf(e)

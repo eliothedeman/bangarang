@@ -22,6 +22,7 @@ type AppConfig struct {
 	TcpPort          *int                   `json:"tcp_port"`
 	HttpPort         *int                   `json:"http_port"`
 	Alarms           *alarm.AlarmCollection `json:"alarms"`
+	GlobalPolicy     *alarm.Policy          `json:"global_policy"`
 }
 
 func LoadConfigFile(fileName string) (*AppConfig, error) {

@@ -30,7 +30,7 @@ func (e *Escalation) LoadAlarms() error {
 }
 
 func (e *Escalation) Match(ev *event.Event) bool {
-	return e.Policy.match(ev) && e.Policy.matchNots(ev)
+	return e.Policy.CheckMatch(ev) && e.Policy.CheckNotMatch(ev)
 }
 
 func (e *Escalation) StatusOf(ev *event.Event) int {
@@ -98,7 +98,7 @@ func (p *Policy) StatusOf(e *event.Event) int {
 	return event.OK
 }
 
-func (p *Policy) matchNots(e *event.Event) bool {
+func (p *Policy) CheckNotMatch(e *event.Event) bool {
 	v := reflect.ValueOf(e).Elem()
 	for k, m := range p.r_not_match {
 		elem := v.FieldByName(formatFiledName(k))
@@ -111,7 +111,7 @@ func (p *Policy) matchNots(e *event.Event) bool {
 }
 
 // check if any of p's matches are satisfied by the event
-func (p *Policy) match(e *event.Event) bool {
+func (p *Policy) CheckMatch(e *event.Event) bool {
 	v := reflect.ValueOf(e).Elem()
 	for k, m := range p.r_match {
 		elem := v.FieldByName(formatFiledName(k))
