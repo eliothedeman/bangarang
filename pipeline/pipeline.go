@@ -147,11 +147,12 @@ func (p *Pipeline) Process(e *event.Event) int {
 			return event.OK
 		}
 	}
-	for _, v := range p.escalations {
-		if v.Match(e) {
-			v.StatusOf(e)
+
+	for _, esc := range p.escalations {
+		if esc.Match(e) {
+			esc.StatusOf(e)
 			if e.StatusChanged() {
-				for _, a := range v.Alarms {
+				for _, a := range esc.Alarms {
 					err := a.Send(e)
 					if err != nil {
 						log.Println(err)

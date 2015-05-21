@@ -3,9 +3,9 @@ package event
 import "fmt"
 
 const (
-	OK       = 0
-	WARNING  = 1
-	CRITICAL = 2
+	OK = iota
+	WARNING
+	CRITICAL
 )
 
 //go:generate ffjson $GOFILE
