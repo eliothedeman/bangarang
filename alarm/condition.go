@@ -41,9 +41,11 @@ func (c *Condition) TrackEvent(e *event.Event) bool {
 
 	if c.Satisfies(e) {
 		t.Inc()
+		return t.Occurences() >= c.Occurences
 	}
 
-	return t.Occurences() >= c.Occurences
+	return false
+
 }
 
 func (c *Condition) CleanEvent(e *event.Event) {

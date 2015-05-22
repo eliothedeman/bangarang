@@ -1,10 +1,16 @@
 {
 	"policy": {
 		"match": {
-			"host": "test\\.otherstuff\\w"
+			"host": ".*test.*"
+		},
+		"not_match": {
+			"test_tag": "world"
+
 		},
 		"crit": {
-			"greater": 0.0
+			"std_dev": {
+				"sigma": 2
+			}
 		}
 	},
 	"escalation": "test"

@@ -118,6 +118,31 @@ func BenchmarkIndex(b *testing.B) {
 
 }
 
+func BenchmarkIndexWithStats(b *testing.B) {
+	c := testCondition(test_f(0), nil, nil, 0)
+	c.StdDev = &alarm.StdDev{
+		Sigma: 4,
+	}
+
+	esc := testEscalation(c, nil, map[string]string{"host": "test"}, nil)
+	p := testPipeline([]*alarm.Escalation{esc})
+	defer p.index.Delete()
+
+	e := &event.Event{
+		Host:    "test",
+		Service: "test",
+		Metric:  -1.0,
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		e.Service = fmt.Sprintf("%d", i)
+		p.Process(e)
+	}
+
+}
+
 func TestProcess(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 0)
 	esc := testEscalation(c, nil, map[string]string{"host": "test"}, nil)
