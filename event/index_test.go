@@ -57,6 +57,43 @@ func BenchmarkIndexPut(b *testing.B) {
 	}
 }
 
+func TestDeleteIncidentById(t *testing.T) {
+	i := newTestIndex()
+	defer i.Delete()
+	e := newTestEvent("h", "s", "ss", 1)
+	in := NewIncident("DeleteIncident", i, e)
+
+	in = i.GetIncident(in.Id)
+	if in == nil {
+		t.Fail()
+	}
+
+	i.DeleteIncidentById(in.Id)
+
+	in = i.GetIncident(in.Id)
+	if in != nil {
+		t.Fail()
+	}
+}
+
+func TestDeleteIncidentByEvent(t *testing.T) {
+	i := newTestIndex()
+	defer i.Delete()
+	e := newTestEvent("h", "s", "ss", 1)
+	in := NewIncident("DeleteIncident", i, e)
+
+	in = i.GetIncident(in.Id)
+	if in == nil {
+		t.Fail()
+	}
+
+	i.DeleteIncidentByEvent(e)
+	in = i.GetIncident(in.Id)
+	if in != nil {
+		t.Fail()
+	}
+}
+
 func TestListIncidents(t *testing.T) {
 	i := newTestIndex()
 	defer i.Delete()
@@ -68,7 +105,6 @@ func TestListIncidents(t *testing.T) {
 	if ins[0].EventName != in.EventName {
 		t.Fail()
 	}
-
 }
 
 func TestAddIncident(t *testing.T) {
@@ -82,5 +118,4 @@ func TestAddIncident(t *testing.T) {
 	if in.EventName != b.EventName {
 		t.Fail()
 	}
-
 }

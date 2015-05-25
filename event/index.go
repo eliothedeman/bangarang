@@ -224,10 +224,12 @@ func (i *Index) GetIncident(id int64) *Incident {
 	return in
 }
 
-func (i *Index) DeleteIncidentById(id []byte) {
+func (i *Index) DeleteIncidentById(id int64) {
+	id_buff := make([]byte, 8)
+	binary.PutVarint(id_buff, id)
 	err := i.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(INCIDENT_BUCKET_NAME)
-		return b.Delete(id)
+		return b.Delete(id_buff)
 	})
 
 	if err != nil {
