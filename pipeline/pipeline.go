@@ -183,6 +183,14 @@ func (p *Pipeline) GetIncident(id int64) *event.Incident {
 	return p.index.GetIncident(id)
 }
 
+func (p *Pipeline) PutIncident(in *event.Incident) {
+	if in.Id == 0 {
+		in.Id = p.index.GetIncidentCounter()
+		p.index.UpdateIncidentCounter(in.Id + 1)
+	}
+	p.index.PutIncident(in)
+}
+
 func (p *Pipeline) NewIncident(escalation string, e *event.Event) *event.Incident {
 	return event.NewIncident(escalation, p.index, e)
 }

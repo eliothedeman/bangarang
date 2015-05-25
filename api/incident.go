@@ -2,10 +2,12 @@ package api
 
 import (
 	"errors"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/eliothedeman/bangarang/event"
 	"github.com/eliothedeman/bangarang/pipeline"
 	"github.com/gorilla/mux"
 	"github.com/pquerna/ffjson/ffjson"
@@ -31,8 +33,22 @@ func (i *Incident) EndPoint() string {
 }
 
 func (i *Incident) Post(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("content-type", "application/json")
-	log.Println("[]")
+	buff, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	in := &event.Incident{}
+	err = ffjson.UnmarshalFast(buff, in)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	i.pipeline.PutIncident(in)
 }
 
 // list all the current incidents for the pipeline
