@@ -25,6 +25,7 @@ func (a *AllIncidents) EndPoint() string {
 
 // list all the current incidents for the pipeline
 func (a *AllIncidents) Get(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("content-type", "application/json")
 	ins := a.pipeline.ListIncidents()
 
 	buff, err := ffjson.Marshal(ins)

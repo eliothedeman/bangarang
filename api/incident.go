@@ -31,11 +31,13 @@ func (i *Incident) EndPoint() string {
 }
 
 func (i *Incident) Post(w http.ResponseWriter, r *http.Request) {
-	log.Println("post")
+	w.Header().Add("content-type", "application/json")
+	log.Println("[]")
 }
 
 // list all the current incidents for the pipeline
 func (i *Incident) Get(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("content-type", "application/json")
 	vars := mux.Vars(r)
 
 	if id, ok := vars["id"]; !ok {
