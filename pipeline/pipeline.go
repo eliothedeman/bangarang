@@ -25,7 +25,7 @@ type Pipeline struct {
 }
 
 func NewPipeline(conf *config.AppConfig) *Pipeline {
-	return &Pipeline{
+	p := &Pipeline{
 		tcpPort:      conf.TcpPort,
 		httpPort:     conf.HttpPort,
 		keepAliveAge: conf.KeepAliveAge,
@@ -33,6 +33,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		index:        event.NewIndex(conf.DbPath),
 		globalPolicy: conf.GlobalPolicy,
 	}
+	return p
 }
 
 func (p *Pipeline) checkExpired() {
@@ -43,7 +44,7 @@ func (p *Pipeline) checkExpired() {
 		for _, host := range hosts {
 			e := &event.Event{
 				Host:    host,
-				Service: "Keepalive",
+				Service: "KeepAlive",
 				Metric:  float64(p.keepAliveAge),
 			}
 			p.Process(e)
@@ -172,6 +173,14 @@ func (p *Pipeline) Process(e *event.Event) int {
 	}
 	p.index.UpdateEvent(e)
 	return e.Status
+}
+
+func (p *Pipeline) ListIncidents() []*event.Incident {
+	return p.index.ListIncidents()
+}
+
+func (p *Pipeline) GetIncident(id int64) *event.Incident {
+	return p.index.GetIncident(id)
 }
 
 func (p *Pipeline) NewIncident(escalation string, e *event.Event) *event.Incident {

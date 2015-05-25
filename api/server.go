@@ -36,15 +36,17 @@ type Server struct {
 }
 
 func (s *Server) construct(e EndPointer) {
-	route := s.router.NewRoute().Path(e.EndPoint())
 
 	if g, ok := e.(Getter); ok {
+		route := s.router.NewRoute().Path(e.EndPoint())
 		route.Methods("GET").HandlerFunc(g.Get)
 	}
 	if p, ok := e.(Poster); ok {
+		route := s.router.NewRoute().Path(e.EndPoint())
 		route.Methods("POST", "PUT").HandlerFunc(p.Post)
 	}
 	if d, ok := e.(Deleter); ok {
+		route := s.router.NewRoute().Path(e.EndPoint())
 		route.Methods("DELETE").HandlerFunc(d.Delete)
 	}
 }
@@ -60,7 +62,8 @@ func NewServer(port int, pipe *pipeline.Pipeline) *Server {
 		pipeline: pipe,
 	}
 
-	s.construct(NewIncidents(pipe))
+	s.construct(NewAllIncidents(pipe))
+	s.construct(NewIncident(pipe))
 
 	return s
 }
