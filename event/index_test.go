@@ -2,7 +2,6 @@ package event
 
 import (
 	"fmt"
-	"log"
 	"testing"
 )
 
@@ -31,16 +30,15 @@ func TestIndexPut(t *testing.T) {
 	e1 := newTestEvent("h", "s", "ss", 0.0)
 	e2 := newTestEvent("h", "s", "ss", 0.0)
 
-	i.Put(e1)
-	i.Put(e2)
+	i.PutEvent(e1)
+	i.PutEvent(e2)
 
-	e3 := i.Get([]byte(e2.IndexName()))
+	e3 := i.GetEvent([]byte(e2.IndexName()))
 
 	if e3.LastEvent == nil {
 		t.Fail()
 	}
 
-	log.Println(*e3)
 }
 
 func BenchmarkIndexPut(b *testing.B) {
@@ -55,6 +53,34 @@ func BenchmarkIndexPut(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		index.Put(events[i%1000])
+		index.PutEvent(events[i%1000])
 	}
+}
+
+func TestListIncidents(t *testing.T) {
+	i := newTestIndex()
+	defer i.Delete()
+	e := newTestEvent("h", "s", "ss", 1)
+	in := NewIncident("ListIncidents", i, e)
+
+	ins := i.ListIncidents()
+
+	if ins[0].EventName != in.EventName {
+		t.Fail()
+	}
+
+}
+
+func TestAddIncident(t *testing.T) {
+	i := newTestIndex()
+	defer i.Delete()
+	e := newTestEvent("h", "s", "ss", 1)
+	in := NewIncident("test", i, e)
+
+	b := i.GetIncident(in.Id)
+
+	if in.EventName != b.EventName {
+		t.Fail()
+	}
+
 }

@@ -159,6 +159,12 @@ func (p *Pipeline) Process(e *event.Event) int {
 						log.Println(err)
 					}
 				}
+
+				if e.Status != event.OK {
+					p.index.PutIncident(p.NewIncident(esc.EscalationPolicy, e))
+				} else {
+					p.index.DeleteIncidentByEvent(e)
+				}
 				p.index.UpdateEvent(e)
 				return e.Status
 			}
@@ -166,4 +172,8 @@ func (p *Pipeline) Process(e *event.Event) int {
 	}
 	p.index.UpdateEvent(e)
 	return e.Status
+}
+
+func (p *Pipeline) NewIncident(escalation string, e *event.Event) *event.Incident {
+	return event.NewIncident(escalation, p.index, e)
 }
