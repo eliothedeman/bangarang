@@ -136,12 +136,13 @@ func (p *Pipeline) IngestTcp() {
 	}
 }
 
+// Run the given event though the pipeline
 func (p *Pipeline) Process(e *event.Event) int {
 	if p.index == nil {
-		p.index = event.NewIndex("test")
+		p.index = event.NewIndex("event.db")
 	}
 
-	p.index.Put(e)
+	p.index.PutEvent(e)
 	if p.globalPolicy != nil {
 		if !p.globalPolicy.CheckMatch(e) || !p.globalPolicy.CheckNotMatch(e) {
 			return event.OK
@@ -158,11 +159,11 @@ func (p *Pipeline) Process(e *event.Event) int {
 						log.Println(err)
 					}
 				}
-				p.index.Update(e)
+				p.index.UpdateEvent(e)
 				return e.Status
 			}
 		}
 	}
-	p.index.Update(e)
+	p.index.UpdateEvent(e)
 	return e.Status
 }

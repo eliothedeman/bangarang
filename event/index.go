@@ -92,7 +92,7 @@ func (i *Index) GetExpired(age time.Duration) []string {
 }
 
 // updates the event, will not apply any of the dedupe logic
-func (i *Index) Update(e *Event) {
+func (i *Index) UpdateEvent(e *Event) {
 	buff, err := ffjson.MarshalFast(e)
 	if err != nil {
 		log.Println(err)
@@ -112,9 +112,9 @@ func (i *Index) Update(e *Event) {
 }
 
 // insert the event into the index
-func (i *Index) Put(e *Event) {
+func (i *Index) PutEvent(e *Event) {
 	name := []byte(e.IndexName())
-	e.LastEvent = i.Get(name)
+	e.LastEvent = i.GetEvent(name)
 	if e.LastEvent != nil {
 		e.LastEvent.LastEvent = nil
 	}
@@ -141,7 +141,7 @@ func (i *Index) Put(e *Event) {
 }
 
 // fetch the event with the given index name
-func (i *Index) Get(name []byte) *Event {
+func (i *Index) GetEvent(name []byte) *Event {
 	e := &Event{}
 	found := false
 	err := i.db.View(func(t *bolt.Tx) error {
