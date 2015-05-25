@@ -65,7 +65,7 @@ func (p *Policy) Compile() {
 	}
 }
 
-func formatFiledName(n string) string {
+func formatFileName(n string) string {
 	s := strings.Split(n, "_")
 	a := ""
 	for _, k := range s {
@@ -97,7 +97,7 @@ func (p *Policy) StatusOf(e *event.Event) int {
 func (p *Policy) CheckNotMatch(e *event.Event) bool {
 	v := reflect.ValueOf(e).Elem()
 	for k, m := range p.r_not_match {
-		elem := v.FieldByName(formatFiledName(k))
+		elem := v.FieldByName(formatFileName(k))
 		if m.MatchString(elem.String()) {
 			return false
 
@@ -119,7 +119,7 @@ func (p *Policy) CheckNotMatch(e *event.Event) bool {
 func (p *Policy) CheckMatch(e *event.Event) bool {
 	v := reflect.ValueOf(e).Elem()
 	for k, m := range p.r_match {
-		elem := v.FieldByName(formatFiledName(k))
+		elem := v.FieldByName(formatFileName(k))
 
 		// if the element does not match the regex pattern, the event does not fully match
 		if !m.MatchString(elem.String()) {
