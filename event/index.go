@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"log"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 
@@ -19,6 +20,7 @@ var (
 )
 
 type Index struct {
+	pool       *EncodingPool
 	db         *bolt.DB
 	dbFileName string
 	keepAlives map[string]time.Time
@@ -67,6 +69,7 @@ func NewIndex(dbName string) *Index {
 	}
 
 	return &Index{
+		pool:       NewEncodingPool(NewMsgPackEncoder, NewMsgPackDecoder, runtime.NumCPU()),
 		db:         db,
 		dbFileName: dbName,
 		keepAlives: make(map[string]time.Time),
@@ -239,37 +242,28 @@ func (i *Index) DeleteIncidentById(id int64) {
 
 // remove an incident by it's associated event if it exists
 func (i *Index) DeleteIncidentByEvent(e *Event) {
-	in := e.Incident
-	if in == nil {
+	id := e.IncidentId
+	if id == nil {
 		if e.LastEvent != nil {
-			in = e.LastEvent.Incident
-
+			id = e.LastEvent.IncidentId
 		}
 	}
 
 	// if no associated incident could be found, return
-	if in == nil {
+	if id == nil {
 		return
 	}
 
-	err := i.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(INCIDENT_BUCKET_NAME)
-		return b.Delete(in.IndexName())
-	})
-
-	if err == nil {
-		e.Incident = nil
-		if e.LastEvent != nil {
-			e.LastEvent.Incident = nil
-		}
-	} else {
-		log.Println(err)
-	}
+	i.DeleteIncidentById(*id)
 }
 
 // updates the event, will not apply any of the dedupe logic
 func (i *Index) UpdateEvent(e *Event) {
-	buff, err := ffjson.MarshalFast(e)
+	var buff []byte
+	var err error
+	i.pool.Encode(func(enc Encoder) {
+		buff, err = enc.Encode(e)
+	})
 	if err != nil {
 		log.Println(err)
 		return
@@ -289,14 +283,17 @@ func (i *Index) UpdateEvent(e *Event) {
 
 // insert the event into the index
 func (i *Index) PutEvent(e *Event) {
-	name := []byte(e.IndexName())
-	e.LastEvent = i.GetEvent(name)
+	e.LastEvent = i.GetEvent(e.IndexName())
 	if e.LastEvent != nil {
 		e.LastEvent.LastEvent = nil
 	}
+	var buff []byte
+	var err error
 
 	// encode the event
-	buff, err := ffjson.MarshalFast(e)
+	i.pool.Encode(func(enc Encoder) {
+		buff, err = enc.Encode(e)
+	})
 	if err != nil {
 		log.Println(err)
 		return
@@ -305,10 +302,8 @@ func (i *Index) PutEvent(e *Event) {
 	// write the event to the db
 	err = i.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(EVENT_BUCKET_NAME)
-		return b.Put(name, buff)
+		return b.Put(e.IndexName(), buff)
 	})
-
-	ffjson.Pool(buff)
 
 	// update the host's keepalive value
 	i.ka_lock.Lock()
@@ -318,27 +313,34 @@ func (i *Index) PutEvent(e *Event) {
 
 // fetch the event with the given index name
 func (i *Index) GetEvent(name []byte) *Event {
-	e := &Event{}
 	found := false
-	err := i.db.View(func(t *bolt.Tx) error {
+	var raw []byte
+	i.db.View(func(t *bolt.Tx) error {
 		b := t.Bucket(EVENT_BUCKET_NAME)
-		raw := b.Get(name)
+		raw = b.Get(name)
 
 		// if we don't have anything at that key, exit early
 		if len(raw) == 0 {
 			return nil
 		}
 		found = true
-		err := ffjson.UnmarshalFast(raw, e)
-
-		return err
+		return nil
 	})
-	if err != nil {
-		log.Println(err)
+
+	if !found {
 		return nil
 	}
 
-	if !found {
+	var e *Event
+	var err error
+	i.pool.Decode(func(dec Decoder) {
+		e, err = dec.Decode(raw)
+		if err != nil {
+			log.Println(err)
+		}
+	})
+
+	if err != nil {
 		return nil
 	}
 

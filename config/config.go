@@ -14,6 +14,10 @@ type Configer interface {
 	Init(interface{}) error
 }
 
+var (
+	DEFAULT_ENCODING = "json"
+)
+
 const (
 	DEFAULT_DB_PATH       = "event.db"
 	DEFAULT_KEEPALIVE_AGE = "25m"
@@ -29,6 +33,7 @@ type AppConfig struct {
 	HttpPort         *int                   `json:"http_port"`
 	Alarms           *alarm.AlarmCollection `json:"alarms"`
 	GlobalPolicy     *alarm.Policy          `json:"global_policy"`
+	Encoding         *string                `json:"encoding"`
 }
 
 func LoadConfigFile(fileName string) (*AppConfig, error) {
@@ -65,6 +70,10 @@ func LoadConfigFile(fileName string) (*AppConfig, error) {
 		}
 
 		ac.Escalations = append(ac.Escalations, e)
+	}
+
+	if ac.Encoding == nil {
+		ac.Encoding = &DEFAULT_ENCODING
 	}
 
 	if ac.GlobalPolicy != nil {

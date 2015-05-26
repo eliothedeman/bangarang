@@ -6,15 +6,16 @@ import (
 )
 
 //go:generate ffjson $GOFILE
+//go:generate msgp $GOFILE
 
 // An incident is created whenever an event changes to a state that is not event.OK
 type Incident struct {
-	EventName  string `json:"event"`
-	Time       int64  `json:"time"`
-	Id         int64  `json:"id"`
-	Active     bool   `json:"active"`
-	Status     int    `json:"status"`
-	Escalation string `json:"escalation"`
+	EventName  []byte `json:"event" msg:"event_name"`
+	Time       int64  `json:"time" msg:"time"`
+	Id         int64  `json:"id" msg:"id"`
+	Active     bool   `json:"active" msg:"active"`
+	Status     int    `json:"status" msg:"status"`
+	Escalation string `json:"escalation" msg:"escalation"`
 }
 
 func (i *Incident) IndexName() []byte {
@@ -34,7 +35,8 @@ func NewIncident(escalation string, i *Index, e *Event) *Incident {
 	}
 
 	// add the incident to the event, so we can look it up later
-	e.Incident = in
+	id := in.Id
+	e.IncidentId = &id
 
 	i.UpdateEvent(e)
 	i.PutIncident(in)

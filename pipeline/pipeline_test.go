@@ -2,10 +2,12 @@ package pipeline
 
 import (
 	"fmt"
+	"runtime"
 	"testing"
 
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/alarm/console"
+	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/event"
 )
 
@@ -16,8 +18,9 @@ var (
 func testPipeline(e []*alarm.Escalation) *Pipeline {
 	tests_ran += 1
 	return &Pipeline{
-		escalations: e,
-		index:       event.NewIndex(fmt.Sprintf("test%d.db", tests_ran)),
+		escalations:  e,
+		index:        event.NewIndex(fmt.Sprintf("test%d.db", tests_ran)),
+		encodingPool: event.NewEncodingPool(event.EncoderFactories[config.DEFAULT_ENCODING], event.DecoderFactories[config.DEFAULT_ENCODING], runtime.NumCPU()),
 	}
 }
 

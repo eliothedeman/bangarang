@@ -2,18 +2,17 @@ package pipeline
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
+	"runtime"
 	"time"
 
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/event"
-	"github.com/pquerna/ffjson/ffjson"
 )
 
 type Pipeline struct {
@@ -22,10 +21,12 @@ type Pipeline struct {
 	keepAliveAge      time.Duration
 	globalPolicy      *alarm.Policy
 	index             *event.Index
+	encodingPool      *event.EncodingPool
 }
 
 func NewPipeline(conf *config.AppConfig) *Pipeline {
 	p := &Pipeline{
+		encodingPool: event.NewEncodingPool(event.EncoderFactories[*conf.Encoding], event.DecoderFactories[*conf.Encoding], runtime.NumCPU()),
 		tcpPort:      conf.TcpPort,
 		httpPort:     conf.HttpPort,
 		keepAliveAge: conf.KeepAliveAge,
@@ -67,14 +68,16 @@ func (p *Pipeline) IngestHttp() {
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-
-		e := &event.Event{}
-
-		err = json.Unmarshal(buff, e)
+		var e *event.Event
+		p.encodingPool.Decode(func(d event.Decoder) {
+			e, err = d.Decode(buff)
+		})
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		p.Process(e)
@@ -104,8 +107,11 @@ func (p *Pipeline) consume(buff []byte) {
 	if len(buff) < 2 {
 		return
 	}
-	e := &event.Event{}
-	err := ffjson.UnmarshalFast(buff, e)
+	var e *event.Event
+	var err error
+	p.encodingPool.Decode(func(d event.Decoder) {
+		e, err = d.Decode(buff)
+	})
 	if err != nil {
 		log.Println(err)
 	} else {

@@ -7,9 +7,11 @@ package event
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	fflib "github.com/pquerna/ffjson/fflib/v1"
+	"reflect"
 )
 
 func (mj *Incident) MarshalJSON() ([]byte, error) {
@@ -26,7 +28,17 @@ func (mj *Incident) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	_ = obj
 	_ = err
 	buf.WriteString(`{"event":`)
-	fflib.WriteJsonString(buf, string(mj.EventName))
+	if mj.EventName != nil {
+		buf.WriteString(`"`)
+		{
+			enc := base64.NewEncoder(base64.StdEncoding, buf)
+			enc.Write(reflect.Indirect(reflect.ValueOf(mj.EventName)).Bytes())
+			enc.Close()
+		}
+		buf.WriteString(`"`)
+	} else {
+		buf.WriteString(`null`)
+	}
 	buf.WriteString(`,"time":`)
 	fflib.FormatBits2(buf, uint64(mj.Time), 10, mj.Time < 0)
 	buf.WriteString(`,"id":`)
@@ -266,21 +278,27 @@ mainparse:
 
 handle_EventName:
 
-	/* handler: uj.EventName type=string kind=string */
+	/* handler: uj.EventName type=[]uint8 kind=slice */
 
 	{
 
 		{
 			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
-				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
+				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for ", tok))
 			}
 		}
 
 		if tok == fflib.FFTok_null {
-
+			uj.EventName = nil
 		} else {
+			b := make([]byte, base64.StdEncoding.DecodedLen(fs.Output.Len()))
+			n, err := base64.StdEncoding.Decode(b, fs.Output.Bytes())
+			if err != nil {
+				return fs.WrapErr(err)
+			}
 
-			uj.EventName = string(fs.Output.String())
+			v := reflect.ValueOf(&uj.EventName).Elem()
+			v.SetBytes(b[0:n])
 
 		}
 	}
