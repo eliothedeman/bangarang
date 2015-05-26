@@ -19,6 +19,7 @@ type Event struct {
 	Tags       map[string]string `json:"tags"`
 	Status     int               `json:"status"`
 	LastEvent  *Event            `json:"last_event,omitempty"`
+	Incident   *Incident         `json:"incident,omitempty"`
 	indexName  string            `json:"index_name"`
 }
 

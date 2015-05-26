@@ -65,6 +65,17 @@ func (mj *Event) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 			buf.WriteByte(',')
 		}
 	}
+	if mj.Incident != nil {
+		if true {
+			/* Struct fall back. type=event.Incident kind=struct */
+			buf.WriteString(`"incident":`)
+			err = buf.Encode(mj.Incident)
+			if err != nil {
+				return err
+			}
+			buf.WriteByte(',')
+		}
+	}
 	buf.Rewind(1)
 	buf.WriteByte('}')
 	return nil
@@ -89,6 +100,8 @@ const (
 	ffj_t_Event_Status
 
 	ffj_t_Event_LastEvent
+
+	ffj_t_Event_Incident
 )
 
 var ffj_key_Event_Host = []byte("host")
@@ -106,6 +119,8 @@ var ffj_key_Event_Tags = []byte("tags")
 var ffj_key_Event_Status = []byte("status")
 
 var ffj_key_Event_LastEvent = []byte("last_event")
+
+var ffj_key_Event_Incident = []byte("incident")
 
 func (uj *Event) UnmarshalJSON(input []byte) error {
 	fs := fflib.NewFFLexer(input)
@@ -174,6 +189,14 @@ mainparse:
 						goto mainparse
 					}
 
+				case 'i':
+
+					if bytes.Equal(ffj_key_Event_Incident, kn) {
+						currentKey = ffj_t_Event_Incident
+						state = fflib.FFParse_want_colon
+						goto mainparse
+					}
+
 				case 'l':
 
 					if bytes.Equal(ffj_key_Event_LastEvent, kn) {
@@ -224,6 +247,12 @@ mainparse:
 						goto mainparse
 					}
 
+				}
+
+				if fflib.SimpleLetterEqualFold(ffj_key_Event_Incident, kn) {
+					currentKey = ffj_t_Event_Incident
+					state = fflib.FFParse_want_colon
+					goto mainparse
 				}
 
 				if fflib.EqualFoldRight(ffj_key_Event_LastEvent, kn) {
@@ -314,6 +343,9 @@ mainparse:
 
 				case ffj_t_Event_LastEvent:
 					goto handle_LastEvent
+
+				case ffj_t_Event_Incident:
+					goto handle_Incident
 
 				case ffj_t_Eventno_such_key:
 					err = fs.SkipField(tok)
@@ -533,6 +565,26 @@ handle_LastEvent:
 			return err
 		}
 		state = fflib.FFParse_after_value
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_Incident:
+
+	/* handler: uj.Incident type=event.Incident kind=struct */
+
+	{
+		/* Falling back. type=event.Incident kind=struct */
+		tbuf, err := fs.CaptureField(tok)
+		if err != nil {
+			return fs.WrapErr(err)
+		}
+
+		err = json.Unmarshal(tbuf, &uj.Incident)
+		if err != nil {
+			return fs.WrapErr(err)
+		}
 	}
 
 	state = fflib.FFParse_after_value

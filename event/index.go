@@ -1,6 +1,7 @@
 package event
 
 import (
+	"encoding/binary"
 	"log"
 	"os"
 	"sync"
@@ -11,7 +12,10 @@ import (
 )
 
 var (
-	EVENT_BUCKET_NAME = []byte("events")
+	EVENT_BUCKET_NAME      = []byte("events")
+	INCIDENT_BUCKET_NAME   = []byte("incidents")
+	MANAGEMENT_BUCKET_NAME = []byte("management")
+	INCIDENT_COUNT_NAME    = []byte("incident_count")
 )
 
 type Index struct {
@@ -45,6 +49,16 @@ func NewIndex(dbName string) *Index {
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists(EVENT_BUCKET_NAME)
+		if err != nil {
+			return err
+		}
+
+		_, err = tx.CreateBucketIfNotExists(MANAGEMENT_BUCKET_NAME)
+		if err != nil {
+			return err
+		}
+
+		_, err = tx.CreateBucketIfNotExists(INCIDENT_BUCKET_NAME)
 		return err
 	})
 
@@ -91,8 +105,170 @@ func (i *Index) GetExpired(age time.Duration) []string {
 	return hosts
 }
 
+func (i *Index) GetIncidentCounter() int64 {
+	var buff []byte
+
+	i.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(MANAGEMENT_BUCKET_NAME)
+		buff = b.Get(INCIDENT_COUNT_NAME)
+		return nil
+	})
+
+	// if the counter wasn't found, set it to 0 and return the value
+	if len(buff) == 0 {
+		i.UpdateIncidentCounter(0)
+		return 0
+	}
+
+	if len(buff) != 8 {
+		log.Println("incorrect size of counter buffer")
+		i.UpdateIncidentCounter(0)
+		return 0
+	}
+
+	count, _ := binary.Varint(buff)
+	return count
+}
+
+func (i *Index) UpdateIncidentCounter(count int64) {
+	buff := make([]byte, 8)
+	binary.PutVarint(buff, count)
+
+	i.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(MANAGEMENT_BUCKET_NAME)
+		b.Put(INCIDENT_COUNT_NAME, buff)
+		return nil
+	})
+}
+
+// write the incident to the db
+func (i *Index) PutIncident(in *Incident) {
+	buff, err := ffjson.MarshalFast(in)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	err = i.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(INCIDENT_BUCKET_NAME)
+		return b.Put(in.IndexName(), buff)
+	})
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	return
+}
+
+// list all the known events
+func (i *Index) ListIncidents() []*Incident {
+	var ins []*Incident
+
+	err := i.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(INCIDENT_BUCKET_NAME)
+
+		// create a slice large enough to hole every value of the incidents bucket
+		ins = make([]*Incident, 0, b.Stats().KeyN)
+
+		// for every incident, parse it and add it to the incidents collection
+		err := b.ForEach(func(k, v []byte) error {
+			in := &Incident{}
+			err := ffjson.UnmarshalFast(v, in)
+			if err != nil {
+				return err
+			}
+
+			ins = append(ins, in)
+			return nil
+		})
+
+		return err
+	})
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	return ins
+}
+
+// get an event from the index
+func (i *Index) GetIncident(id int64) *Incident {
+	var buff []byte
+	id_buff := make([]byte, 8)
+	binary.PutVarint(id_buff, id)
+
+	// attempt to find the incident in the index
+	i.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(INCIDENT_BUCKET_NAME)
+		buff = b.Get(id_buff)
+		return nil
+	})
+
+	// if we couldn't find the incident
+	if len(buff) == 0 {
+		log.Printf("Unable to find incident with id %d", id)
+		return nil
+	}
+
+	in := &Incident{}
+	// if we have the event, attempt to decode it
+	err := ffjson.Unmarshal(buff, in)
+
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
+	return in
+}
+
+func (i *Index) DeleteIncidentById(id int64) {
+	id_buff := make([]byte, 8)
+	binary.PutVarint(id_buff, id)
+	err := i.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(INCIDENT_BUCKET_NAME)
+		return b.Delete(id_buff)
+	})
+
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+// remove an incident by it's associated event if it exists
+func (i *Index) DeleteIncidentByEvent(e *Event) {
+	in := e.Incident
+	if in == nil {
+		if e.LastEvent != nil {
+			in = e.LastEvent.Incident
+
+		}
+	}
+
+	// if no associated incident could be found, return
+	if in == nil {
+		return
+	}
+
+	err := i.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(INCIDENT_BUCKET_NAME)
+		return b.Delete(in.IndexName())
+	})
+
+	if err == nil {
+		e.Incident = nil
+		if e.LastEvent != nil {
+			e.LastEvent.Incident = nil
+		}
+	} else {
+		log.Println(err)
+	}
+}
+
 // updates the event, will not apply any of the dedupe logic
-func (i *Index) Update(e *Event) {
+func (i *Index) UpdateEvent(e *Event) {
 	buff, err := ffjson.MarshalFast(e)
 	if err != nil {
 		log.Println(err)
@@ -112,9 +288,9 @@ func (i *Index) Update(e *Event) {
 }
 
 // insert the event into the index
-func (i *Index) Put(e *Event) {
+func (i *Index) PutEvent(e *Event) {
 	name := []byte(e.IndexName())
-	e.LastEvent = i.Get(name)
+	e.LastEvent = i.GetEvent(name)
 	if e.LastEvent != nil {
 		e.LastEvent.LastEvent = nil
 	}
@@ -141,7 +317,7 @@ func (i *Index) Put(e *Event) {
 }
 
 // fetch the event with the given index name
-func (i *Index) Get(name []byte) *Event {
+func (i *Index) GetEvent(name []byte) *Event {
 	e := &Event{}
 	found := false
 	err := i.db.View(func(t *bolt.Tx) error {

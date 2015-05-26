@@ -25,7 +25,7 @@ type Pipeline struct {
 }
 
 func NewPipeline(conf *config.AppConfig) *Pipeline {
-	return &Pipeline{
+	p := &Pipeline{
 		tcpPort:      conf.TcpPort,
 		httpPort:     conf.HttpPort,
 		keepAliveAge: conf.KeepAliveAge,
@@ -33,6 +33,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		index:        event.NewIndex(conf.DbPath),
 		globalPolicy: conf.GlobalPolicy,
 	}
+	return p
 }
 
 func (p *Pipeline) checkExpired() {
@@ -43,7 +44,7 @@ func (p *Pipeline) checkExpired() {
 		for _, host := range hosts {
 			e := &event.Event{
 				Host:    host,
-				Service: "Keepalive",
+				Service: "KeepAlive",
 				Metric:  float64(p.keepAliveAge),
 			}
 			p.Process(e)
@@ -136,12 +137,13 @@ func (p *Pipeline) IngestTcp() {
 	}
 }
 
+// Run the given event though the pipeline
 func (p *Pipeline) Process(e *event.Event) int {
 	if p.index == nil {
-		p.index = event.NewIndex("test")
+		p.index = event.NewIndex("event.db")
 	}
 
-	p.index.Put(e)
+	p.index.PutEvent(e)
 	if p.globalPolicy != nil {
 		if !p.globalPolicy.CheckMatch(e) || !p.globalPolicy.CheckNotMatch(e) {
 			return event.OK
@@ -158,11 +160,37 @@ func (p *Pipeline) Process(e *event.Event) int {
 						log.Println(err)
 					}
 				}
-				p.index.Update(e)
+
+				if e.Status != event.OK {
+					p.index.PutIncident(p.NewIncident(esc.EscalationPolicy, e))
+				} else {
+					p.index.DeleteIncidentByEvent(e)
+				}
+				p.index.UpdateEvent(e)
 				return e.Status
 			}
 		}
 	}
-	p.index.Update(e)
+	p.index.UpdateEvent(e)
 	return e.Status
+}
+
+func (p *Pipeline) ListIncidents() []*event.Incident {
+	return p.index.ListIncidents()
+}
+
+func (p *Pipeline) GetIncident(id int64) *event.Incident {
+	return p.index.GetIncident(id)
+}
+
+func (p *Pipeline) PutIncident(in *event.Incident) {
+	if in.Id == 0 {
+		in.Id = p.index.GetIncidentCounter()
+		p.index.UpdateIncidentCounter(in.Id + 1)
+	}
+	p.index.PutIncident(in)
+}
+
+func (p *Pipeline) NewIncident(escalation string, e *event.Event) *event.Incident {
+	return event.NewIncident(escalation, p.index, e)
 }
