@@ -9,23 +9,24 @@ const (
 )
 
 //go:generate ffjson $GOFILE
+//go:generate msgp $GOFILE
 
 type Event struct {
-	Host       string            `json:"host"`
-	Service    string            `json:"service"`
-	SubService string            `json:"sub_type"`
-	Metric     float64           `json:"metric"`
-	Occurences int               `json:"occurences"`
-	Tags       map[string]string `json:"tags"`
-	Status     int               `json:"status"`
-	LastEvent  *Event            `json:"last_event,omitempty"`
-	Incident   *Incident         `json:"incident,omitempty"`
-	indexName  string            `json:"index_name"`
+	Host       string            `json:"host" msg:"host"`
+	Service    string            `json:"service" msg:"service"`
+	SubService string            `json:"sub_type" msg:"sub_service"`
+	Metric     float64           `json:"metric" msg:"metric"`
+	Occurences int               `json:"occurences" msg:"occurences"`
+	Tags       map[string]string `json:"tags" msg:"tags"`
+	Status     int               `json:"status" msg:"status"`
+	LastEvent  *Event            `json:"last_event,omitempty" msg:"last_event,omitempty`
+	IncidentId *int64            `json:"incident,omitempty" msg:"incident_id"`
+	indexName  []byte
 }
 
-func (e *Event) IndexName() string {
+func (e *Event) IndexName() []byte {
 	if len(e.indexName) == 0 {
-		e.indexName = fmt.Sprintf("%s:%s:%s", e.Host, e.Service, e.SubService)
+		e.indexName = []byte(e.Host + e.Service + e.SubService)
 	}
 	return e.indexName
 }

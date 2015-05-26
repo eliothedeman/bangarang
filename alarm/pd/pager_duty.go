@@ -37,7 +37,7 @@ func (p *PagerDuty) Send(e *event.Event) error {
 	case event.OK:
 		pdPevent = pagerduty.NewResolveEvent(p.conf.Key, e.FormatDescription())
 	}
-	pdPevent.IncidentKey = e.IndexName()
+	pdPevent.IncidentKey = string(e.IndexName())
 
 	_, _, err := pagerduty.Submit(pdPevent)
 	return err

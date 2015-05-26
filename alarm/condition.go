@@ -62,7 +62,7 @@ func (c *Condition) trackingStats() bool {
 
 func (c *Condition) getEventTracker(e *event.Event) *EventTracker {
 	c.trackerMutex.RLock()
-	t, ok := c.tracker[e.IndexName()]
+	t, ok := c.tracker[string(e.IndexName())]
 	c.trackerMutex.RUnlock()
 	if !ok {
 		t = NewEventTracker()
@@ -73,7 +73,7 @@ func (c *Condition) getEventTracker(e *event.Event) *EventTracker {
 			t.initDataFrame(*c.StdDev.WindowSize)
 		}
 		c.trackerMutex.Lock()
-		c.tracker[e.IndexName()] = t
+		c.tracker[string(e.IndexName())] = t
 		c.trackerMutex.Unlock()
 	}
 
@@ -138,7 +138,7 @@ func (c *Condition) Satisfies(e *event.Event) bool {
 		// check if the current metric is outside of n * sigma
 		if c.StdDev != nil {
 			c.trackerMutex.RLock()
-			t := c.tracker[e.IndexName()]
+			t := c.tracker[string(e.IndexName())]
 			avg := t.df.Avg()
 			if math.Abs(e.Metric-avg) > t.df.StdDev()*c.StdDev.Sigma {
 				return true
