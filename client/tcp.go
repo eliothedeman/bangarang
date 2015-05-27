@@ -21,15 +21,13 @@ func NewTcpClient(srvAddr, encoding string, maxEncoders int) (*TcpClient, error)
 		encoder: event.NewEncodingPool(event.EncoderFactories[encoding], event.DecoderFactories[encoding], maxEncoders),
 	}
 
-	net.ResolveTCPAddr(net, addr)
-
 	return c, c.dial()
 }
 
 // establish a tcp connection with the remote server
 func (t *TcpClient) dial() error {
-	conn, err := net.Dial("tcp", srvAddr)
-	c.conn = conn
+	conn, err := net.Dial("tcp", t.rAddr)
+	t.conn = conn
 	return err
 }
 
