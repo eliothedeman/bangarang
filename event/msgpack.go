@@ -19,8 +19,8 @@ func NewMsgPackDecoder() Decoder {
 type MsgPackDecoder struct {
 }
 
-func (m *MsgPackDecoder) Decode(raw []byte) (*Event, error) {
-	e := &Event{}
-	_, err := e.UnmarshalMsg(raw)
+func (m *MsgPackDecoder) Decode(raw []byte) (e *Event, err error) {
+	e = &Event{}
+	_, err = e.UnmarshalMsg(raw)
 	return e, err
 }

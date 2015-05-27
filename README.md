@@ -51,7 +51,6 @@ The "escalations_dir" spesified above will be filled with seperate
 .json files of alert conditions like the one below. Right now each file can only contain one alert condition. The naming of these files doens't matter, as long as it has a ".json" extension.
 ```javascript
 {
-	"policy": {
 		"match": {		// <- will pass the event on if any of the match cases are satisifed
 			"service": "my.service"
 		},
@@ -64,16 +63,16 @@ The "escalations_dir" spesified above will be filled with seperate
 			"less": 12.0,
 			"exactly": 25.0,
 			"occurences": 3 // <- will only go critical if this happens 3 times
+			"escalation": "demo" // <- will be passed on to this escalation policy
 		},
 		"warn": {
 			"greater": 200.0,
 			"less": 12.0,
 			"exactly": 25.0,
 			"occurences": 2 // <- will go warning if it happens twice
+			"escalation": "demo" // <- will be passed on to this escalation policy
 		}
-	},
-	"escalation": "demo" // <- will be passed on to this escalation policy
-
+	}
 }
 ```
 

@@ -51,20 +51,6 @@ func (mj *Event) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	buf.WriteString(`,"status":`)
 	fflib.FormatBits2(buf, uint64(mj.Status), 10, mj.Status < 0)
 	buf.WriteByte(',')
-	if mj.LastEvent != nil {
-		if true {
-			buf.WriteString(`"last_event":`)
-
-			{
-				err = mj.LastEvent.MarshalJSONBuf(buf)
-				if err != nil {
-					return err
-				}
-			}
-
-			buf.WriteByte(',')
-		}
-	}
 	if mj.IncidentId != nil {
 		if true {
 			buf.WriteString(`"incident":`)
@@ -95,8 +81,6 @@ const (
 
 	ffj_t_Event_Status
 
-	ffj_t_Event_LastEvent
-
 	ffj_t_Event_IncidentId
 )
 
@@ -113,8 +97,6 @@ var ffj_key_Event_Occurences = []byte("occurences")
 var ffj_key_Event_Tags = []byte("tags")
 
 var ffj_key_Event_Status = []byte("status")
-
-var ffj_key_Event_LastEvent = []byte("last_event")
 
 var ffj_key_Event_IncidentId = []byte("incident")
 
@@ -193,14 +175,6 @@ mainparse:
 						goto mainparse
 					}
 
-				case 'l':
-
-					if bytes.Equal(ffj_key_Event_LastEvent, kn) {
-						currentKey = ffj_t_Event_LastEvent
-						state = fflib.FFParse_want_colon
-						goto mainparse
-					}
-
 				case 'm':
 
 					if bytes.Equal(ffj_key_Event_Metric, kn) {
@@ -247,12 +221,6 @@ mainparse:
 
 				if fflib.SimpleLetterEqualFold(ffj_key_Event_IncidentId, kn) {
 					currentKey = ffj_t_Event_IncidentId
-					state = fflib.FFParse_want_colon
-					goto mainparse
-				}
-
-				if fflib.EqualFoldRight(ffj_key_Event_LastEvent, kn) {
-					currentKey = ffj_t_Event_LastEvent
 					state = fflib.FFParse_want_colon
 					goto mainparse
 				}
@@ -336,9 +304,6 @@ mainparse:
 
 				case ffj_t_Event_Status:
 					goto handle_Status
-
-				case ffj_t_Event_LastEvent:
-					goto handle_LastEvent
 
 				case ffj_t_Event_IncidentId:
 					goto handle_IncidentId
@@ -534,33 +499,6 @@ handle_Status:
 			uj.Status = int(tval)
 
 		}
-	}
-
-	state = fflib.FFParse_after_value
-	goto mainparse
-
-handle_LastEvent:
-
-	/* handler: uj.LastEvent type=event.Event kind=struct */
-
-	{
-		if tok == fflib.FFTok_null {
-
-			uj.LastEvent = nil
-
-			state = fflib.FFParse_after_value
-			goto mainparse
-		}
-
-		if uj.LastEvent == nil {
-			uj.LastEvent = new(Event)
-		}
-
-		err = uj.LastEvent.UnmarshalJSONFFLexer(fs, fflib.FFParse_want_key)
-		if err != nil {
-			return err
-		}
-		state = fflib.FFParse_after_value
 	}
 
 	state = fflib.FFParse_after_value

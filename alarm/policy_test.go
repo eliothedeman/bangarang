@@ -103,3 +103,42 @@ func TestMatchStructFiled(t *testing.T) {
 		t.Fail()
 	}
 }
+func test_f(f float64) *float64 {
+	return &f
+}
+
+func TestCompileWithCrit(t *testing.T) {
+	p := &Policy{}
+	p.Crit = &Condition{
+		Greater: test_f(10.0),
+		Less:    test_f(-0.1),
+		Exactly: test_f(0.5),
+	}
+
+	p.Compile()
+
+}
+
+func TestCompileSatisfies(t *testing.T) {
+	p := &Policy{}
+	p.Crit = &Condition{
+		Greater: test_f(10.0),
+		Less:    test_f(-0.1),
+		Exactly: test_f(0.5),
+	}
+
+	p.Compile()
+
+	e := &event.Event{}
+
+	e.Metric = 15
+	if !p.Crit.Satisfies(e) {
+		t.Fail()
+	}
+
+	e.Metric = 8
+	if p.Crit.Satisfies(e) {
+		t.Fail()
+	}
+
+}

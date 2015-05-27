@@ -243,11 +243,6 @@ func (i *Index) DeleteIncidentById(id int64) {
 // remove an incident by it's associated event if it exists
 func (i *Index) DeleteIncidentByEvent(e *Event) {
 	id := e.IncidentId
-	if id == nil {
-		if e.LastEvent != nil {
-			id = e.LastEvent.IncidentId
-		}
-	}
 
 	// if no associated incident could be found, return
 	if id == nil {
@@ -283,10 +278,6 @@ func (i *Index) UpdateEvent(e *Event) {
 
 // insert the event into the index
 func (i *Index) PutEvent(e *Event) {
-	e.LastEvent = i.GetEvent(e.IndexName())
-	if e.LastEvent != nil {
-		e.LastEvent.LastEvent = nil
-	}
 	var buff []byte
 	var err error
 
@@ -302,7 +293,7 @@ func (i *Index) PutEvent(e *Event) {
 	// write the event to the db
 	err = i.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(EVENT_BUCKET_NAME)
-		return b.Put(e.IndexName(), buff)
+		return b.Put([]byte(e.IndexName()), buff)
 	})
 
 	// update the host's keepalive value
