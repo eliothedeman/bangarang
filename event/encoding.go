@@ -1,5 +1,10 @@
 package event
 
+const (
+	ENCODING_TYPE_JSON    = "json"
+	ENCODING_TYPE_MSGPACK = "msgp"
+)
+
 var (
 	EncoderFactories = map[string]EncoderFactory{
 		"json": NewJsonEncoder,
