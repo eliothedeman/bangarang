@@ -98,6 +98,11 @@ func loadPolicy(fileName string) (*alarm.Policy, error) {
 		return p, err
 	}
 
+	if p.Name == "" {
+		fileName = filepath.Base(fileName)
+		p.Name = fileName[:len(fileName)-4]
+	}
+
 	p.Compile()
 
 	return p, err

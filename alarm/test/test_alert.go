@@ -16,8 +16,8 @@ func init() {
 type Console struct {
 }
 
-func (t *TestAlert) Send(e *event.Event) error {
-	t.Events[e] = e.Status
+func (t *TestAlert) Send(i *event.Incident) error {
+	t.Events[i.GetEvent()] = i.Status
 	return nil
 }
 

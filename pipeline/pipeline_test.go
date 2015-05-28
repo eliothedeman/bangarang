@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"fmt"
+	"log"
 	"runtime"
 	"testing"
 
@@ -68,10 +69,13 @@ func TestMatchPolicy(t *testing.T) {
 	}
 
 	p.Process(e)
-
-	if _, ok := ta.Events[e]; !ok {
+	if len(ta.Events) == 0 {
 		t.Fail()
-
+	}
+	for k, _ := range ta.Events {
+		if k.IndexName() != e.IndexName() {
+			t.Fail()
+		}
 	}
 }
 
@@ -198,7 +202,7 @@ func TestProcess(t *testing.T) {
 func TestProcessDedupe(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 0)
 	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
-	p, _ := testPipeline([]*alarm.Policy{pipe})
+	p, ta := testPipeline([]*alarm.Policy{pipe})
 	defer p.index.Delete()
 
 	events := make([]*event.Event, 100)
@@ -215,4 +219,10 @@ func TestProcessDedupe(t *testing.T) {
 	for i := 1; i < len(events); i++ {
 		p.Process(events[i])
 	}
+
+	if len(ta.Events) != 1 {
+		log.Println(ta.Events)
+		t.Fail()
+	}
+
 }
