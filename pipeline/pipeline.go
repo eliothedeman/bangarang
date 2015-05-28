@@ -17,9 +17,10 @@ import (
 
 type Pipeline struct {
 	tcpPort, httpPort *int
-	escalations       []*alarm.Escalation
 	keepAliveAge      time.Duration
 	globalPolicy      *alarm.Policy
+	escalations       alarm.AlarmCollection
+	policies          []*alarm.Policy
 	index             *event.Index
 	encodingPool      *event.EncodingPool
 }
@@ -30,8 +31,9 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		tcpPort:      conf.TcpPort,
 		httpPort:     conf.HttpPort,
 		keepAliveAge: conf.KeepAliveAge,
-		escalations:  conf.Escalations,
+		escalations:  *conf.Escalations,
 		index:        event.NewIndex(conf.DbPath),
+		policies:     conf.Policies,
 		globalPolicy: conf.GlobalPolicy,
 	}
 	return p
@@ -156,19 +158,20 @@ func (p *Pipeline) Process(e *event.Event) int {
 		}
 	}
 
-	for _, esc := range p.escalations {
-		if esc.Match(e) {
-			esc.StatusOf(e)
-			if e.StatusChanged() {
-				for _, a := range esc.Alarms {
-					err := a.Send(e)
-					if err != nil {
-						log.Println(err)
+	for _, pol := range p.policies {
+		if pol.Matches(e) {
+			act := pol.Action(e)
+			if act != "" {
+				esc, ok := p.escalations[act]
+				if ok {
+					for _, a := range esc {
+						a.Send(e)
 					}
+				} else {
+					log.Println("unknown escalation", act)
 				}
-
 				if e.Status != event.OK {
-					p.index.PutIncident(p.NewIncident(esc.EscalationPolicy, e))
+					p.index.PutIncident(p.NewIncident(act, e))
 				} else {
 					p.index.DeleteIncidentByEvent(e)
 				}
@@ -177,6 +180,7 @@ func (p *Pipeline) Process(e *event.Event) int {
 			}
 		}
 	}
+
 	p.index.UpdateEvent(e)
 	return e.Status
 }

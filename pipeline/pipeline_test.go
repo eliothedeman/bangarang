@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/eliothedeman/bangarang/alarm"
-	"github.com/eliothedeman/bangarang/alarm/console"
+	"github.com/eliothedeman/bangarang/alarm/test"
 	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/event"
 )
@@ -15,30 +15,30 @@ var (
 	tests_ran = 0
 )
 
-func testPipeline(e []*alarm.Escalation) *Pipeline {
+func testPipeline(p []*alarm.Policy) (*Pipeline, *test.TestAlert) {
 	tests_ran += 1
-	return &Pipeline{
-		escalations:  e,
+	ta := test.NewTest().(*test.TestAlert)
+	pipe := &Pipeline{
+		policies:     p,
 		index:        event.NewIndex(fmt.Sprintf("test%d.db", tests_ran)),
 		encodingPool: event.NewEncodingPool(event.EncoderFactories[config.DEFAULT_ENCODING], event.DecoderFactories[config.DEFAULT_ENCODING], runtime.NumCPU()),
+		escalations: map[string][]alarm.Alarm{
+			"test": []alarm.Alarm{ta},
+		},
 	}
+	return pipe, ta
 }
 
-func testEscalation(crit, warn *alarm.Condition, match, notMatch map[string]string) *alarm.Escalation {
-	e := &alarm.Escalation{
-		Policy: alarm.Policy{
-			Warn:     warn,
-			Crit:     crit,
-			Match:    match,
-			NotMatch: notMatch,
-		},
-		Alarms: []alarm.Alarm{
-			console.NewConsole(),
-		},
+func testPolicy(crit, warn *alarm.Condition, match, notMatch map[string]string) *alarm.Policy {
+	p := &alarm.Policy{
+		Warn:     warn,
+		Crit:     crit,
+		Match:    match,
+		NotMatch: notMatch,
 	}
 
-	e.Policy.Compile()
-	return e
+	p.Compile()
+	return p
 }
 
 func testCondition(g, l, e *float64, o int) *alarm.Condition {
@@ -47,6 +47,7 @@ func testCondition(g, l, e *float64, o int) *alarm.Condition {
 		Less:       l,
 		Exactly:    e,
 		Occurences: o,
+		Escalation: "test",
 	}
 }
 
@@ -54,10 +55,30 @@ func test_f(f float64) *float64 {
 	return &f
 }
 
+func TestMatchPolicy(t *testing.T) {
+	c := testCondition(test_f(0), nil, nil, 1)
+	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	p, ta := testPipeline([]*alarm.Policy{pipe})
+	defer p.index.Delete()
+
+	e := &event.Event{
+		Host:    "test",
+		Service: "test",
+		Metric:  1.0,
+	}
+
+	p.Process(e)
+
+	if _, ok := ta.Events[e]; !ok {
+		t.Fail()
+
+	}
+}
+
 func TestOccurences(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 2)
-	esc := testEscalation(c, nil, map[string]string{"host": "test"}, nil)
-	p := testPipeline([]*alarm.Escalation{esc})
+	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	p, _ := testPipeline([]*alarm.Policy{pipe})
 	defer p.index.Delete()
 
 	e := &event.Event{
@@ -83,8 +104,8 @@ func TestOccurences(t *testing.T) {
 
 func BenchmarkProcessOk(b *testing.B) {
 	c := testCondition(test_f(0), nil, nil, 0)
-	esc := testEscalation(c, nil, map[string]string{"host": "test"}, nil)
-	p := testPipeline([]*alarm.Escalation{esc})
+	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	p, _ := testPipeline([]*alarm.Policy{pipe})
 	defer p.index.Delete()
 
 	e := &event.Event{
@@ -102,8 +123,8 @@ func BenchmarkProcessOk(b *testing.B) {
 
 func BenchmarkIndex(b *testing.B) {
 	c := testCondition(test_f(0), nil, nil, 0)
-	esc := testEscalation(c, nil, map[string]string{"host": "test"}, nil)
-	p := testPipeline([]*alarm.Escalation{esc})
+	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	p, _ := testPipeline([]*alarm.Policy{pipe})
 	defer p.index.Delete()
 
 	e := &event.Event{
@@ -127,8 +148,8 @@ func BenchmarkIndexWithStats(b *testing.B) {
 		Sigma: 4,
 	}
 
-	esc := testEscalation(c, nil, map[string]string{"host": "test"}, nil)
-	p := testPipeline([]*alarm.Escalation{esc})
+	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	p, _ := testPipeline([]*alarm.Policy{pipe})
 	defer p.index.Delete()
 
 	e := &event.Event{
@@ -148,8 +169,8 @@ func BenchmarkIndexWithStats(b *testing.B) {
 
 func TestProcess(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 0)
-	esc := testEscalation(c, nil, map[string]string{"host": "test"}, nil)
-	p := testPipeline([]*alarm.Escalation{esc})
+	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	p, _ := testPipeline([]*alarm.Policy{pipe})
 	defer p.index.Delete()
 
 	e := &event.Event{
@@ -176,8 +197,8 @@ func TestProcess(t *testing.T) {
 
 func TestProcessDedupe(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 0)
-	esc := testEscalation(c, nil, map[string]string{"host": "test"}, nil)
-	p := testPipeline([]*alarm.Escalation{esc})
+	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	p, _ := testPipeline([]*alarm.Policy{pipe})
 	defer p.index.Delete()
 
 	events := make([]*event.Event, 100)
@@ -193,8 +214,5 @@ func TestProcessDedupe(t *testing.T) {
 
 	for i := 1; i < len(events); i++ {
 		p.Process(events[i])
-		if events[i].StatusChanged() {
-			t.Fail()
-		}
 	}
 }

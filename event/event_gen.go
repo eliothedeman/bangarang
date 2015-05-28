@@ -81,22 +81,6 @@ func (z *Event) DecodeMsg(dc *msgp.Reader) (err error) {
 			if err != nil {
 				return
 			}
-		case "LastEvent":
-			if dc.IsNil() {
-				err = dc.ReadNil()
-				if err != nil {
-					return
-				}
-				z.LastEvent = nil
-			} else {
-				if z.LastEvent == nil {
-					z.LastEvent = new(Event)
-				}
-				err = z.LastEvent.DecodeMsg(dc)
-				if err != nil {
-					return
-				}
-			}
 		case "incident_id":
 			if dc.IsNil() {
 				err = dc.ReadNil()
@@ -125,7 +109,7 @@ func (z *Event) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Event) EncodeMsg(en *msgp.Writer) (err error) {
-	err = en.WriteMapHeader(9)
+	err = en.WriteMapHeader(8)
 	if err != nil {
 		return
 	}
@@ -195,21 +179,6 @@ func (z *Event) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	err = en.WriteString("LastEvent")
-	if err != nil {
-		return
-	}
-	if z.LastEvent == nil {
-		err = en.WriteNil()
-		if err != nil {
-			return
-		}
-	} else {
-		err = z.LastEvent.EncodeMsg(en)
-		if err != nil {
-			return
-		}
-	}
 	err = en.WriteString("incident_id")
 	if err != nil {
 		return
@@ -231,7 +200,7 @@ func (z *Event) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Event) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	o = msgp.AppendMapHeader(o, 9)
+	o = msgp.AppendMapHeader(o, 8)
 	o = msgp.AppendString(o, "host")
 	o = msgp.AppendString(o, z.Host)
 	o = msgp.AppendString(o, "service")
@@ -250,15 +219,6 @@ func (z *Event) MarshalMsg(b []byte) (o []byte, err error) {
 	}
 	o = msgp.AppendString(o, "status")
 	o = msgp.AppendInt(o, z.Status)
-	o = msgp.AppendString(o, "LastEvent")
-	if z.LastEvent == nil {
-		o = msgp.AppendNil(o)
-	} else {
-		o, err = z.LastEvent.MarshalMsg(o)
-		if err != nil {
-			return
-		}
-	}
 	o = msgp.AppendString(o, "incident_id")
 	if z.IncidentId == nil {
 		o = msgp.AppendNil(o)
@@ -341,22 +301,6 @@ func (z *Event) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
-		case "LastEvent":
-			if msgp.IsNil(bts) {
-				bts, err = msgp.ReadNilBytes(bts)
-				if err != nil {
-					return
-				}
-				z.LastEvent = nil
-			} else {
-				if z.LastEvent == nil {
-					z.LastEvent = new(Event)
-				}
-				bts, err = z.LastEvent.UnmarshalMsg(bts)
-				if err != nil {
-					return
-				}
-			}
 		case "incident_id":
 			if msgp.IsNil(bts) {
 				bts, err = msgp.ReadNilBytes(bts)
@@ -392,13 +336,7 @@ func (z *Event) Msgsize() (s int) {
 			s += msgp.StringPrefixSize + len(xvk) + msgp.StringPrefixSize + len(bzg)
 		}
 	}
-	s += msgp.StringPrefixSize + 6 + msgp.IntSize + msgp.StringPrefixSize + 9
-	if z.LastEvent == nil {
-		s += msgp.NilSize
-	} else {
-		s += z.LastEvent.Msgsize()
-	}
-	s += msgp.StringPrefixSize + 11
+	s += msgp.StringPrefixSize + 6 + msgp.IntSize + msgp.StringPrefixSize + 11
 	if z.IncidentId == nil {
 		s += msgp.NilSize
 	} else {

@@ -26,7 +26,7 @@ func (i *Incident) IndexName() []byte {
 func NewIncident(escalation string, i *Index, e *Event) *Incident {
 	i.UpdateIncidentCounter(i.GetIncidentCounter() + 1)
 	in := &Incident{
-		EventName:  e.IndexName(),
+		EventName:  []byte(e.IndexName()),
 		Time:       time.Now().Unix(),
 		Active:     true,
 		Status:     e.Status,

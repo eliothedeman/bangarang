@@ -24,16 +24,16 @@ const (
 )
 
 type AppConfig struct {
-	Escalations      []*alarm.Escalation    `json:"-"`
 	EscalationsDir   string                 `json:"escalations_dir"`
 	KeepAliveAge     time.Duration          `json:"-"`
 	Raw_KeepAliveAge string                 `json:"keep_alive_age"`
 	DbPath           string                 `json:"db_path"`
 	TcpPort          *int                   `json:"tcp_port"`
 	HttpPort         *int                   `json:"http_port"`
-	Alarms           *alarm.AlarmCollection `json:"alarms"`
+	Escalations      *alarm.AlarmCollection `json:"escalations"`
 	GlobalPolicy     *alarm.Policy          `json:"global_policy"`
 	Encoding         *string                `json:"encoding"`
+	Policies         []*alarm.Policy        `json:"-"`
 }
 
 func LoadConfigFile(fileName string) (*AppConfig, error) {
@@ -46,7 +46,7 @@ func LoadConfigFile(fileName string) (*AppConfig, error) {
 		Raw_KeepAliveAge: DEFAULT_KEEPALIVE_AGE,
 		DbPath:           DEFAULT_DB_PATH,
 	}
-	ac.Alarms = &alarm.AlarmCollection{}
+	ac.Escalations = &alarm.AlarmCollection{}
 
 	err = json.Unmarshal(buff, ac)
 	if err != nil {
@@ -64,12 +64,12 @@ func LoadConfigFile(fileName string) (*AppConfig, error) {
 	}
 
 	for _, path := range paths {
-		e, err := loadEscalation(path)
+		p, err := loadPolicy(path)
 		if err != nil {
 			return ac, err
 		}
 
-		ac.Escalations = append(ac.Escalations, e)
+		ac.Policies = append(ac.Policies, p)
 	}
 
 	if ac.Encoding == nil {
@@ -83,7 +83,7 @@ func LoadConfigFile(fileName string) (*AppConfig, error) {
 	return ac, nil
 }
 
-func loadEscalation(fileName string) (*alarm.Escalation, error) {
+func loadPolicy(fileName string) (*alarm.Policy, error) {
 	if !filepath.IsAbs(fileName) {
 		fileName, _ = filepath.Abs(fileName)
 	}
@@ -92,13 +92,13 @@ func loadEscalation(fileName string) (*alarm.Escalation, error) {
 		return nil, err
 	}
 
-	e := &alarm.Escalation{}
-	err = json.Unmarshal(buff, e)
+	p := &alarm.Policy{}
+	err = json.Unmarshal(buff, p)
 	if err != nil {
-		return e, err
+		return p, err
 	}
-	e.Policy.Compile()
 
-	err = e.LoadAlarms()
-	return e, err
+	p.Compile()
+
+	return p, err
 }

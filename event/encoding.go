@@ -7,12 +7,12 @@ const (
 
 var (
 	EncoderFactories = map[string]EncoderFactory{
-		"json": NewJsonEncoder,
-		"msgp": NewMsgPackEncoder,
+		ENCODING_TYPE_JSON:    NewJsonEncoder,
+		ENCODING_TYPE_MSGPACK: NewMsgPackEncoder,
 	}
 	DecoderFactories = map[string]DecoderFactory{
-		"json": NewJsonDecoder,
-		"msgp": NewMsgPackDecoder,
+		ENCODING_TYPE_JSON:    NewJsonDecoder,
+		ENCODING_TYPE_MSGPACK: NewMsgPackDecoder,
 	}
 )
 
