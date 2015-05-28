@@ -121,6 +121,7 @@ func (p *Pipeline) consume(buff []byte) {
 	}
 }
 
+// Listen for, and serve new incomming tcp connections
 func (p *Pipeline) IngestTcp() {
 	if p.tcpPort == nil {
 		return
@@ -151,46 +152,65 @@ func (p *Pipeline) Process(e *event.Event) int {
 		p.index = event.NewIndex("event.db")
 	}
 
-	p.index.PutEvent(e)
 	if p.globalPolicy != nil {
 		if !p.globalPolicy.CheckMatch(e) || !p.globalPolicy.CheckNotMatch(e) {
 			return event.OK
 		}
 	}
 
+	p.index.PutEvent(e)
 	for _, pol := range p.policies {
 		if pol.Matches(e) {
 			act := pol.Action(e)
+
+			// if there is an action to be taken
 			if act != "" {
-				esc, ok := p.escalations[act]
-				if ok {
-					for _, a := range esc {
-						a.Send(e)
+
+				// create a new incident for this event
+				in := p.NewIncident(pol.Name, e)
+
+				// dedup the incident
+				if p.Dedupe(in) {
+
+					// update the incident in the index
+					if in.Status != event.OK {
+						p.index.PutIncident(in)
+					} else {
+						p.index.DeleteIncidentById(in.IndexName())
 					}
-				} else {
-					log.Println("unknown escalation", act)
+
+					// fetch the escalation to take
+					esc, ok := p.escalations[act]
+					if ok {
+
+						// send to every alarm in the escalation
+						for _, a := range esc {
+							a.Send(in)
+						}
+					} else {
+						log.Println("unknown escalation", act)
+					}
 				}
-				if e.Status != event.OK {
-					p.index.PutIncident(p.NewIncident(act, e))
-				} else {
-					p.index.DeleteIncidentByEvent(e)
-				}
-				p.index.UpdateEvent(e)
-				return e.Status
 			}
 		}
 	}
 
-	p.index.UpdateEvent(e)
 	return e.Status
+}
+
+// returns true if this is a new incident, false if it is a duplicate
+func (p *Pipeline) Dedupe(i *event.Incident) bool {
+	old := p.index.GetIncident(i.IndexName())
+
+	if old == nil {
+		return i.Status != event.OK
+	}
+
+	return old.Status != i.Status
 }
 
 func (p *Pipeline) ListIncidents() []*event.Incident {
 	return p.index.ListIncidents()
-}
-
-func (p *Pipeline) GetIncident(id int64) *event.Incident {
-	return p.index.GetIncident(id)
 }
 
 func (p *Pipeline) PutIncident(in *event.Incident) {
@@ -201,6 +221,6 @@ func (p *Pipeline) PutIncident(in *event.Incident) {
 	p.index.PutIncident(in)
 }
 
-func (p *Pipeline) NewIncident(escalation string, e *event.Event) *event.Incident {
-	return event.NewIncident(escalation, p.index, e)
+func (p *Pipeline) NewIncident(policy string, e *event.Event) *event.Incident {
+	return event.NewIncident(policy, e)
 }

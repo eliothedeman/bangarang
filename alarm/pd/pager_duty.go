@@ -29,15 +29,15 @@ func (p *PagerDuty) Init(conf interface{}) error {
 	return nil
 }
 
-func (p *PagerDuty) Send(e *event.Event) error {
+func (p *PagerDuty) Send(i *event.Incident) error {
 	var pdPevent *pagerduty.Event
-	switch e.Status {
+	switch i.Status {
 	case event.CRITICAL, event.WARNING:
-		pdPevent = pagerduty.NewTriggerEvent(p.conf.Key, e.FormatDescription())
+		pdPevent = pagerduty.NewTriggerEvent(p.conf.Key, i.FormatDescription())
 	case event.OK:
-		pdPevent = pagerduty.NewResolveEvent(p.conf.Key, e.FormatDescription())
+		pdPevent = pagerduty.NewResolveEvent(p.conf.Key, i.FormatDescription())
 	}
-	pdPevent.IncidentKey = string(e.IndexName())
+	pdPevent.IncidentKey = string(string(i.IndexName()))
 
 	_, _, err := pagerduty.Submit(pdPevent)
 	return err

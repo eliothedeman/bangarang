@@ -47,8 +47,6 @@ func NewIndex(dbName string) *Index {
 		log.Printf("Opened db %s", dbName)
 	}
 
-	db.NoSync = true
-
 	err = db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists(EVENT_BUCKET_NAME)
 		if err != nil {
@@ -197,21 +195,18 @@ func (i *Index) ListIncidents() []*Incident {
 }
 
 // get an event from the index
-func (i *Index) GetIncident(id int64) *Incident {
+func (i *Index) GetIncident(id []byte) *Incident {
 	var buff []byte
-	id_buff := make([]byte, 8)
-	binary.PutVarint(id_buff, id)
 
 	// attempt to find the incident in the index
 	i.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(INCIDENT_BUCKET_NAME)
-		buff = b.Get(id_buff)
+		buff = b.Get(id)
 		return nil
 	})
 
 	// if we couldn't find the incident
 	if len(buff) == 0 {
-		log.Printf("Unable to find incident with id %d", id)
 		return nil
 	}
 
@@ -227,29 +222,15 @@ func (i *Index) GetIncident(id int64) *Incident {
 	return in
 }
 
-func (i *Index) DeleteIncidentById(id int64) {
-	id_buff := make([]byte, 8)
-	binary.PutVarint(id_buff, id)
+func (i *Index) DeleteIncidentById(id []byte) {
 	err := i.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(INCIDENT_BUCKET_NAME)
-		return b.Delete(id_buff)
+		return b.Delete(id)
 	})
 
 	if err != nil {
 		log.Println(err)
 	}
-}
-
-// remove an incident by it's associated event if it exists
-func (i *Index) DeleteIncidentByEvent(e *Event) {
-	id := e.IncidentId
-
-	// if no associated incident could be found, return
-	if id == nil {
-		return
-	}
-
-	i.DeleteIncidentById(*id)
 }
 
 // updates the event, will not apply any of the dedupe logic
@@ -278,23 +259,6 @@ func (i *Index) UpdateEvent(e *Event) {
 
 // insert the event into the index
 func (i *Index) PutEvent(e *Event) {
-	var buff []byte
-	var err error
-
-	// encode the event
-	i.pool.Encode(func(enc Encoder) {
-		buff, err = enc.Encode(e)
-	})
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	// write the event to the db
-	err = i.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(EVENT_BUCKET_NAME)
-		return b.Put([]byte(e.IndexName()), buff)
-	})
 
 	// update the host's keepalive value
 	i.ka_lock.Lock()

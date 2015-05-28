@@ -18,6 +18,7 @@ type Policy struct {
 	NotMatch    map[string]string `json:"not_match"`
 	Crit        *Condition        `json:"crit"`
 	Warn        *Condition        `json:"warn"`
+	Name        string            `json:"name"`
 	r_match     map[string]*regexp.Regexp
 	r_not_match map[string]*regexp.Regexp
 }
