@@ -5,6 +5,7 @@ import (
 	"log"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/alarm/test"
@@ -54,6 +55,31 @@ func testCondition(g, l, e *float64, o int) *alarm.Condition {
 
 func test_f(f float64) *float64 {
 	return &f
+}
+
+func TestKeepAlive(t *testing.T) {
+	c := testCondition(test_f(0), nil, nil, 1)
+	pipe := testPolicy(c, nil, map[string]string{"service": "KeepAlive"}, nil)
+	p, ta := testPipeline([]*alarm.Policy{pipe})
+	defer p.index.Delete()
+	e := &event.Event{
+		Host:    "test",
+		Service: "test",
+		Metric:  0.0,
+	}
+
+	p.Process(e)
+
+	p.keepAliveAge = time.Millisecond * 15
+	p.keepAliveCheckTime = time.Millisecond * 10
+	go p.checkExpired()
+
+	time.Sleep(25 * time.Millisecond)
+
+	if len(ta.Events) != 1 {
+		t.Fail()
+	}
+
 }
 
 func TestMatchPolicy(t *testing.T) {
