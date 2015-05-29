@@ -16,32 +16,34 @@ import (
 )
 
 type Pipeline struct {
-	tcpPort, httpPort *int
-	keepAliveAge      time.Duration
-	globalPolicy      *alarm.Policy
-	escalations       alarm.AlarmCollection
-	policies          []*alarm.Policy
-	index             *event.Index
-	encodingPool      *event.EncodingPool
+	tcpPort, httpPort  *int
+	keepAliveAge       time.Duration
+	keepAliveCheckTime time.Duration
+	globalPolicy       *alarm.Policy
+	escalations        alarm.AlarmCollection
+	policies           []*alarm.Policy
+	index              *event.Index
+	encodingPool       *event.EncodingPool
 }
 
 func NewPipeline(conf *config.AppConfig) *Pipeline {
 	p := &Pipeline{
-		encodingPool: event.NewEncodingPool(event.EncoderFactories[*conf.Encoding], event.DecoderFactories[*conf.Encoding], runtime.NumCPU()),
-		tcpPort:      conf.TcpPort,
-		httpPort:     conf.HttpPort,
-		keepAliveAge: conf.KeepAliveAge,
-		escalations:  *conf.Escalations,
-		index:        event.NewIndex(conf.DbPath),
-		policies:     conf.Policies,
-		globalPolicy: conf.GlobalPolicy,
+		encodingPool:       event.NewEncodingPool(event.EncoderFactories[*conf.Encoding], event.DecoderFactories[*conf.Encoding], runtime.NumCPU()),
+		tcpPort:            conf.TcpPort,
+		httpPort:           conf.HttpPort,
+		keepAliveAge:       conf.KeepAliveAge,
+		keepAliveCheckTime: 30 * time.Second,
+		escalations:        *conf.Escalations,
+		index:              event.NewIndex(conf.DbPath),
+		policies:           conf.Policies,
+		globalPolicy:       conf.GlobalPolicy,
 	}
 	return p
 }
 
 func (p *Pipeline) checkExpired() {
 	for {
-		time.Sleep(30 * time.Second)
+		time.Sleep(p.keepAliveCheckTime)
 
 		hosts := p.index.GetExpired(p.keepAliveAge)
 		for _, host := range hosts {
