@@ -1,40 +1,35 @@
 package pipeline
 
 import (
-	"bytes"
-	"fmt"
-	"io/ioutil"
 	"log"
-	"net"
-	"net/http"
 	"runtime"
 	"time"
 
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/event"
+	"github.com/eliothedeman/bangarang/provider"
 )
 
 type Pipeline struct {
-	tcpPort, httpPort  *int
 	keepAliveAge       time.Duration
 	keepAliveCheckTime time.Duration
 	globalPolicy       *alarm.Policy
 	escalations        alarm.AlarmCollection
 	policies           []*alarm.Policy
 	index              *event.Index
+	providers          provider.EventProviderCollection
 	encodingPool       *event.EncodingPool
 }
 
 func NewPipeline(conf *config.AppConfig) *Pipeline {
 	p := &Pipeline{
 		encodingPool:       event.NewEncodingPool(event.EncoderFactories[*conf.Encoding], event.DecoderFactories[*conf.Encoding], runtime.NumCPU()),
-		tcpPort:            conf.TcpPort,
-		httpPort:           conf.HttpPort,
 		keepAliveAge:       conf.KeepAliveAge,
 		keepAliveCheckTime: 30 * time.Second,
 		escalations:        *conf.Escalations,
 		index:              event.NewIndex(conf.DbPath),
+		providers:          conf.EventProviders,
 		policies:           conf.Policies,
 		globalPolicy:       conf.GlobalPolicy,
 	}
@@ -58,94 +53,26 @@ func (p *Pipeline) checkExpired() {
 }
 
 func (p *Pipeline) Start() {
-	go p.IngestHttp()
-	go p.IngestTcp()
 	go p.checkExpired()
-}
+	dst := make(chan *event.Event, 25)
 
-func (p *Pipeline) IngestHttp() {
-	if p.httpPort == nil {
-		return
+	// start up all of the providers
+	for _, ep := range p.providers {
+		go ep.Start(dst)
 	}
-	http.HandleFunc("/ingest", func(w http.ResponseWriter, r *http.Request) {
-		buff, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+
+	// fan in all of the providers and process them
+	go func() {
 		var e *event.Event
-		p.encodingPool.Decode(func(d event.Decoder) {
-			e, err = d.Decode(buff)
-		})
-		if err != nil {
-			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		for {
+			// recieve the event
+			e = <-dst
+
+			// process the event
+			p.Process(e)
 		}
+	}()
 
-		p.Process(e)
-	})
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *p.httpPort), nil))
-}
-
-func (p *Pipeline) consumeTcp(c *net.TCPConn) {
-	buff := make([]byte, 1024*200)
-	term := []byte{byte(0)}
-	for {
-		n, err := c.Read(buff)
-		if err != nil {
-			log.Println(err)
-			c.Close()
-			return
-		}
-
-		buffs := bytes.Split(buff[:n], term)
-		for _, b := range buffs {
-			p.consume(b)
-		}
-	}
-}
-
-func (p *Pipeline) consume(buff []byte) {
-	if len(buff) < 2 {
-		return
-	}
-	var e *event.Event
-	var err error
-	p.encodingPool.Decode(func(d event.Decoder) {
-		e, err = d.Decode(buff)
-	})
-	if err != nil {
-		log.Println(err)
-	} else {
-		p.Process(e)
-	}
-}
-
-// Listen for, and serve new incomming tcp connections
-func (p *Pipeline) IngestTcp() {
-	if p.tcpPort == nil {
-		return
-	}
-	addr, err := net.ResolveTCPAddr("tcp4", fmt.Sprintf(":%d", *p.tcpPort))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	c, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for {
-		conn, err := c.AcceptTCP()
-		if err != nil {
-			log.Println(err)
-		} else {
-			go p.consumeTcp(conn)
-		}
-	}
 }
 
 // Run the given event though the pipeline

@@ -7,6 +7,12 @@ import (
 	"github.com/eliothedeman/bangarang/event"
 )
 
+var (
+
+	// an impossible string of bytes given all available encodings
+	DELIMITER = []byte{0, 0, 0, 0, 0, 0, 0, 0}
+)
+
 // A client which maintains an open tcp connection to the server
 type TcpClient struct {
 	rAddr   string
@@ -39,6 +45,8 @@ func (t *TcpClient) Send(e *event.Event) error {
 	t.encoder.Encode(func(enc event.Encoder) {
 		buff, err = enc.Encode(e)
 	})
+
+	buff = append(buff, DELIMITER...)
 
 	if err != nil {
 		return err
