@@ -29,7 +29,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		keepAliveCheckTime: 30 * time.Second,
 		escalations:        *conf.Escalations,
 		index:              event.NewIndex(conf.DbPath),
-		providers:          conf.EventProviders,
+		providers:          *conf.EventProviders,
 		policies:           conf.Policies,
 		globalPolicy:       conf.GlobalPolicy,
 	}

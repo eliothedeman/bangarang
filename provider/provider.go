@@ -23,20 +23,20 @@ func (i INVALID_PROVIDER_TYPE) Error() string {
 
 type EventProviderCollection []EventProvider
 
-func (e EventProviderCollection) UnmarshalJSON(buff []byte) error {
+func (e *EventProviderCollection) UnmarshalJSON(buff []byte) error {
 	typer := struct {
 		Type string `json:"type"`
 	}{}
 
 	// turn the buff into an array of buffs
 	eps := make([]json.RawMessage, 0)
-	err := json.Unmarshal(buff, eps)
+	err := json.Unmarshal(buff, &eps)
 
 	for _, b := range eps {
 		typer.Type = ""
 
 		// get the type of the provider
-		err = json.Unmarshal(b, typer)
+		err = json.Unmarshal(b, &typer)
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func (e EventProviderCollection) UnmarshalJSON(buff []byte) error {
 			return err
 		}
 
-		e = append(e, p)
+		*e = append(*e, p)
 	}
 	return nil
 }
