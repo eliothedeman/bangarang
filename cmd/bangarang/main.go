@@ -9,6 +9,8 @@ import (
 	"github.com/eliothedeman/bangarang/api"
 	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/pipeline"
+	_ "github.com/eliothedeman/bangarang/provider/http"
+	_ "github.com/eliothedeman/bangarang/provider/tcp"
 )
 
 var (

@@ -4,7 +4,7 @@ make:
 	$(BUILD) -o bin/bangarang github.com/eliothedeman/bangarang/cmd/bangarang
 
 test:
-	go test ./...
+	go test -p=1 ./...
 
 all: linux osx windows
 

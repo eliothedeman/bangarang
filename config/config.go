@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/eliothedeman/bangarang/alarm"
+	"github.com/eliothedeman/bangarang/provider"
 )
 
 type Configer interface {
@@ -24,24 +25,19 @@ const (
 )
 
 type AppConfig struct {
-	EscalationsDir   string                 `json:"escalations_dir"`
-	KeepAliveAge     time.Duration          `json:"-"`
-	Raw_KeepAliveAge string                 `json:"keep_alive_age"`
-	DbPath           string                 `json:"db_path"`
-	TcpPort          *int                   `json:"tcp_port"`
-	HttpPort         *int                   `json:"http_port"`
-	Escalations      *alarm.AlarmCollection `json:"escalations"`
-	GlobalPolicy     *alarm.Policy          `json:"global_policy"`
-	Encoding         *string                `json:"encoding"`
-	Policies         []*alarm.Policy        `json:"-"`
+	EscalationsDir   string                            `json:"escalations_dir"`
+	KeepAliveAge     time.Duration                     `json:"-"`
+	Raw_KeepAliveAge string                            `json:"keep_alive_age"`
+	DbPath           string                            `json:"db_path"`
+	Escalations      *alarm.AlarmCollection            `json:"escalations"`
+	GlobalPolicy     *alarm.Policy                     `json:"global_policy"`
+	Encoding         *string                           `json:"encoding"`
+	Policies         []*alarm.Policy                   `json:"-"`
+	EventProviders   *provider.EventProviderCollection `json:"event_providers"`
 }
 
-func LoadConfigFile(fileName string) (*AppConfig, error) {
-	buff, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return nil, err
-	}
-
+func parseConfigFile(buff []byte) (*AppConfig, error) {
+	var err error
 	ac := &AppConfig{
 		Raw_KeepAliveAge: DEFAULT_KEEPALIVE_AGE,
 		DbPath:           DEFAULT_DB_PATH,
@@ -81,6 +77,16 @@ func LoadConfigFile(fileName string) (*AppConfig, error) {
 	}
 
 	return ac, nil
+
+}
+
+func LoadConfigFile(fileName string) (*AppConfig, error) {
+	buff, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseConfigFile(buff)
 }
 
 func loadPolicy(fileName string) (*alarm.Policy, error) {

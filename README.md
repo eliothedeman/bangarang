@@ -29,8 +29,6 @@ bangarang uses two configurations. One main config, and a series of files that d
 ### Main Config
 ```javascript
 {
-	"tcp_port": 8083, 	// <- tcp port to listen on 
-	"http_port": 8084, 	// <- http port to listen on
 	"alarms": {			// <- a list of policies to be used by the escalations
 		"demo": [
 			{
@@ -42,6 +40,19 @@ bangarang uses two configurations. One main config, and a series of files that d
 			}
 		]
 	},
+	"event_providers": [
+		{
+			"type":"tcp", // will listen for incomming tcp connection
+			"listen":"0.0.0.0:8080" // on all interfaces with port 8080
+			"encoding": "msgp" // expecting msgpack encoding
+		},
+		{
+			"type": "http", // will serve http 
+			"listen": "0.0.0.0:8081", // on all interfaces with port 8081
+			"encoding": "json" // expecting json encoding
+
+		}
+	],
 	"escalations_dir": "/etc/bangarang/alerts/" // <- dir that holds individual alert configs
 }
 ```
