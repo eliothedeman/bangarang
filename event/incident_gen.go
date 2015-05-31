@@ -44,13 +44,23 @@ func (z *Incident) DecodeMsg(dc *msgp.Reader) (err error) {
 			if err != nil {
 				return
 			}
-		case "status":
-			z.Status, err = dc.ReadInt()
+		case "escalation":
+			z.Escalation, err = dc.ReadString()
 			if err != nil {
 				return
 			}
-		case "escalation":
-			z.Escalation, err = dc.ReadString()
+		case "description":
+			z.Description, err = dc.ReadString()
+			if err != nil {
+				return
+			}
+		case "policy":
+			z.Policy, err = dc.ReadString()
+			if err != nil {
+				return
+			}
+		case "Event":
+			err = z.Event.DecodeMsg(dc)
 			if err != nil {
 				return
 			}
@@ -66,7 +76,7 @@ func (z *Incident) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Incident) EncodeMsg(en *msgp.Writer) (err error) {
-	err = en.WriteMapHeader(6)
+	err = en.WriteMapHeader(8)
 	if err != nil {
 		return
 	}
@@ -102,19 +112,35 @@ func (z *Incident) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	err = en.WriteString("status")
-	if err != nil {
-		return
-	}
-	err = en.WriteInt(z.Status)
-	if err != nil {
-		return
-	}
 	err = en.WriteString("escalation")
 	if err != nil {
 		return
 	}
 	err = en.WriteString(z.Escalation)
+	if err != nil {
+		return
+	}
+	err = en.WriteString("description")
+	if err != nil {
+		return
+	}
+	err = en.WriteString(z.Description)
+	if err != nil {
+		return
+	}
+	err = en.WriteString("policy")
+	if err != nil {
+		return
+	}
+	err = en.WriteString(z.Policy)
+	if err != nil {
+		return
+	}
+	err = en.WriteString("Event")
+	if err != nil {
+		return
+	}
+	err = z.Event.EncodeMsg(en)
 	if err != nil {
 		return
 	}
@@ -124,7 +150,7 @@ func (z *Incident) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Incident) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	o = msgp.AppendMapHeader(o, 6)
+	o = msgp.AppendMapHeader(o, 8)
 	o = msgp.AppendString(o, "event_name")
 	o = msgp.AppendBytes(o, z.EventName)
 	o = msgp.AppendString(o, "time")
@@ -133,10 +159,17 @@ func (z *Incident) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.AppendInt64(o, z.Id)
 	o = msgp.AppendString(o, "active")
 	o = msgp.AppendBool(o, z.Active)
-	o = msgp.AppendString(o, "status")
-	o = msgp.AppendInt(o, z.Status)
 	o = msgp.AppendString(o, "escalation")
 	o = msgp.AppendString(o, z.Escalation)
+	o = msgp.AppendString(o, "description")
+	o = msgp.AppendString(o, z.Description)
+	o = msgp.AppendString(o, "policy")
+	o = msgp.AppendString(o, z.Policy)
+	o = msgp.AppendString(o, "Event")
+	o, err = z.Event.MarshalMsg(o)
+	if err != nil {
+		return
+	}
 	return
 }
 
@@ -176,13 +209,23 @@ func (z *Incident) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
-		case "status":
-			z.Status, bts, err = msgp.ReadIntBytes(bts)
+		case "escalation":
+			z.Escalation, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
 				return
 			}
-		case "escalation":
-			z.Escalation, bts, err = msgp.ReadStringBytes(bts)
+		case "description":
+			z.Description, bts, err = msgp.ReadStringBytes(bts)
+			if err != nil {
+				return
+			}
+		case "policy":
+			z.Policy, bts, err = msgp.ReadStringBytes(bts)
+			if err != nil {
+				return
+			}
+		case "Event":
+			bts, err = z.Event.UnmarshalMsg(bts)
 			if err != nil {
 				return
 			}
@@ -198,6 +241,6 @@ func (z *Incident) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 func (z *Incident) Msgsize() (s int) {
-	s = msgp.MapHeaderSize + msgp.StringPrefixSize + 10 + msgp.BytesPrefixSize + len(z.EventName) + msgp.StringPrefixSize + 4 + msgp.Int64Size + msgp.StringPrefixSize + 2 + msgp.Int64Size + msgp.StringPrefixSize + 6 + msgp.BoolSize + msgp.StringPrefixSize + 6 + msgp.IntSize + msgp.StringPrefixSize + 10 + msgp.StringPrefixSize + len(z.Escalation)
+	s = msgp.MapHeaderSize + msgp.StringPrefixSize + 10 + msgp.BytesPrefixSize + len(z.EventName) + msgp.StringPrefixSize + 4 + msgp.Int64Size + msgp.StringPrefixSize + 2 + msgp.Int64Size + msgp.StringPrefixSize + 6 + msgp.BoolSize + msgp.StringPrefixSize + 10 + msgp.StringPrefixSize + len(z.Escalation) + msgp.StringPrefixSize + 11 + msgp.StringPrefixSize + len(z.Description) + msgp.StringPrefixSize + 6 + msgp.StringPrefixSize + len(z.Policy) + msgp.StringPrefixSize + 5 + z.Event.Msgsize()
 	return
 }

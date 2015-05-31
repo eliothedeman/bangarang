@@ -8,6 +8,7 @@ package event
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	fflib "github.com/pquerna/ffjson/fflib/v1"
@@ -27,7 +28,7 @@ func (mj *Incident) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	var obj []byte
 	_ = obj
 	_ = err
-	buf.WriteString(`{"event":`)
+	buf.WriteString(`{ "event":`)
 	if mj.EventName != nil {
 		buf.WriteString(`"`)
 		{
@@ -48,10 +49,46 @@ func (mj *Incident) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	} else {
 		buf.WriteString(`,"active":false`)
 	}
-	buf.WriteString(`,"status":`)
-	fflib.FormatBits2(buf, uint64(mj.Status), 10, mj.Status < 0)
 	buf.WriteString(`,"escalation":`)
 	fflib.WriteJsonString(buf, string(mj.Escalation))
+	buf.WriteString(`,"description":`)
+	fflib.WriteJsonString(buf, string(mj.Description))
+	buf.WriteString(`,"policy":`)
+	fflib.WriteJsonString(buf, string(mj.Policy))
+	buf.WriteString(`,"host":`)
+	fflib.WriteJsonString(buf, string(mj.Host))
+	buf.WriteString(`,"service":`)
+	fflib.WriteJsonString(buf, string(mj.Service))
+	buf.WriteString(`,"sub_type":`)
+	fflib.WriteJsonString(buf, string(mj.SubService))
+	buf.WriteString(`,"metric":`)
+	fflib.AppendFloat(buf, float64(mj.Metric), 'g', -1, 64)
+	buf.WriteString(`,"occurences":`)
+	fflib.FormatBits2(buf, uint64(mj.Occurences), 10, mj.Occurences < 0)
+	if mj.Tags == nil {
+		buf.WriteString(`,"tags":null`)
+	} else {
+		buf.WriteString(`,"tags":{ `)
+		for key, value := range mj.Tags {
+			fflib.WriteJsonString(buf, key)
+			buf.WriteString(`:`)
+			fflib.WriteJsonString(buf, string(value))
+			buf.WriteByte(',')
+		}
+		buf.Rewind(1)
+		buf.WriteByte('}')
+	}
+	buf.WriteString(`,"status":`)
+	fflib.FormatBits2(buf, uint64(mj.Status), 10, mj.Status < 0)
+	buf.WriteByte(',')
+	if mj.IncidentId != nil {
+		if true {
+			buf.WriteString(`"incident":`)
+			fflib.FormatBits2(buf, uint64(*mj.IncidentId), 10, *mj.IncidentId < 0)
+			buf.WriteByte(',')
+		}
+	}
+	buf.Rewind(1)
 	buf.WriteByte('}')
 	return nil
 }
@@ -68,9 +105,27 @@ const (
 
 	ffj_t_Incident_Active
 
+	ffj_t_Incident_Escalation
+
+	ffj_t_Incident_Description
+
+	ffj_t_Incident_Policy
+
+	ffj_t_Incident_Host
+
+	ffj_t_Incident_Service
+
+	ffj_t_Incident_SubService
+
+	ffj_t_Incident_Metric
+
+	ffj_t_Incident_Occurences
+
+	ffj_t_Incident_Tags
+
 	ffj_t_Incident_Status
 
-	ffj_t_Incident_Escalation
+	ffj_t_Incident_IncidentId
 )
 
 var ffj_key_Incident_EventName = []byte("event")
@@ -81,9 +136,27 @@ var ffj_key_Incident_Id = []byte("id")
 
 var ffj_key_Incident_Active = []byte("active")
 
+var ffj_key_Incident_Escalation = []byte("escalation")
+
+var ffj_key_Incident_Description = []byte("description")
+
+var ffj_key_Incident_Policy = []byte("policy")
+
+var ffj_key_Incident_Host = []byte("host")
+
+var ffj_key_Incident_Service = []byte("service")
+
+var ffj_key_Incident_SubService = []byte("sub_type")
+
+var ffj_key_Incident_Metric = []byte("metric")
+
+var ffj_key_Incident_Occurences = []byte("occurences")
+
+var ffj_key_Incident_Tags = []byte("tags")
+
 var ffj_key_Incident_Status = []byte("status")
 
-var ffj_key_Incident_Escalation = []byte("escalation")
+var ffj_key_Incident_IncidentId = []byte("incident")
 
 func (uj *Incident) UnmarshalJSON(input []byte) error {
 	fs := fflib.NewFFLexer(input)
@@ -152,6 +225,14 @@ mainparse:
 						goto mainparse
 					}
 
+				case 'd':
+
+					if bytes.Equal(ffj_key_Incident_Description, kn) {
+						currentKey = ffj_t_Incident_Description
+						state = fflib.FFParse_want_colon
+						goto mainparse
+					}
+
 				case 'e':
 
 					if bytes.Equal(ffj_key_Incident_EventName, kn) {
@@ -165,17 +246,64 @@ mainparse:
 						goto mainparse
 					}
 
+				case 'h':
+
+					if bytes.Equal(ffj_key_Incident_Host, kn) {
+						currentKey = ffj_t_Incident_Host
+						state = fflib.FFParse_want_colon
+						goto mainparse
+					}
+
 				case 'i':
 
 					if bytes.Equal(ffj_key_Incident_Id, kn) {
 						currentKey = ffj_t_Incident_Id
 						state = fflib.FFParse_want_colon
 						goto mainparse
+
+					} else if bytes.Equal(ffj_key_Incident_IncidentId, kn) {
+						currentKey = ffj_t_Incident_IncidentId
+						state = fflib.FFParse_want_colon
+						goto mainparse
+					}
+
+				case 'm':
+
+					if bytes.Equal(ffj_key_Incident_Metric, kn) {
+						currentKey = ffj_t_Incident_Metric
+						state = fflib.FFParse_want_colon
+						goto mainparse
+					}
+
+				case 'o':
+
+					if bytes.Equal(ffj_key_Incident_Occurences, kn) {
+						currentKey = ffj_t_Incident_Occurences
+						state = fflib.FFParse_want_colon
+						goto mainparse
+					}
+
+				case 'p':
+
+					if bytes.Equal(ffj_key_Incident_Policy, kn) {
+						currentKey = ffj_t_Incident_Policy
+						state = fflib.FFParse_want_colon
+						goto mainparse
 					}
 
 				case 's':
 
-					if bytes.Equal(ffj_key_Incident_Status, kn) {
+					if bytes.Equal(ffj_key_Incident_Service, kn) {
+						currentKey = ffj_t_Incident_Service
+						state = fflib.FFParse_want_colon
+						goto mainparse
+
+					} else if bytes.Equal(ffj_key_Incident_SubService, kn) {
+						currentKey = ffj_t_Incident_SubService
+						state = fflib.FFParse_want_colon
+						goto mainparse
+
+					} else if bytes.Equal(ffj_key_Incident_Status, kn) {
 						currentKey = ffj_t_Incident_Status
 						state = fflib.FFParse_want_colon
 						goto mainparse
@@ -187,18 +315,77 @@ mainparse:
 						currentKey = ffj_t_Incident_Time
 						state = fflib.FFParse_want_colon
 						goto mainparse
+
+					} else if bytes.Equal(ffj_key_Incident_Tags, kn) {
+						currentKey = ffj_t_Incident_Tags
+						state = fflib.FFParse_want_colon
+						goto mainparse
 					}
 
 				}
 
-				if fflib.EqualFoldRight(ffj_key_Incident_Escalation, kn) {
-					currentKey = ffj_t_Incident_Escalation
+				if fflib.SimpleLetterEqualFold(ffj_key_Incident_IncidentId, kn) {
+					currentKey = ffj_t_Incident_IncidentId
 					state = fflib.FFParse_want_colon
 					goto mainparse
 				}
 
 				if fflib.EqualFoldRight(ffj_key_Incident_Status, kn) {
 					currentKey = ffj_t_Incident_Status
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				if fflib.EqualFoldRight(ffj_key_Incident_Tags, kn) {
+					currentKey = ffj_t_Incident_Tags
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				if fflib.EqualFoldRight(ffj_key_Incident_Occurences, kn) {
+					currentKey = ffj_t_Incident_Occurences
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				if fflib.SimpleLetterEqualFold(ffj_key_Incident_Metric, kn) {
+					currentKey = ffj_t_Incident_Metric
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				if fflib.EqualFoldRight(ffj_key_Incident_SubService, kn) {
+					currentKey = ffj_t_Incident_SubService
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				if fflib.EqualFoldRight(ffj_key_Incident_Service, kn) {
+					currentKey = ffj_t_Incident_Service
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				if fflib.EqualFoldRight(ffj_key_Incident_Host, kn) {
+					currentKey = ffj_t_Incident_Host
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				if fflib.SimpleLetterEqualFold(ffj_key_Incident_Policy, kn) {
+					currentKey = ffj_t_Incident_Policy
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				if fflib.EqualFoldRight(ffj_key_Incident_Description, kn) {
+					currentKey = ffj_t_Incident_Description
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				if fflib.EqualFoldRight(ffj_key_Incident_Escalation, kn) {
+					currentKey = ffj_t_Incident_Escalation
 					state = fflib.FFParse_want_colon
 					goto mainparse
 				}
@@ -256,11 +443,38 @@ mainparse:
 				case ffj_t_Incident_Active:
 					goto handle_Active
 
+				case ffj_t_Incident_Escalation:
+					goto handle_Escalation
+
+				case ffj_t_Incident_Description:
+					goto handle_Description
+
+				case ffj_t_Incident_Policy:
+					goto handle_Policy
+
+				case ffj_t_Incident_Host:
+					goto handle_Host
+
+				case ffj_t_Incident_Service:
+					goto handle_Service
+
+				case ffj_t_Incident_SubService:
+					goto handle_SubService
+
+				case ffj_t_Incident_Metric:
+					goto handle_Metric
+
+				case ffj_t_Incident_Occurences:
+					goto handle_Occurences
+
+				case ffj_t_Incident_Tags:
+					goto handle_Tags
+
 				case ffj_t_Incident_Status:
 					goto handle_Status
 
-				case ffj_t_Incident_Escalation:
-					goto handle_Escalation
+				case ffj_t_Incident_IncidentId:
+					goto handle_IncidentId
 
 				case ffj_t_Incidentno_such_key:
 					err = fs.SkipField(tok)
@@ -402,6 +616,230 @@ handle_Active:
 	state = fflib.FFParse_after_value
 	goto mainparse
 
+handle_Escalation:
+
+	/* handler: uj.Escalation type=string kind=string */
+
+	{
+
+		{
+			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
+				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
+			}
+		}
+
+		if tok == fflib.FFTok_null {
+
+		} else {
+
+			uj.Escalation = string(fs.Output.String())
+
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_Description:
+
+	/* handler: uj.Description type=string kind=string */
+
+	{
+
+		{
+			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
+				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
+			}
+		}
+
+		if tok == fflib.FFTok_null {
+
+		} else {
+
+			uj.Description = string(fs.Output.String())
+
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_Policy:
+
+	/* handler: uj.Policy type=string kind=string */
+
+	{
+
+		{
+			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
+				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
+			}
+		}
+
+		if tok == fflib.FFTok_null {
+
+		} else {
+
+			uj.Policy = string(fs.Output.String())
+
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_Host:
+
+	/* handler: uj.Host type=string kind=string */
+
+	{
+
+		{
+			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
+				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
+			}
+		}
+
+		if tok == fflib.FFTok_null {
+
+		} else {
+
+			uj.Host = string(fs.Output.String())
+
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_Service:
+
+	/* handler: uj.Service type=string kind=string */
+
+	{
+
+		{
+			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
+				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
+			}
+		}
+
+		if tok == fflib.FFTok_null {
+
+		} else {
+
+			uj.Service = string(fs.Output.String())
+
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_SubService:
+
+	/* handler: uj.SubService type=string kind=string */
+
+	{
+
+		{
+			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
+				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
+			}
+		}
+
+		if tok == fflib.FFTok_null {
+
+		} else {
+
+			uj.SubService = string(fs.Output.String())
+
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_Metric:
+
+	/* handler: uj.Metric type=float64 kind=float64 */
+
+	{
+		if tok != fflib.FFTok_double && tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
+			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for float64", tok))
+		}
+	}
+
+	{
+
+		if tok == fflib.FFTok_null {
+
+		} else {
+
+			tval, err := fflib.ParseFloat(fs.Output.Bytes(), 64)
+
+			if err != nil {
+				return fs.WrapErr(err)
+			}
+
+			uj.Metric = float64(tval)
+
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_Occurences:
+
+	/* handler: uj.Occurences type=int kind=int */
+
+	{
+		if tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
+			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for int", tok))
+		}
+	}
+
+	{
+
+		if tok == fflib.FFTok_null {
+
+		} else {
+
+			tval, err := fflib.ParseInt(fs.Output.Bytes(), 10, 64)
+
+			if err != nil {
+				return fs.WrapErr(err)
+			}
+
+			uj.Occurences = int(tval)
+
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_Tags:
+
+	/* handler: uj.Tags type=map[string]string kind=map */
+
+	{
+		/* Falling back. type=map[string]string kind=map */
+		tbuf, err := fs.CaptureField(tok)
+		if err != nil {
+			return fs.WrapErr(err)
+		}
+
+		err = json.Unmarshal(tbuf, &uj.Tags)
+		if err != nil {
+			return fs.WrapErr(err)
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
 handle_Status:
 
 	/* handler: uj.Status type=int kind=int */
@@ -432,23 +870,32 @@ handle_Status:
 	state = fflib.FFParse_after_value
 	goto mainparse
 
-handle_Escalation:
+handle_IncidentId:
 
-	/* handler: uj.Escalation type=string kind=string */
+	/* handler: uj.IncidentId type=int64 kind=int64 */
+
+	{
+		if tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
+			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for int64", tok))
+		}
+	}
 
 	{
 
-		{
-			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
-				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
-			}
-		}
-
 		if tok == fflib.FFTok_null {
+
+			uj.IncidentId = nil
 
 		} else {
 
-			uj.Escalation = string(fs.Output.String())
+			tval, err := fflib.ParseInt(fs.Output.Bytes(), 10, 64)
+
+			if err != nil {
+				return fs.WrapErr(err)
+			}
+
+			ttypval := int64(tval)
+			uj.IncidentId = &ttypval
 
 		}
 	}
