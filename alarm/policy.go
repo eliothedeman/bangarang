@@ -69,12 +69,21 @@ func (p *Policy) Action(e *event.Event) string {
 	if p.Crit != nil {
 		if p.Crit.TrackEvent(e) {
 			e.Status = event.CRITICAL
+		} else {
+			e.Status = event.OK
+		}
+
+		if p.Crit.StateChanged(e) {
 			return p.Crit.Escalation
 		}
 	}
 	if p.Warn != nil {
 		if p.Warn.TrackEvent(e) {
 			e.Status = event.WARNING
+		} else {
+			e.Status = event.OK
+		}
+		if p.Warn.StateChanged(e) {
 			return p.Warn.Escalation
 		}
 	}

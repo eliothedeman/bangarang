@@ -10,6 +10,7 @@ import (
 
 var (
 	DEFAULT_WINDOW_SIZE = 100
+	STATUS_SIZE         = 10
 )
 
 type Condition struct {
@@ -28,6 +29,7 @@ type Condition struct {
 
 type eventTracker struct {
 	df         *smoothie.DataFrame
+	states     *smoothie.DataFrame
 	occurences int
 }
 
@@ -38,42 +40,55 @@ type StdDev struct {
 	WindowSize *int    `json:"window_size"`
 }
 
-func (c *Condition) DoOnDataFrame(e *event.Event, dfo func(*smoothie.DataFrame)) {
+func (c *Condition) DoOnTracker(e *event.Event, dot func(*eventTracker)) {
 	c.Lock()
 	et, ok := c.eventTrackers[e.IndexName()]
 	if !ok {
 		df := smoothie.NewDataFrame(c.WindowSize)
+		states := smoothie.NewDataFrameFromSlice(make([]float64, STATUS_SIZE))
 		et = &eventTracker{
-			df: df,
+			df:     df,
+			states: states,
 		}
 		c.eventTrackers[e.IndexName()] = et
 	}
-	dfo(et.df)
+	dot(et)
 	c.Unlock()
 }
 
 // start tracking an event, and returns if the event has hit it's occurence settings
 func (c *Condition) TrackEvent(e *event.Event) bool {
-	c.DoOnDataFrame(e, func(df *smoothie.DataFrame) {
-		df.Push(e.Metric)
+	c.DoOnTracker(e, func(t *eventTracker) {
+		t.df.Push(e.Metric)
 	})
 
 	return c.OccurencesHit(e)
 
 }
 
+func (c *Condition) StateChanged(e *event.Event) bool {
+	changed := false
+	c.DoOnTracker(e, func(t *eventTracker) {
+		changed = t.states.Index(0) == t.states.Index(1)
+	})
+	return changed
+}
+
 // check to see if an event has it the occurences level
 func (c *Condition) OccurencesHit(e *event.Event) bool {
 	occ := 0
+
 	if c.Satisfies(e) {
-		c.Lock()
-		c.eventTrackers[e.IndexName()].occurences += 1
-		occ = c.eventTrackers[e.IndexName()].occurences
-		c.Unlock()
+		c.DoOnTracker(e, func(t *eventTracker) {
+			t.occurences += 1
+			occ = t.occurences
+			t.states.Push(1)
+		})
 	} else {
-		c.Lock()
-		c.eventTrackers[e.IndexName()].occurences = 0
-		c.Unlock()
+		c.DoOnTracker(e, func(t *eventTracker) {
+			t.occurences = 0
+			t.states.Push(0)
+		})
 	}
 
 	return occ >= c.Occurences
@@ -112,9 +127,9 @@ func (c *Condition) compileChecks() []satisfier {
 	if c.StdDev != nil {
 		s = append(s, func(e *event.Event) bool {
 			met := false
-			c.DoOnDataFrame(e, func(df *smoothie.DataFrame) {
-				avg := df.Avg()
-				if math.Abs(e.Metric-avg) > df.StdDev()*c.StdDev.Sigma {
+			c.DoOnTracker(e, func(t *eventTracker) {
+				avg := t.df.Avg()
+				if math.Abs(e.Metric-avg) > t.df.StdDev()*c.StdDev.Sigma {
 					met = true
 				}
 			})
@@ -128,7 +143,7 @@ func (c *Condition) init() {
 	c.checks = c.compileChecks()
 
 	// fixes issue where occurences are hit, even when the event doesn't satisify the condition
-	if c.Occurences == 0 {
+	if c.Occurences < 1 {
 		c.Occurences = 1
 	}
 
