@@ -1,4 +1,4 @@
-# bangarang
+# bangarang [![Build Status](https://travis-ci.org/eliothedeman/bangarang.svg?branch=master)](https://travis-ci.org/eliothedeman/bangarang)
 A stupid simple stream processor for monitoring applications. 
 
 ## Install
