@@ -19,6 +19,7 @@ var (
 
 func main() {
 	flag.Parse()
+	log.Println(flag.Arg(0))
 	ac, err := config.LoadConfigFile(*confFile)
 	if err != nil {
 		log.Fatal(err)

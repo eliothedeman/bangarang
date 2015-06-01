@@ -76,6 +76,10 @@ func parseConfigFile(buff []byte) (*AppConfig, error) {
 		ac.GlobalPolicy.Compile()
 	}
 
+	if ac.EventProviders == nil {
+		ac.EventProviders = &provider.EventProviderCollection{}
+	}
+
 	return ac, nil
 
 }
