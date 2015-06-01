@@ -22,7 +22,7 @@ func testPipeline(p []*alarm.Policy) (*Pipeline, *test.TestAlert) {
 	ta := test.NewTest().(*test.TestAlert)
 	pipe := &Pipeline{
 		policies:     p,
-		index:        event.NewIndex(fmt.Sprintf("test%d.db", tests_ran)),
+		index:        event.NewIndex(fmt.Sprintf("test%d.db", time.Now().Nanosecond())),
 		encodingPool: event.NewEncodingPool(event.EncoderFactories[config.DEFAULT_ENCODING], event.DecoderFactories[config.DEFAULT_ENCODING], runtime.NumCPU()),
 		escalations: map[string][]alarm.Alarm{
 			"test": []alarm.Alarm{ta},

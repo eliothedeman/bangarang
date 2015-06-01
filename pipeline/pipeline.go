@@ -40,13 +40,8 @@ func (p *Pipeline) checkExpired() {
 	for {
 		time.Sleep(p.keepAliveCheckTime)
 
-		hosts := p.index.GetExpired(p.keepAliveAge)
-		for _, host := range hosts {
-			e := &event.Event{
-				Host:    host,
-				Service: "KeepAlive",
-				Metric:  float64(p.keepAliveAge),
-			}
+		events := p.index.GetKeepAlives()
+		for _, e := range events {
 			p.Process(e)
 		}
 	}
