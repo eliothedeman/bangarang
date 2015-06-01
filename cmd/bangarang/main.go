@@ -17,13 +17,24 @@ var (
 	confFile = flag.String("conf", "/etc/bangarang/conf.json", "path main config file")
 )
 
+func command(conf *config.AppConfig) {
+	switch flag.Arg(0) {
+	case "dry":
+		err := config.DryRun(conf)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+}
+
 func main() {
 	flag.Parse()
-	log.Println(flag.Arg(0))
 	ac, err := config.LoadConfigFile(*confFile)
 	if err != nil {
 		log.Fatal(err)
 	}
+	command(ac)
 	p := pipeline.NewPipeline(ac)
 	p.Start()
 	apiServer := api.NewServer(8081, p)
