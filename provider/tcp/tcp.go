@@ -91,14 +91,16 @@ func (t *TCPProvider) consume(conn *net.TCPConn, dst chan *event.Event) {
 
 		buffs := bytes.Split(buff[:n], client.DELIMITER)
 		for _, b := range buffs {
-			t.pool.Decode(func(d event.Decoder) {
-				e, err = d.Decode(b)
-			})
+			if len(b) > 2 {
+				t.pool.Decode(func(d event.Decoder) {
+					e, err = d.Decode(b)
+				})
 
-			if err != nil {
-				log.Println(err)
-			} else {
-				dst <- e
+				if err != nil {
+					log.Println(err)
+				} else {
+					dst <- e
+				}
 			}
 		}
 	}
