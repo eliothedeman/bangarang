@@ -1,6 +1,7 @@
 BUILD=go build -a
 
 make:
+	go generate ./...
 	$(BUILD) -o bin/bangarang github.com/eliothedeman/bangarang/cmd/bangarang
 
 test:
