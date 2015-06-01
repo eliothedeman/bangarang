@@ -19,6 +19,10 @@ var (
 	INCIDENT_COUNT_NAME    = []byte("incident_count")
 )
 
+const (
+	KEEP_ALIVE_SERVICE_NAME = "KeepAlive"
+)
+
 type Index struct {
 	pool       *EncodingPool
 	db         *bolt.DB
@@ -92,18 +96,22 @@ func (i *Index) Delete() error {
 	return os.Remove(i.dbFileName)
 }
 
-// get all of the hosts that have missed their keepalives
-func (i *Index) GetExpired(age time.Duration) []string {
-	hosts := make([]string, 0, 10)
+// return all keep alive's as events
+func (i *Index) GetKeepAlives() []*Event {
 	n := time.Now()
 	i.ka_lock.Lock()
+	events := make([]*Event, len(i.keepAlives))
+	x := 0
 	for host, t := range i.keepAlives {
-		if n.Sub(t) > age {
-			hosts = append(hosts, host)
+		events[x] = &Event{
+			Host:    host,
+			Metric:  n.Sub(t).Seconds(),
+			Service: KEEP_ALIVE_SERVICE_NAME,
 		}
+		x += 1
 	}
 	i.ka_lock.Unlock()
-	return hosts
+	return events
 }
 
 func (i *Index) GetIncidentCounter() int64 {
@@ -264,40 +272,4 @@ func (i *Index) PutEvent(e *Event) {
 	i.ka_lock.Lock()
 	i.keepAlives[e.Host] = time.Now()
 	i.ka_lock.Unlock()
-}
-
-// fetch the event with the given index name
-func (i *Index) GetEvent(name []byte) *Event {
-	found := false
-	var raw []byte
-	i.db.View(func(t *bolt.Tx) error {
-		b := t.Bucket(EVENT_BUCKET_NAME)
-		raw = b.Get(name)
-
-		// if we don't have anything at that key, exit early
-		if len(raw) == 0 {
-			return nil
-		}
-		found = true
-		return nil
-	})
-
-	if !found {
-		return nil
-	}
-
-	var e *Event
-	var err error
-	i.pool.Decode(func(dec Decoder) {
-		e, err = dec.Decode(raw)
-		if err != nil {
-			log.Println(err)
-		}
-	})
-
-	if err != nil {
-		return nil
-	}
-
-	return e
 }
