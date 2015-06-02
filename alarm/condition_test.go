@@ -63,9 +63,9 @@ func TestGroupByHostName(t *testing.T) {
 	})
 
 	e := newTestEvent("my.test.com", "is-fun", 1)
-	expected := "test"
+	expected := ":test"
 
-	if g.genIndexName(e) != "test" {
+	if g.genIndexName(e) != expected {
 		t.Error("expected:", expected, "got:", g.genIndexName(e))
 	}
 }
