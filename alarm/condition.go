@@ -2,6 +2,7 @@ package alarm
 
 import (
 	"math"
+	"regexp"
 	"sync"
 
 	"github.com/eliothedeman/bangarang/event"
@@ -21,10 +22,33 @@ type Condition struct {
 	Escalation    string   `json:"escalation"`
 	Occurences    int      `json:"occurences"`
 	WindowSize    int      `json:"window_size"`
+	groupBy       grouper
 	checks        []satisfier
 	eventTrackers map[string]*eventTracker
 	sync.Mutex
 	ready bool
+}
+
+type matcher struct {
+	name  string
+	match *regexp.Regexp
+}
+
+type grouper []*matcher
+
+func (g grouper) genIndexName(e *event.Event) string {
+	name := ""
+	for _, m := range g {
+		res := m.match.FindStringSubmatch(e.Get(m.name))
+
+		switch len(res) {
+		case 1:
+			name = name + res[0]
+		case 2:
+			name = name + res[1]
+		}
+	}
+	return name
 }
 
 type eventTracker struct {
@@ -42,7 +66,7 @@ type StdDev struct {
 
 func (c *Condition) DoOnTracker(e *event.Event, dot func(*eventTracker)) {
 	c.Lock()
-	et, ok := c.eventTrackers[e.IndexName()]
+	et, ok := c.eventTrackers[c.groupBy.genIndexName(e)]
 	if !ok {
 		df := smoothie.NewDataFrame(c.WindowSize)
 		states := smoothie.NewDataFrameFromSlice(make([]float64, STATUS_SIZE))
@@ -139,7 +163,17 @@ func (c *Condition) compileChecks() []satisfier {
 	return s
 }
 
-func (c *Condition) init() {
+func compileGrouper(gb map[string]string) grouper {
+	g := grouper{}
+	for k, v := range gb {
+		g = append(g, &matcher{name: k, match: regexp.MustCompile(v)})
+	}
+	return g
+}
+
+func (c *Condition) init(groupBy map[string]string) {
+	c.groupBy = compileGrouper(groupBy)
+
 	c.checks = c.compileChecks()
 
 	// fixes issue where occurences are hit, even when the event doesn't satisify the condition
