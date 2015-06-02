@@ -74,7 +74,7 @@ func (c *Condition) DoOnTracker(e *event.Event, dot func(*eventTracker)) {
 			df:     df,
 			states: states,
 		}
-		c.eventTrackers[e.IndexName()] = et
+		c.eventTrackers[c.groupBy.genIndexName(e)] = et
 	}
 	dot(et)
 	c.Unlock()
