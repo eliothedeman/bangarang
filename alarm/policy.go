@@ -2,7 +2,6 @@ package alarm
 
 import (
 	"log"
-	"reflect"
 	"regexp"
 	"strings"
 
@@ -13,9 +12,18 @@ func init() {
 	log.SetFlags(log.Llongfile)
 }
 
+var (
+	DEFAULT_GROUP_BY = map[string]string{
+		"host":        "^(.*)$",
+		"service":     "^(.*)$",
+		"sub_service": "^(.*)$",
+	}
+)
+
 type Policy struct {
 	Match       map[string]string `json:"match"`
 	NotMatch    map[string]string `json:"not_match"`
+	GroupBy     map[string]string `json:"group_by"`
 	Crit        *Condition        `json:"crit"`
 	Warn        *Condition        `json:"warn"`
 	Name        string            `json:"name"`
@@ -38,6 +46,20 @@ func (p *Policy) Compile() {
 		p.r_not_match = make(map[string]*regexp.Regexp)
 	}
 
+	if len(p.GroupBy) < 3 {
+		tmp := map[string]string{}
+		for k, v := range DEFAULT_GROUP_BY {
+			tmp[k] = v
+		}
+
+		for k, v := range p.GroupBy {
+			tmp[k] = v
+		}
+
+		p.GroupBy = tmp
+
+	}
+
 	for k, v := range p.Match {
 		p.r_match[k] = regexp.MustCompile(v)
 	}
@@ -47,11 +69,11 @@ func (p *Policy) Compile() {
 	}
 
 	if p.Crit != nil {
-		p.Crit.init()
+		p.Crit.init(p.GroupBy)
 	}
 
 	if p.Warn != nil {
-		p.Warn.init()
+		p.Warn.init(p.GroupBy)
 	}
 }
 
@@ -93,48 +115,21 @@ func (p *Policy) Action(e *event.Event) string {
 }
 
 func (p *Policy) CheckNotMatch(e *event.Event) bool {
-	v := reflect.ValueOf(e).Elem()
 	for k, m := range p.r_not_match {
-		elem := v.FieldByName(formatFileName(k))
-		if m.MatchString(elem.String()) {
+		if m.MatchString(e.Get(k)) {
 			return false
-
-			// check againt the element's tags
-			if e.Tags != nil {
-				if against, inMap := e.Tags[k]; inMap {
-					if m.MatchString(against) {
-						return false
-					}
-				}
-			}
 		}
 	}
-
 	return true
 }
 
 // check if any of p's matches are satisfied by the event
 func (p *Policy) CheckMatch(e *event.Event) bool {
-	v := reflect.ValueOf(e).Elem()
 	for k, m := range p.r_match {
-		elem := v.FieldByName(formatFileName(k))
-
 		// if the element does not match the regex pattern, the event does not fully match
-		if !m.MatchString(elem.String()) {
-
-			// check againt the element's tags
-			if e.Tags == nil {
-				return false
-			}
-			if against, inMap := e.Tags[k]; inMap {
-				if !m.MatchString(against) {
-					return false
-				}
-			} else {
-				return false
-			}
+		if !m.MatchString(e.Get(k)) {
+			return false
 		}
 	}
-
 	return true
 }
