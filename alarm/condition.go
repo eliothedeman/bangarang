@@ -4,6 +4,7 @@ import (
 	"math"
 	"regexp"
 	"sync"
+	"time"
 
 	"github.com/eliothedeman/bangarang/event"
 	"github.com/eliothedeman/smoothie"
@@ -15,18 +16,35 @@ var (
 )
 
 type Condition struct {
-	Greater       *float64 `json:"greater"`
-	Less          *float64 `json:"less"`
-	Exactly       *float64 `json:"exactly"`
-	StdDev        *StdDev  `json:"std_dev"`
-	Escalation    string   `json:"escalation"`
-	Occurences    int      `json:"occurences"`
-	WindowSize    int      `json:"window_size"`
+	Greater       *float64     `json:"greater"`
+	Less          *float64     `json:"less"`
+	Exactly       *float64     `json:"exactly"`
+	StdDev        *StdDev      `json:"std_dev"`
+	Escalation    string       `json:"escalation"`
+	Occurences    int          `json:"occurences"`
+	WindowSize    int          `json:"window_size"`
+	Aggregation   *Aggregation `json:"agregation"`
+	trackFunc     TrackFunc
 	groupBy       grouper
 	checks        []satisfier
 	eventTrackers map[string]*eventTracker
 	sync.Mutex
 	ready bool
+}
+
+// Config for checks based on the aggrigation of data over a time window, instead of individual data points
+type Aggregation struct {
+	WindowLength int `json:"window_length"`
+}
+
+// Config for checks based on standard deviation
+type StdDev struct {
+	Sigma      float64 `json:"sigma"`
+	WindowSize *int    `json:"window_size"`
+}
+
+type aggregator struct {
+	nextCloseout time.Time
 }
 
 type matcher struct {
@@ -56,39 +74,67 @@ type eventTracker struct {
 	df         *smoothie.DataFrame
 	states     *smoothie.DataFrame
 	occurences int
+
+	// optional
+	agg *aggregator
 }
 
 type satisfier func(e *event.Event) bool
 
-type StdDev struct {
-	Sigma      float64 `json:"sigma"`
-	WindowSize *int    `json:"window_size"`
+func (c *Condition) newTracker() *eventTracker {
+	et := &eventTracker{
+		df:     smoothie.NewDataFrame(c.WindowSize),
+		states: smoothie.NewDataFrameFromSlice(make([]float64, STATUS_SIZE)),
+	}
+
+	if c.Aggregation != nil {
+		et.agg = &aggregator{}
+	}
+
+	return et
 }
 
 func (c *Condition) DoOnTracker(e *event.Event, dot func(*eventTracker)) {
 	c.Lock()
 	et, ok := c.eventTrackers[c.groupBy.genIndexName(e)]
 	if !ok {
-		df := smoothie.NewDataFrame(c.WindowSize)
-		states := smoothie.NewDataFrameFromSlice(make([]float64, STATUS_SIZE))
-		et = &eventTracker{
-			df:     df,
-			states: states,
-		}
+		et = c.newTracker()
 		c.eventTrackers[c.groupBy.genIndexName(e)] = et
 	}
 	dot(et)
 	c.Unlock()
 }
 
-// start tracking an event, and returns if the event has hit it's occurence settings
-func (c *Condition) TrackEvent(e *event.Event) bool {
+type TrackFunc func(c *Condition, e *event.Event) bool
+
+func AggregationTrack(c *Condition, e *event.Event) bool {
+	c.DoOnTracker(e, func(t *eventTracker) {
+
+		// if we are still within the closeout, add to the current value
+		if time.Now().Before(t.agg.nextCloseout) {
+			t.df.Insert(0, t.df.Index(0)+e.Metric)
+
+			// if we are after the closeout, start a new datapoint and close out the old one
+		} else {
+			t.df.Push(e.Metric)
+			t.agg.nextCloseout = time.Now().Add(time.Second * time.Duration(c.Aggregation.WindowLength))
+		}
+	})
+
+	return c.OccurencesHit(e)
+}
+
+func SimpleTrack(c *Condition, e *event.Event) bool {
 	c.DoOnTracker(e, func(t *eventTracker) {
 		t.df.Push(e.Metric)
 	})
 
 	return c.OccurencesHit(e)
+}
 
+// start tracking an event, and returns if the event has hit it's occurence settings
+func (c *Condition) TrackEvent(e *event.Event) bool {
+	return c.trackFunc(c, e)
 }
 
 func (c *Condition) StateChanged(e *event.Event) bool {
@@ -161,7 +207,26 @@ func (c *Condition) compileChecks() []satisfier {
 			return met
 		})
 	}
+
+	// if we are using aggregation, replace all with the aggregation form
+	if c.Aggregation != nil {
+		for i := range s {
+			s[i] = c.wrapAggregation(s[i])
+		}
+	}
 	return s
+}
+
+func (c *Condition) wrapAggregation(s satisfier) satisfier {
+	return func(e *event.Event) bool {
+		// create a new event with the aggregated value
+		ne := *e
+		c.DoOnTracker(e, func(t *eventTracker) {
+			ne.Metric = t.df.Index(0)
+		})
+
+		return s(&ne)
+	}
 }
 
 func compileGrouper(gb map[string]string) grouper {
@@ -170,6 +235,14 @@ func compileGrouper(gb map[string]string) grouper {
 		g = append(g, &matcher{name: k, match: regexp.MustCompile(v)})
 	}
 	return g
+}
+
+func getTrackingFunc(c *Condition) TrackFunc {
+	if c.Aggregation != nil {
+		return AggregationTrack
+	}
+
+	return SimpleTrack
 }
 
 func (c *Condition) init(groupBy map[string]string) {
@@ -189,5 +262,9 @@ func (c *Condition) init(groupBy map[string]string) {
 	if c.WindowSize == 0 {
 		c.WindowSize = DEFAULT_WINDOW_SIZE
 	}
+
+	// decide which tracking method we will use
+	c.trackFunc = getTrackingFunc(c)
+
 	c.ready = true
 }

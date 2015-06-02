@@ -46,18 +46,25 @@ func (p *Policy) Compile() {
 		p.r_not_match = make(map[string]*regexp.Regexp)
 	}
 
+	// if we don't have at least three componants of the group by, establish them from the defaults
 	if len(p.GroupBy) < 3 {
-		tmp := map[string]string{}
-		for k, v := range DEFAULT_GROUP_BY {
-			tmp[k] = v
+
+		if len(p.GroupBy) == 0 {
+			p.GroupBy = DEFAULT_GROUP_BY
+
+		} else {
+
+			tmp := map[string]string{}
+			for k, v := range DEFAULT_GROUP_BY {
+				tmp[k] = v
+			}
+
+			for k, v := range p.GroupBy {
+				tmp[k] = v
+			}
+
+			p.GroupBy = tmp
 		}
-
-		for k, v := range p.GroupBy {
-			tmp[k] = v
-		}
-
-		p.GroupBy = tmp
-
 	}
 
 	for k, v := range p.Match {
