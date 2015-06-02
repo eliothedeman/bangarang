@@ -36,6 +36,7 @@ type matcher struct {
 
 type grouper []*matcher
 
+// generate an index name by using group-by statements
 func (g grouper) genIndexName(e *event.Event) string {
 	name := ""
 	for _, m := range g {
@@ -43,9 +44,9 @@ func (g grouper) genIndexName(e *event.Event) string {
 
 		switch len(res) {
 		case 1:
-			name = name + res[0]
+			name = name + ":" + res[0]
 		case 2:
-			name = name + res[1]
+			name = name + ":" + res[1]
 		}
 	}
 	return name
