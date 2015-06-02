@@ -87,6 +87,31 @@ The "escalations_dir" spesified above will be filled with seperate
 }
 ```
 
+Alerts can also be based on aggregations over a "group-by" regex pattern
+```javascript
+{
+		"match": {		// <- will pass the event on if any of the match cases are satisifed
+			"service": "my.service"
+		},
+		"group_by": {
+			"host": "\\w+\\.(?P<deployment>\\w+)\\.\\w+" // <- will aggregate by the second element of the host name
+		},
+		"crit": { 		// <- the event will only be passed if the metric
+						// 	   meets all of the following conditions
+			"aggregation": {
+				"window_length": 60 // <- number of seconds the aggregation window is open
+			},
+			"greater": 200.0,
+			"less": 12.0,
+			"exactly": 25.0,
+			"occurences": 3 // <- will only go critical if this happens 3 times
+			"escalation": "demo" // <- will be passed on to this escalation policy
+		}
+	}
+}
+```
+
+
 ## Goals
 A simple stream processor for matching incoming metrics, to predefined alert conditions.
 
