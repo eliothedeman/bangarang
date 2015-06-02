@@ -1,6 +1,9 @@
 package event
 
 import "fmt"
+import (
+	"strings"
+)
 
 const (
 	OK = iota
@@ -21,6 +24,27 @@ type Event struct {
 	Status     int               `json:"status" msg:"status"`
 	IncidentId *int64            `json:"incident,omitempty" msg:"incident_id"`
 	indexName  string
+}
+
+// Get any value on an event as a string
+func (e *Event) Get(key string) string {
+
+	// attempt to find the string values of the event
+	switch strings.ToLower(key) {
+	case "host":
+		return e.Host
+	case "service":
+		return e.Service
+	case "sub_service":
+		return e.SubService
+	}
+
+	// if we make it to this point, assume we are looking for a tag
+	if val, ok := e.Tags[key]; ok {
+		return val
+	}
+
+	return ""
 }
 
 func (e *Event) IndexName() string {
