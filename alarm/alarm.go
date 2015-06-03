@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"sync"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/event"
 	"github.com/eliothedeman/workhorse/config"
 )
@@ -77,6 +78,7 @@ func GetFactory(name string) AlarmFactory {
 }
 
 func LoadFactory(name string, f AlarmFactory) {
+	logrus.Infof("Loading alarm factory %s", name)
 	alarms.Lock()
 	alarms.factories[name] = f
 	alarms.Unlock()

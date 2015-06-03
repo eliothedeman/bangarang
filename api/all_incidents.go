@@ -1,9 +1,9 @@
 package api
 
 import (
-	"log"
 	"net/http"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/pipeline"
 	"github.com/pquerna/ffjson/ffjson"
 )
@@ -25,12 +25,13 @@ func (a *AllIncidents) EndPoint() string {
 
 // list all the current incidents for the pipeline
 func (a *AllIncidents) Get(w http.ResponseWriter, r *http.Request) {
+	logrus.Info("Serving GET all-incidents")
 	w.Header().Add("content-type", "application/json")
 	ins := a.pipeline.ListIncidents()
 
 	buff, err := ffjson.Marshal(ins)
 	if err != nil {
-		log.Println(err)
+		logrus.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
