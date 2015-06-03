@@ -19,6 +19,10 @@ var (
 	INCIDENT_COUNT_NAME    = []byte("incident_count")
 )
 
+const (
+	KEEP_ALIVE_SERVICE_NAME = "KeepAlive"
+)
+
 type Index struct {
 	pool       *EncodingPool
 	db         *bolt.DB
@@ -46,8 +50,6 @@ func NewIndex(dbName string) *Index {
 	case <-db_wait:
 		log.Printf("Opened db %s", dbName)
 	}
-
-	db.NoSync = true
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists(EVENT_BUCKET_NAME)
@@ -94,18 +96,22 @@ func (i *Index) Delete() error {
 	return os.Remove(i.dbFileName)
 }
 
-// get all of the hosts that have missed their keepalives
-func (i *Index) GetExpired(age time.Duration) []string {
-	hosts := make([]string, 0, 10)
+// return all keep alive's as events
+func (i *Index) GetKeepAlives() []*Event {
 	n := time.Now()
 	i.ka_lock.Lock()
+	events := make([]*Event, len(i.keepAlives))
+	x := 0
 	for host, t := range i.keepAlives {
-		if n.Sub(t) > age {
-			hosts = append(hosts, host)
+		events[x] = &Event{
+			Host:    host,
+			Metric:  n.Sub(t).Seconds(),
+			Service: KEEP_ALIVE_SERVICE_NAME,
 		}
+		x += 1
 	}
 	i.ka_lock.Unlock()
-	return hosts
+	return events
 }
 
 func (i *Index) GetIncidentCounter() int64 {
@@ -197,21 +203,18 @@ func (i *Index) ListIncidents() []*Incident {
 }
 
 // get an event from the index
-func (i *Index) GetIncident(id int64) *Incident {
+func (i *Index) GetIncident(id []byte) *Incident {
 	var buff []byte
-	id_buff := make([]byte, 8)
-	binary.PutVarint(id_buff, id)
 
 	// attempt to find the incident in the index
 	i.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(INCIDENT_BUCKET_NAME)
-		buff = b.Get(id_buff)
+		buff = b.Get(id)
 		return nil
 	})
 
 	// if we couldn't find the incident
 	if len(buff) == 0 {
-		log.Printf("Unable to find incident with id %d", id)
 		return nil
 	}
 
@@ -227,34 +230,15 @@ func (i *Index) GetIncident(id int64) *Incident {
 	return in
 }
 
-func (i *Index) DeleteIncidentById(id int64) {
-	id_buff := make([]byte, 8)
-	binary.PutVarint(id_buff, id)
+func (i *Index) DeleteIncidentById(id []byte) {
 	err := i.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(INCIDENT_BUCKET_NAME)
-		return b.Delete(id_buff)
+		return b.Delete(id)
 	})
 
 	if err != nil {
 		log.Println(err)
 	}
-}
-
-// remove an incident by it's associated event if it exists
-func (i *Index) DeleteIncidentByEvent(e *Event) {
-	id := e.IncidentId
-	if id == nil {
-		if e.LastEvent != nil {
-			id = e.LastEvent.IncidentId
-		}
-	}
-
-	// if no associated incident could be found, return
-	if id == nil {
-		return
-	}
-
-	i.DeleteIncidentById(*id)
 }
 
 // updates the event, will not apply any of the dedupe logic
@@ -283,66 +267,9 @@ func (i *Index) UpdateEvent(e *Event) {
 
 // insert the event into the index
 func (i *Index) PutEvent(e *Event) {
-	e.LastEvent = i.GetEvent(e.IndexName())
-	if e.LastEvent != nil {
-		e.LastEvent.LastEvent = nil
-	}
-	var buff []byte
-	var err error
-
-	// encode the event
-	i.pool.Encode(func(enc Encoder) {
-		buff, err = enc.Encode(e)
-	})
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	// write the event to the db
-	err = i.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(EVENT_BUCKET_NAME)
-		return b.Put(e.IndexName(), buff)
-	})
 
 	// update the host's keepalive value
 	i.ka_lock.Lock()
 	i.keepAlives[e.Host] = time.Now()
 	i.ka_lock.Unlock()
-}
-
-// fetch the event with the given index name
-func (i *Index) GetEvent(name []byte) *Event {
-	found := false
-	var raw []byte
-	i.db.View(func(t *bolt.Tx) error {
-		b := t.Bucket(EVENT_BUCKET_NAME)
-		raw = b.Get(name)
-
-		// if we don't have anything at that key, exit early
-		if len(raw) == 0 {
-			return nil
-		}
-		found = true
-		return nil
-	})
-
-	if !found {
-		return nil
-	}
-
-	var e *Event
-	var err error
-	i.pool.Decode(func(dec Decoder) {
-		e, err = dec.Decode(raw)
-		if err != nil {
-			log.Println(err)
-		}
-	})
-
-	if err != nil {
-		return nil
-	}
-
-	return e
 }

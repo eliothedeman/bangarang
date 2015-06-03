@@ -28,24 +28,6 @@ func newTestEvent(h, s, ss string, m float64) *Event {
 	}
 }
 
-func TestIndexPut(t *testing.T) {
-	i := newTestIndex()
-	defer i.Delete()
-
-	e1 := newTestEvent("h", "s", "ss", 0.0)
-	e2 := newTestEvent("h", "s", "ss", 0.0)
-
-	i.PutEvent(e1)
-	i.PutEvent(e2)
-
-	e3 := i.GetEvent([]byte(e2.IndexName()))
-
-	if e3.LastEvent == nil {
-		t.Fail()
-	}
-
-}
-
 func BenchmarkIndexPutJSON(b *testing.B) {
 	index := newTestIndex()
 	index.pool = NewEncodingPool(NewJsonEncoder, NewJsonDecoder, 4)
@@ -83,34 +65,16 @@ func TestDeleteIncidentById(t *testing.T) {
 	i := newTestIndex()
 	defer i.Delete()
 	e := newTestEvent("h", "s", "ss", 1)
-	in := NewIncident("DeleteIncident", i, e)
-
-	in = i.GetIncident(in.Id)
+	in := NewIncident("DeleteIncident", e)
+	i.PutIncident(in)
+	in = i.GetIncident(in.IndexName())
 	if in == nil {
 		t.Fail()
 	}
 
-	i.DeleteIncidentById(in.Id)
+	i.DeleteIncidentById(in.IndexName())
 
-	in = i.GetIncident(in.Id)
-	if in != nil {
-		t.Fail()
-	}
-}
-
-func TestDeleteIncidentByEvent(t *testing.T) {
-	i := newTestIndex()
-	defer i.Delete()
-	e := newTestEvent("h", "s", "ss", 1)
-	in := NewIncident("DeleteIncident", i, e)
-
-	in = i.GetIncident(in.Id)
-	if in == nil {
-		t.Fail()
-	}
-
-	i.DeleteIncidentByEvent(e)
-	in = i.GetIncident(in.Id)
+	in = i.GetIncident(in.IndexName())
 	if in != nil {
 		t.Fail()
 	}
@@ -120,7 +84,8 @@ func TestListIncidents(t *testing.T) {
 	i := newTestIndex()
 	defer i.Delete()
 	e := newTestEvent("h", "s", "ss", 1)
-	in := NewIncident("ListIncidents", i, e)
+	in := NewIncident("ListIncidents", e)
+	i.PutIncident(in)
 
 	ins := i.ListIncidents()
 
@@ -133,9 +98,10 @@ func TestAddIncident(t *testing.T) {
 	i := newTestIndex()
 	defer i.Delete()
 	e := newTestEvent("h", "s", "ss", 1)
-	in := NewIncident("test", i, e)
+	in := NewIncident("test", e)
+	i.PutIncident(in)
 
-	b := i.GetIncident(in.Id)
+	b := i.GetIncident(in.IndexName())
 
 	if len(in.EventName) != len(b.EventName) {
 		t.Fail()

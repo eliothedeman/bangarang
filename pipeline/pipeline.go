@@ -1,146 +1,73 @@
 package pipeline
 
 import (
-	"bytes"
-	"fmt"
-	"io/ioutil"
 	"log"
-	"net"
-	"net/http"
 	"runtime"
 	"time"
 
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/event"
+	"github.com/eliothedeman/bangarang/provider"
 )
 
 type Pipeline struct {
-	tcpPort, httpPort *int
-	escalations       []*alarm.Escalation
-	keepAliveAge      time.Duration
-	globalPolicy      *alarm.Policy
-	index             *event.Index
-	encodingPool      *event.EncodingPool
+	keepAliveAge       time.Duration
+	keepAliveCheckTime time.Duration
+	globalPolicy       *alarm.Policy
+	escalations        alarm.AlarmCollection
+	policies           []*alarm.Policy
+	index              *event.Index
+	providers          provider.EventProviderCollection
+	encodingPool       *event.EncodingPool
 }
 
 func NewPipeline(conf *config.AppConfig) *Pipeline {
 	p := &Pipeline{
-		encodingPool: event.NewEncodingPool(event.EncoderFactories[*conf.Encoding], event.DecoderFactories[*conf.Encoding], runtime.NumCPU()),
-		tcpPort:      conf.TcpPort,
-		httpPort:     conf.HttpPort,
-		keepAliveAge: conf.KeepAliveAge,
-		escalations:  conf.Escalations,
-		index:        event.NewIndex(conf.DbPath),
-		globalPolicy: conf.GlobalPolicy,
+		encodingPool:       event.NewEncodingPool(event.EncoderFactories[*conf.Encoding], event.DecoderFactories[*conf.Encoding], runtime.NumCPU()),
+		keepAliveAge:       conf.KeepAliveAge,
+		keepAliveCheckTime: 30 * time.Second,
+		escalations:        *conf.Escalations,
+		index:              event.NewIndex(conf.DbPath),
+		providers:          *conf.EventProviders,
+		policies:           conf.Policies,
+		globalPolicy:       conf.GlobalPolicy,
 	}
 	return p
 }
 
 func (p *Pipeline) checkExpired() {
 	for {
-		time.Sleep(30 * time.Second)
+		time.Sleep(p.keepAliveCheckTime)
 
-		hosts := p.index.GetExpired(p.keepAliveAge)
-		for _, host := range hosts {
-			e := &event.Event{
-				Host:    host,
-				Service: "KeepAlive",
-				Metric:  float64(p.keepAliveAge),
-			}
+		events := p.index.GetKeepAlives()
+		for _, e := range events {
 			p.Process(e)
 		}
 	}
 }
 
 func (p *Pipeline) Start() {
-	go p.IngestHttp()
-	go p.IngestTcp()
 	go p.checkExpired()
-}
+	dst := make(chan *event.Event, 25)
 
-func (p *Pipeline) IngestHttp() {
-	if p.httpPort == nil {
-		return
+	// start up all of the providers
+	for _, ep := range p.providers {
+		go ep.Start(dst)
 	}
-	http.HandleFunc("/ingest", func(w http.ResponseWriter, r *http.Request) {
-		buff, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+
+	// fan in all of the providers and process them
+	go func() {
 		var e *event.Event
-		p.encodingPool.Decode(func(d event.Decoder) {
-			e, err = d.Decode(buff)
-		})
-		if err != nil {
-			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		for {
+			// recieve the event
+			e = <-dst
+
+			// process the event
+			p.Process(e)
 		}
+	}()
 
-		p.Process(e)
-	})
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *p.httpPort), nil))
-}
-
-func (p *Pipeline) consumeTcp(c *net.TCPConn) {
-	buff := make([]byte, 1024*200)
-	term := []byte{byte(0)}
-	for {
-		n, err := c.Read(buff)
-		if err != nil {
-			log.Println(err)
-			c.Close()
-			return
-		}
-
-		buffs := bytes.Split(buff[:n], term)
-		for _, b := range buffs {
-			p.consume(b)
-		}
-	}
-}
-
-func (p *Pipeline) consume(buff []byte) {
-	if len(buff) < 2 {
-		return
-	}
-	var e *event.Event
-	var err error
-	p.encodingPool.Decode(func(d event.Decoder) {
-		e, err = d.Decode(buff)
-	})
-	if err != nil {
-		log.Println(err)
-	} else {
-		p.Process(e)
-	}
-}
-
-func (p *Pipeline) IngestTcp() {
-	if p.tcpPort == nil {
-		return
-	}
-	addr, err := net.ResolveTCPAddr("tcp4", fmt.Sprintf(":%d", *p.tcpPort))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	c, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for {
-		conn, err := c.AcceptTCP()
-		if err != nil {
-			log.Println(err)
-		} else {
-			go p.consumeTcp(conn)
-		}
-	}
 }
 
 // Run the given event though the pipeline
@@ -149,44 +76,65 @@ func (p *Pipeline) Process(e *event.Event) int {
 		p.index = event.NewIndex("event.db")
 	}
 
-	p.index.PutEvent(e)
 	if p.globalPolicy != nil {
 		if !p.globalPolicy.CheckMatch(e) || !p.globalPolicy.CheckNotMatch(e) {
 			return event.OK
 		}
 	}
 
-	for _, esc := range p.escalations {
-		if esc.Match(e) {
-			esc.StatusOf(e)
-			if e.StatusChanged() {
-				for _, a := range esc.Alarms {
-					err := a.Send(e)
-					if err != nil {
-						log.Println(err)
+	p.index.PutEvent(e)
+	for _, pol := range p.policies {
+		if pol.Matches(e) {
+			act := pol.Action(e)
+
+			// if there is an action to be taken
+			if act != "" {
+
+				// create a new incident for this event
+				in := p.NewIncident(pol.Name, e)
+
+				// dedup the incident
+				if p.Dedupe(in) {
+
+					// update the incident in the index
+					if in.Status != event.OK {
+						p.index.PutIncident(in)
+					} else {
+						p.index.DeleteIncidentById(in.IndexName())
+					}
+
+					// fetch the escalation to take
+					esc, ok := p.escalations[act]
+					if ok {
+
+						// send to every alarm in the escalation
+						for _, a := range esc {
+							a.Send(in)
+						}
+					} else {
+						log.Println("unknown escalation", act)
 					}
 				}
-
-				if e.Status != event.OK {
-					p.index.PutIncident(p.NewIncident(esc.EscalationPolicy, e))
-				} else {
-					p.index.DeleteIncidentByEvent(e)
-				}
-				p.index.UpdateEvent(e)
-				return e.Status
 			}
 		}
 	}
-	p.index.UpdateEvent(e)
+
 	return e.Status
+}
+
+// returns true if this is a new incident, false if it is a duplicate
+func (p *Pipeline) Dedupe(i *event.Incident) bool {
+	old := p.index.GetIncident(i.IndexName())
+
+	if old == nil {
+		return i.Status != event.OK
+	}
+
+	return old.Status != i.Status
 }
 
 func (p *Pipeline) ListIncidents() []*event.Incident {
 	return p.index.ListIncidents()
-}
-
-func (p *Pipeline) GetIncident(id int64) *event.Incident {
-	return p.index.GetIncident(id)
 }
 
 func (p *Pipeline) PutIncident(in *event.Incident) {
@@ -197,6 +145,6 @@ func (p *Pipeline) PutIncident(in *event.Incident) {
 	p.index.PutIncident(in)
 }
 
-func (p *Pipeline) NewIncident(escalation string, e *event.Event) *event.Incident {
-	return event.NewIncident(escalation, p.index, e)
+func (p *Pipeline) NewIncident(policy string, e *event.Event) *event.Incident {
+	return event.NewIncident(policy, e)
 }

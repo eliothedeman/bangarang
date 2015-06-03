@@ -1,12 +1,9 @@
 {
-	"policy": {
-		"match": {
-			"host": ".*test.*"
-		},
-		"crit": {
-			"greater": 1
-		}
+	"match": {
+		"host": ".*test.*"
+	},
+	"crit": {
+		"greater": 1
 	},
 	"escalation": "test"
-
 }

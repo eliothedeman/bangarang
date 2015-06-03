@@ -1,4 +1,4 @@
-# bangarang
+# bangarang [![Build Status](https://travis-ci.org/eliothedeman/bangarang.svg?branch=master)](https://travis-ci.org/eliothedeman/bangarang)
 A stupid simple stream processor for monitoring applications. 
 
 ## Install
@@ -29,8 +29,6 @@ bangarang uses two configurations. One main config, and a series of files that d
 ### Main Config
 ```javascript
 {
-	"tcp_port": 8083, 	// <- tcp port to listen on 
-	"http_port": 8084, 	// <- http port to listen on
 	"alarms": {			// <- a list of policies to be used by the escalations
 		"demo": [
 			{
@@ -42,6 +40,19 @@ bangarang uses two configurations. One main config, and a series of files that d
 			}
 		]
 	},
+	"event_providers": [
+		{
+			"type":"tcp", // will listen for incomming tcp connection
+			"listen":"0.0.0.0:8080" // on all interfaces with port 8080
+			"encoding": "msgp" // expecting msgpack encoding
+		},
+		{
+			"type": "http", // will serve http 
+			"listen": "0.0.0.0:8081", // on all interfaces with port 8081
+			"encoding": "json" // expecting json encoding
+
+		}
+	],
 	"escalations_dir": "/etc/bangarang/alerts/" // <- dir that holds individual alert configs
 }
 ```
@@ -51,7 +62,6 @@ The "escalations_dir" spesified above will be filled with seperate
 .json files of alert conditions like the one below. Right now each file can only contain one alert condition. The naming of these files doens't matter, as long as it has a ".json" extension.
 ```javascript
 {
-	"policy": {
 		"match": {		// <- will pass the event on if any of the match cases are satisifed
 			"service": "my.service"
 		},
@@ -64,18 +74,43 @@ The "escalations_dir" spesified above will be filled with seperate
 			"less": 12.0,
 			"exactly": 25.0,
 			"occurences": 3 // <- will only go critical if this happens 3 times
+			"escalation": "demo" // <- will be passed on to this escalation policy
 		},
 		"warn": {
 			"greater": 200.0,
 			"less": 12.0,
 			"exactly": 25.0,
 			"occurences": 2 // <- will go warning if it happens twice
+			"escalation": "demo" // <- will be passed on to this escalation policy
 		}
-	},
-	"escalation": "demo" // <- will be passed on to this escalation policy
-
+	}
 }
 ```
+
+Alerts can also be based on aggregations over a "group-by" regex pattern
+```javascript
+{
+		"match": {		// <- will pass the event on if any of the match cases are satisifed
+			"service": "my.service"
+		},
+		"group_by": {
+			"host": "\\w+\\.(?P<deployment>\\w+)\\.\\w+" // <- will aggregate by the second element of the host name
+		},
+		"crit": { 		// <- the event will only be passed if the metric
+						// 	   meets all of the following conditions
+			"aggregation": {
+				"window_length": 60 // <- number of seconds the aggregation window is open
+			},
+			"greater": 200.0,
+			"less": 12.0,
+			"exactly": 25.0,
+			"occurences": 3 // <- will only go critical if this happens 3 times
+			"escalation": "demo" // <- will be passed on to this escalation policy
+		}
+	}
+}
+```
+
 
 ## Goals
 A simple stream processor for matching incoming metrics, to predefined alert conditions.

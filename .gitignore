@@ -1,3 +1,4 @@
 cmd/bangarang/conf.json
 *.deb
 *.db
+bin/*

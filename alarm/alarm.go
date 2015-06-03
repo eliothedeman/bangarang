@@ -83,7 +83,7 @@ func LoadFactory(name string, f AlarmFactory) {
 }
 
 type Alarm interface {
-	Send(e *event.Event) error
+	Send(i *event.Incident) error
 	config.Configer
 }
 

@@ -14,8 +14,8 @@ func init() {
 type Console struct {
 }
 
-func (c *Console) Send(e *event.Event) error {
-	log.Println(e.FormatDescription())
+func (c *Console) Send(i *event.Incident) error {
+	log.Println(i.FormatDescription())
 	return nil
 }
 

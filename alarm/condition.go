@@ -2,150 +2,269 @@ package alarm
 
 import (
 	"math"
+	"regexp"
 	"sync"
-	"sync/atomic"
+	"time"
 
 	"github.com/eliothedeman/bangarang/event"
 	"github.com/eliothedeman/smoothie"
 )
 
-//go:generate ffjson $GOFILE
-
 var (
 	DEFAULT_WINDOW_SIZE = 100
+	STATUS_SIZE         = 10
 )
 
 type Condition struct {
-	Greater      *float64                 `json:"greater"`
-	Less         *float64                 `json:"less"`
-	Exactly      *float64                 `json:"exactly"`
-	StdDev       *StdDev                  `json:"std_dev"`
-	Occurences   int                      `json:"occurences"`
-	tracker      map[string]*EventTracker `-`
-	trackerMutex sync.RWMutex
+	Greater       *float64     `json:"greater"`
+	Less          *float64     `json:"less"`
+	Exactly       *float64     `json:"exactly"`
+	StdDev        *StdDev      `json:"std_dev"`
+	Escalation    string       `json:"escalation"`
+	Occurences    int          `json:"occurences"`
+	WindowSize    int          `json:"window_size"`
+	Aggregation   *Aggregation `json:"agregation"`
+	trackFunc     TrackFunc
+	groupBy       grouper
+	checks        []satisfier
+	eventTrackers map[string]*eventTracker
+	sync.Mutex
+	ready bool
 }
 
+// Config for checks based on the aggrigation of data over a time window, instead of individual data points
+type Aggregation struct {
+	WindowLength int `json:"window_length"`
+}
+
+// Config for checks based on standard deviation
 type StdDev struct {
 	Sigma      float64 `json:"sigma"`
 	WindowSize *int    `json:"window_size"`
 }
 
+type aggregator struct {
+	nextCloseout time.Time
+}
+
+type matcher struct {
+	name  string
+	match *regexp.Regexp
+}
+
+type grouper []*matcher
+
+// generate an index name by using group-by statements
+func (g grouper) genIndexName(e *event.Event) string {
+	name := ""
+	for _, m := range g {
+		res := m.match.FindStringSubmatch(e.Get(m.name))
+
+		switch len(res) {
+		case 1:
+			name = name + ":" + res[0]
+		case 2:
+			name = name + ":" + res[1]
+		}
+	}
+	return name
+}
+
+type eventTracker struct {
+	df         *smoothie.DataFrame
+	states     *smoothie.DataFrame
+	occurences int
+
+	// optional
+	agg *aggregator
+}
+
+type satisfier func(e *event.Event) bool
+
+func (c *Condition) newTracker() *eventTracker {
+	et := &eventTracker{
+		df:     smoothie.NewDataFrame(c.WindowSize),
+		states: smoothie.NewDataFrameFromSlice(make([]float64, STATUS_SIZE)),
+	}
+
+	if c.Aggregation != nil {
+		et.agg = &aggregator{}
+	}
+
+	return et
+}
+
+func (c *Condition) DoOnTracker(e *event.Event, dot func(*eventTracker)) {
+	c.Lock()
+	et, ok := c.eventTrackers[c.groupBy.genIndexName(e)]
+	if !ok {
+		et = c.newTracker()
+		c.eventTrackers[c.groupBy.genIndexName(e)] = et
+	}
+	dot(et)
+	c.Unlock()
+}
+
+type TrackFunc func(c *Condition, e *event.Event) bool
+
+func AggregationTrack(c *Condition, e *event.Event) bool {
+	c.DoOnTracker(e, func(t *eventTracker) {
+
+		// if we are still within the closeout, add to the current value
+		if time.Now().Before(t.agg.nextCloseout) {
+			t.df.Insert(0, t.df.Index(0)+e.Metric)
+
+			// if we are after the closeout, start a new datapoint and close out the old one
+		} else {
+			t.df.Push(e.Metric)
+			t.agg.nextCloseout = time.Now().Add(time.Second * time.Duration(c.Aggregation.WindowLength))
+		}
+	})
+
+	return c.OccurencesHit(e)
+}
+
+func SimpleTrack(c *Condition, e *event.Event) bool {
+	c.DoOnTracker(e, func(t *eventTracker) {
+		t.df.Push(e.Metric)
+	})
+
+	return c.OccurencesHit(e)
+}
+
 // start tracking an event, and returns if the event has hit it's occurence settings
 func (c *Condition) TrackEvent(e *event.Event) bool {
-	c.initTracker()
-	t := c.getEventTracker(e)
+	return c.trackFunc(c, e)
+}
 
-	if c.trackingStats() {
-		t.df.Push(e.Metric)
-	}
+func (c *Condition) StateChanged(e *event.Event) bool {
+	changed := false
+	c.DoOnTracker(e, func(t *eventTracker) {
+		changed = t.states.Index(0) == t.states.Index(1)
+	})
+	return changed
+}
+
+// check to see if an event has it the occurences level
+func (c *Condition) OccurencesHit(e *event.Event) bool {
+	occ := 0
 
 	if c.Satisfies(e) {
-		t.Inc()
-		return t.Occurences() >= c.Occurences
+		c.DoOnTracker(e, func(t *eventTracker) {
+			t.occurences += 1
+			occ = t.occurences
+			t.states.Push(1)
+		})
+	} else {
+		c.DoOnTracker(e, func(t *eventTracker) {
+			t.occurences = 0
+			t.states.Push(0)
+		})
 	}
 
-	return false
-
-}
-
-func (c *Condition) CleanEvent(e *event.Event) {
-	c.initTracker()
-	c.trackerMutex.Lock()
-	delete(c.tracker, e.FormatDescription())
-	c.trackerMutex.Unlock()
-
-}
-
-func (c *Condition) trackingStats() bool {
-	return c.StdDev != nil
-}
-
-func (c *Condition) getEventTracker(e *event.Event) *EventTracker {
-	c.trackerMutex.RLock()
-	t, ok := c.tracker[string(e.IndexName())]
-	c.trackerMutex.RUnlock()
-	if !ok {
-		t = NewEventTracker()
-		if c.trackingStats() {
-			if c.StdDev.WindowSize == nil {
-				c.StdDev.WindowSize = &DEFAULT_WINDOW_SIZE
-			}
-			t.initDataFrame(*c.StdDev.WindowSize)
-		}
-		c.trackerMutex.Lock()
-		c.tracker[string(e.IndexName())] = t
-		c.trackerMutex.Unlock()
-	}
-
-	return t
-}
-
-func (c *Condition) initTracker() {
-	if c.tracker == nil {
-		c.trackerMutex.Lock()
-		c.tracker = make(map[string]*EventTracker)
-		c.trackerMutex.Unlock()
-	}
-}
-
-type EventTracker struct {
-	df        *smoothie.DataFrame
-	occurence int64
-}
-
-func (e *EventTracker) initDataFrame(windowSize int) {
-	e.df = smoothie.EmptyDataFrame(windowSize)
-}
-
-func NewEventTracker() *EventTracker {
-	return &EventTracker{}
-}
-
-func (e *EventTracker) Inc() {
-	atomic.AddInt64(&e.occurence, 1)
-}
-
-func (e *EventTracker) Reset() {
-	atomic.StoreInt64(&e.occurence, 0)
-}
-
-func (e *EventTracker) Occurences() int {
-	return int(atomic.LoadInt64(&e.occurence))
+	return occ >= c.Occurences
 }
 
 // check if an event satisfies a condition
 func (c *Condition) Satisfies(e *event.Event) bool {
-	if c.Greater != nil {
-		if e.Metric > *c.Greater {
+	for _, check := range c.checks {
+		if check(e) {
 			return true
-		}
-	}
-
-	if c.Less != nil {
-		if e.Metric < *c.Less {
-			return true
-		}
-	}
-
-	if c.Exactly != nil {
-		if e.Metric == *c.Exactly {
-			return true
-		}
-	}
-
-	if c.trackingStats() {
-
-		// check if the current metric is outside of n * sigma
-		if c.StdDev != nil {
-			c.trackerMutex.RLock()
-			t := c.tracker[string(e.IndexName())]
-			avg := t.df.Avg()
-			if math.Abs(e.Metric-avg) > t.df.StdDev()*c.StdDev.Sigma {
-				return true
-			}
-			c.trackerMutex.RUnlock()
 		}
 	}
 
 	return false
+}
+
+// create a list of checks that the condition will use to test events
+func (c *Condition) compileChecks() []satisfier {
+	s := []satisfier{}
+
+	if c.Greater != nil {
+		s = append(s, func(e *event.Event) bool {
+			return e.Metric > *c.Greater
+		})
+	}
+	if c.Less != nil {
+		s = append(s, func(e *event.Event) bool {
+			return e.Metric < *c.Less
+		})
+	}
+	if c.Exactly != nil {
+		s = append(s, func(e *event.Event) bool {
+			return e.Metric == *c.Less
+		})
+	}
+	if c.StdDev != nil {
+		s = append(s, func(e *event.Event) bool {
+			met := false
+			c.DoOnTracker(e, func(t *eventTracker) {
+				avg := t.df.Avg()
+				if math.Abs(e.Metric-avg) > t.df.StdDev()*c.StdDev.Sigma {
+					met = true
+				}
+			})
+			return met
+		})
+	}
+
+	// if we are using aggregation, replace all with the aggregation form
+	if c.Aggregation != nil {
+		for i := range s {
+			s[i] = c.wrapAggregation(s[i])
+		}
+	}
+	return s
+}
+
+func (c *Condition) wrapAggregation(s satisfier) satisfier {
+	return func(e *event.Event) bool {
+		// create a new event with the aggregated value
+		ne := *e
+		c.DoOnTracker(e, func(t *eventTracker) {
+			ne.Metric = t.df.Index(0)
+		})
+
+		return s(&ne)
+	}
+}
+
+func compileGrouper(gb map[string]string) grouper {
+	g := grouper{}
+	for k, v := range gb {
+		g = append(g, &matcher{name: k, match: regexp.MustCompile(v)})
+	}
+	return g
+}
+
+func getTrackingFunc(c *Condition) TrackFunc {
+	if c.Aggregation != nil {
+		return AggregationTrack
+	}
+
+	return SimpleTrack
+}
+
+func (c *Condition) init(groupBy map[string]string) {
+	c.groupBy = compileGrouper(groupBy)
+
+	c.checks = c.compileChecks()
+
+	// fixes issue where occurences are hit, even when the event doesn't satisify the condition
+	if c.Occurences < 1 {
+		c.Occurences = 1
+	}
+
+	if c.eventTrackers == nil {
+		c.eventTrackers = make(map[string]*eventTracker)
+	}
+
+	if c.WindowSize == 0 {
+		c.WindowSize = DEFAULT_WINDOW_SIZE
+	}
+
+	// decide which tracking method we will use
+	c.trackFunc = getTrackingFunc(c)
+
+	c.ready = true
 }

@@ -47,7 +47,7 @@ func TestNewTcpClient(t *testing.T) {
 	}
 
 	expected := `{ "host":"test_1","service":"test_service","sub_type":"","metric":1,"occurences":0,"tags":null,"status":0}`
-	if expected != c.buff.String() {
-		t.Fail()
+	if expected != c.buff.String()[:c.buff.Len()-len(DELIMITER)] {
+		t.Error(c.buff.String())
 	}
 }

@@ -1,0 +1,12 @@
+#!/bin/bash
+go generate ./...
+
+make
+
+mkdir -p opt/bangarang
+mkdir -p etc/bangarang
+mv bin/bangarang opt/bangarang/bangarang
+
+fpm -s dir -t deb --name bangarang -v $1 etc opt
+
+rm -r opt etc
