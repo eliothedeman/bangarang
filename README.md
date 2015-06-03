@@ -37,6 +37,19 @@ bangarang uses two configurations. One main config, and a series of files that d
 			{
 				"type": "pager_duty", // <- creates a pagerduty event
 				"key": "mytestkeyXYZ"
+			},
+			{
+				"type": "email", // <- send an email directly
+				"source_email": "ops@bigshotmonitoring.io", 
+				"dest_emails": [
+					"devnull@noproblemshere.com"
+				],
+				"server": {
+					"host": "smtp.foo.com:25",
+					"user": "bar",
+					"password": "baz",
+					"identity": "id" // <- optional
+				}
 			}
 		]
 	},
