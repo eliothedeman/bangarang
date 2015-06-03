@@ -22,8 +22,7 @@ const (
 	}`
 )
 
-
-func TestParse(t *testing.T){
+func TestParse(t *testing.T) {
 	e := &EmailConfig{}
 	err := json.Unmarshal([]byte(test_email_config), e)
 
@@ -31,8 +30,7 @@ func TestParse(t *testing.T){
 		t.Error(err)
 	}
 	if e.Server.Password != "bar" {
-	  t.Logf(e.Server.Password)
+		t.Logf(e.Server.Password)
 		t.Error("Email config not properly parsed")
 	}
 }
-
