@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/event"
@@ -38,9 +39,14 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 
 func (p *Pipeline) checkExpired() {
 	for {
+		logrus.Info("Checking for expired events.")
 		time.Sleep(p.keepAliveCheckTime)
 
+		// get keepalive events for all known hosts
 		events := p.index.GetKeepAlives()
+		logrus.Infof("Found %d hosts with keepalives", len(events))
+
+		// process every event as if it was an incomming event
 		for _, e := range events {
 			p.Process(e)
 		}
@@ -48,10 +54,13 @@ func (p *Pipeline) checkExpired() {
 }
 
 func (p *Pipeline) Start() {
+
+	logrus.Debug("Starting expiration checker")
 	go p.checkExpired()
 	dst := make(chan *event.Event, 25)
 
 	// start up all of the providers
+	logrus.Info("Starting %d providers", len(p.providers))
 	for _, ep := range p.providers {
 		go ep.Start(dst)
 	}
@@ -72,10 +81,6 @@ func (p *Pipeline) Start() {
 
 // Run the given event though the pipeline
 func (p *Pipeline) Process(e *event.Event) int {
-	if p.index == nil {
-		p.index = event.NewIndex("event.db")
-	}
-
 	if p.globalPolicy != nil {
 		if !p.globalPolicy.CheckMatch(e) || !p.globalPolicy.CheckNotMatch(e) {
 			return event.OK

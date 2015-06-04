@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/event"
 )
 
@@ -38,6 +39,8 @@ func (p *Policy) Matches(e *event.Event) bool {
 
 // compile the regex patterns for this policy
 func (p *Policy) Compile() {
+	logrus.Info("Compiling regex maches for %s", p.Name)
+
 	if p.r_match == nil {
 		p.r_match = make(map[string]*regexp.Regexp)
 	}
@@ -76,10 +79,12 @@ func (p *Policy) Compile() {
 	}
 
 	if p.Crit != nil {
+		logrus.Infof("Initializing crit for %s", p.Name)
 		p.Crit.init(p.GroupBy)
 	}
 
 	if p.Warn != nil {
+		logrus.Infof("Initializing warn for %s", p.Name)
 		p.Warn.init(p.GroupBy)
 	}
 }

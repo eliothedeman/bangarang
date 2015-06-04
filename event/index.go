@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
 	"github.com/pquerna/ffjson/ffjson"
 )
@@ -38,7 +39,7 @@ func NewIndex(dbName string) *Index {
 	go func() {
 		db, err = bolt.Open(dbName, 0600, nil)
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 		db_wait <- struct{}{}
 	}()
@@ -46,28 +47,31 @@ func NewIndex(dbName string) *Index {
 	// if the db takes more than 100 miliseconds to open, fail out
 	select {
 	case <-time.After(100 * time.Millisecond):
-		log.Fatalf("Unable to open db %s", dbName)
+		logrus.Fatalf("Unable to open db %s", dbName)
 	case <-db_wait:
-		log.Printf("Opened db %s", dbName)
+		logrus.Infof("Opened db %s", dbName)
 	}
 
 	err = db.Update(func(tx *bolt.Tx) error {
+		logrus.Info("Setting up event bucket.")
 		_, err := tx.CreateBucketIfNotExists(EVENT_BUCKET_NAME)
 		if err != nil {
 			return err
 		}
 
+		logrus.Info("Setting up management bucket.")
 		_, err = tx.CreateBucketIfNotExists(MANAGEMENT_BUCKET_NAME)
 		if err != nil {
 			return err
 		}
 
+		logrus.Info("Setting up incident bucket.")
 		_, err = tx.CreateBucketIfNotExists(INCIDENT_BUCKET_NAME)
 		return err
 	})
 
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	return &Index{
@@ -80,6 +84,7 @@ func NewIndex(dbName string) *Index {
 
 // close out the index
 func (i *Index) Close() error {
+	logrus.Infof("Closing index %s", i.dbFileName)
 	i.ka_lock.Lock()
 	i.keepAlives = make(map[string]time.Time)
 	i.ka_lock.Unlock()
@@ -93,6 +98,7 @@ func (i *Index) Delete() error {
 		log.Println(err)
 	}
 
+	logrus.Info("Deleting index %s", i.dbFileName)
 	return os.Remove(i.dbFileName)
 }
 
@@ -154,7 +160,7 @@ func (i *Index) UpdateIncidentCounter(count int64) {
 func (i *Index) PutIncident(in *Incident) {
 	buff, err := ffjson.MarshalFast(in)
 	if err != nil {
-		log.Println(err)
+		logrus.Error(err)
 		return
 	}
 
@@ -164,7 +170,7 @@ func (i *Index) PutIncident(in *Incident) {
 	})
 
 	if err != nil {
-		log.Println(err)
+		logrus.Error(err)
 	}
 
 	return
@@ -196,7 +202,7 @@ func (i *Index) ListIncidents() []*Incident {
 	})
 
 	if err != nil {
-		log.Println(err)
+		logrus.Error(err)
 	}
 
 	return ins
@@ -223,7 +229,7 @@ func (i *Index) GetIncident(id []byte) *Incident {
 	err := ffjson.Unmarshal(buff, in)
 
 	if err != nil {
-		log.Println(err)
+		logrus.Error(err)
 		return nil
 	}
 
@@ -237,7 +243,7 @@ func (i *Index) DeleteIncidentById(id []byte) {
 	})
 
 	if err != nil {
-		log.Println(err)
+		logrus.Error(err)
 	}
 }
 
@@ -249,7 +255,7 @@ func (i *Index) UpdateEvent(e *Event) {
 		buff, err = enc.Encode(e)
 	})
 	if err != nil {
-		log.Println(err)
+		logrus.Error(err)
 		return
 	}
 
@@ -259,7 +265,7 @@ func (i *Index) UpdateEvent(e *Event) {
 	})
 
 	if err != nil {
-		log.Println(err)
+		logrus.Error(err)
 		return
 	}
 

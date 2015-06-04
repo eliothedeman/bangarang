@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/event"
 	"github.com/eliothedeman/smoothie"
 )
@@ -181,21 +182,26 @@ func (c *Condition) compileChecks() []satisfier {
 	s := []satisfier{}
 
 	if c.Greater != nil {
+		logrus.Info("Adding greater than check:", *c.Greater)
 		s = append(s, func(e *event.Event) bool {
 			return e.Metric > *c.Greater
 		})
 	}
 	if c.Less != nil {
+		logrus.Info("Adding less than check:", *c.Less)
 		s = append(s, func(e *event.Event) bool {
 			return e.Metric < *c.Less
 		})
 	}
 	if c.Exactly != nil {
+		logrus.Info("Adding exactly check:", *c.Exactly)
 		s = append(s, func(e *event.Event) bool {
 			return e.Metric == *c.Less
 		})
 	}
+
 	if c.StdDev != nil {
+		logrus.Infof("Adding a standard deviation check: %+v", *c.StdDev)
 		s = append(s, func(e *event.Event) bool {
 			met := false
 			c.DoOnTracker(e, func(t *eventTracker) {
@@ -210,6 +216,7 @@ func (c *Condition) compileChecks() []satisfier {
 
 	// if we are using aggregation, replace all with the aggregation form
 	if c.Aggregation != nil {
+		logrus.Info("Converting checks to using aggregation")
 		for i := range s {
 			s[i] = c.wrapAggregation(s[i])
 		}
@@ -252,6 +259,7 @@ func (c *Condition) init(groupBy map[string]string) {
 
 	// fixes issue where occurences are hit, even when the event doesn't satisify the condition
 	if c.Occurences < 1 {
+		logrus.Warnf("Occurences must be > 1. %d given. Occurences for this condition will be set to 1.", c.Occurences)
 		c.Occurences = 1
 	}
 
