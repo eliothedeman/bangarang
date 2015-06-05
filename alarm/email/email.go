@@ -1,6 +1,8 @@
 package email
 
 import (
+	"encoding/base64"
+	"fmt"
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/event"
 	"log"
@@ -8,8 +10,6 @@ import (
 	"net/smtp"
 	"strconv"
 	"strings"
-	"fmt"
-	"encoding/base64"
 )
 
 func init() {
