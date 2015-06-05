@@ -16,7 +16,8 @@ type Configer interface {
 }
 
 var (
-	DEFAULT_ENCODING = "json"
+	DEFAULT_ENCODING  = "json"
+	DEFAULT_LOG_LEVEL = "info"
 )
 
 const (
@@ -34,6 +35,7 @@ type AppConfig struct {
 	Encoding         *string                           `json:"encoding"`
 	Policies         []*alarm.Policy                   `json:"-"`
 	EventProviders   *provider.EventProviderCollection `json:"event_providers"`
+	LogLevel         string                            `json:"log_level"`
 }
 
 func parseConfigFile(buff []byte) (*AppConfig, error) {
@@ -78,6 +80,10 @@ func parseConfigFile(buff []byte) (*AppConfig, error) {
 
 	if ac.EventProviders == nil {
 		ac.EventProviders = &provider.EventProviderCollection{}
+	}
+
+	if ac.LogLevel == "" {
+		ac.LogLevel = DEFAULT_LOG_LEVEL
 	}
 
 	return ac, nil
