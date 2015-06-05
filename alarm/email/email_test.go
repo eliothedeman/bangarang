@@ -14,11 +14,10 @@ const (
 			"bar@bar.com",
 			"baz@baz.com"
 		],
-		"server": {
-			"host": "test.foo.com:25",
-			"user": "foo",
-			"password": "bar"
-		}
+		"host": "test.foo.com",
+		"port": 25,
+		"user": "foo",
+		"password": "bar"
 	}`
 )
 
@@ -29,8 +28,8 @@ func TestParse(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if e.Server.Password != "bar" {
-		t.Logf(e.Server.Password)
+	if e.Password != "bar" {
+		t.Logf(e.Password)
 		t.Error("Email config not properly parsed")
 	}
 }

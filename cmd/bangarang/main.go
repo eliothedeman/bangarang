@@ -6,6 +6,7 @@ import (
 
 	_ "github.com/eliothedeman/bangarang/alarm/console"
 	_ "github.com/eliothedeman/bangarang/alarm/pd"
+	_ "github.com/eliothedeman/bangarang/alarm/email"
 	"github.com/eliothedeman/bangarang/api"
 	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/pipeline"
