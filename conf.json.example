@@ -1,0 +1,11 @@
+{
+	"http_port": 5555,
+	"alarms": {
+		"test": [
+			{
+				"type":"console"
+			},
+		]
+	},
+	"escalations_dir": "alerts/"
+}
