@@ -1,7 +1,7 @@
 package console
 
 import (
-	"log"
+	"github.com/Sirupsen/logrus"
 
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/event"
@@ -15,7 +15,16 @@ type Console struct {
 }
 
 func (c *Console) Send(i *event.Incident) error {
-	log.Println(i.FormatDescription())
+
+	switch i.Status {
+	case event.OK:
+		logrus.Info(i.FormatDescription())
+	case event.WARNING:
+		logrus.Warn(i.FormatDescription())
+	case event.CRITICAL:
+		logrus.Error(i.FormatDescription())
+	}
+
 	return nil
 }
 
@@ -24,6 +33,7 @@ func (c *Console) ConfigStruct() interface{} {
 }
 
 func (c *Console) Init(i interface{}) error {
+	logrus.Info("Initializing console logger.")
 	return nil
 }
 

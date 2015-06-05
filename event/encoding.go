@@ -1,5 +1,7 @@
 package event
 
+import "github.com/Sirupsen/logrus"
+
 const (
 	ENCODING_TYPE_JSON    = "json"
 	ENCODING_TYPE_MSGPACK = "msgp"
@@ -70,6 +72,8 @@ type DecFunc func(d Decoder)
 
 // starts up a goroutine for each encoder/decoder and managages incoming work on them
 func (t *EncodingPool) manage() {
+
+	logrus.Infof("Starting %d encoders", cap(t.encoders))
 	// manage encoders
 	for i := 0; i < cap(t.encoders); i++ {
 		go func() {
@@ -84,6 +88,7 @@ func (t *EncodingPool) manage() {
 		}()
 	}
 
+	logrus.Infof("Starting %d decoders", cap(t.encoders))
 	// manage decoders
 	for i := 0; i < cap(t.decoders); i++ {
 		go func() {

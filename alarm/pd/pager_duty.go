@@ -1,6 +1,7 @@
 package pd
 
 import (
+	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/event"
 	"github.com/marcw/pagerduty"
@@ -26,6 +27,7 @@ func (p *PagerDuty) ConfigStruct() interface{} {
 }
 
 func (p *PagerDuty) Init(conf interface{}) error {
+	logrus.Info("Initilizing pager duty alarm.")
 	return nil
 }
 
