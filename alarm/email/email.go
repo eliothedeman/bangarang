@@ -12,18 +12,20 @@ func init() {
 
 type Email struct {
 	conf *EmailConfig
+	Auth	*smtp.Auth
 }
 
 func NewEmail() alarm.Alarm {
 	e := &Email{
 		conf: &EmailConfig{},
+		Auth: &Auth{},
 	}
 	return e
 }
 
 func (e *Email) Send(i *event.Incident) error {
 	text := i.FormatDescription()
-	err := smtp.SendMail(e.conf.Server.Host, e.conf.Server.Auth,
+	err := smtp.SendMail(e.conf.Host+":"+strconv.Itoa(e.conf.Port), e.Auth,
 		e.conf.Sender, e.conf.Recipient, []byte(text))
 	return err
 }
@@ -32,25 +34,15 @@ func (e *Email) ConfigStruct() interface{} {
 	return e.conf
 }
 
-func (p *Email) Init(conf interface{}) error {
+func (e *Email) Init(conf interface{}) error {
+//	e.Auth = smtp.PlainAuth("", a.User, a.Password, a.Host)
 	return nil
 }
-
-func (a *SMTPServer) Init(conf interface{}) error {
-	a.Auth = smtp.PlainAuth(a.Identity, a.User, a.Password, a.Host)
-	return nil
-}
-
 type EmailConfig struct {
-	Sender    string     `json:"source_email"`
-	Recipient []string   `json:"dest_email"`
-	Server    SMTPServer `json:"server"`
-}
-
-type SMTPServer struct {
-	Host     string `json:"host"`
-	Identity string `json:"identity"`
-	User     string `json:"user"`
-	Password string `json:"password"`
-	Auth     smtp.Auth
+	Sender		string			`json:"source_email"`
+	Recipient	[]string		`json:"dest_email"`
+	Host			string 			`json:"host"`
+	User			string 			`json:"user"`
+	Password	string 			`json:"password"`
+	Port			int					`json:"port"`
 }
