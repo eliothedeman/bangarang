@@ -1,4 +1,6 @@
 cmd/bangarang/conf.json
+conf.json
+alerts
 *.deb
 *.db
 bin/*
