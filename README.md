@@ -39,17 +39,15 @@ bangarang uses two configurations. One main config, and a series of files that d
 				"key": "mytestkeyXYZ"
 			},
 			{
-				"type": "email", // <- send an email directly
+				"type": "email", // <- send an email directly via smtp
 				"source_email": "ops@bigshotmonitoring.io", 
 				"dest_emails": [
 					"devnull@noproblemshere.com"
 				],
-				"server": {
-					"host": "smtp.foo.com:25",
-					"user": "bar",
-					"password": "baz",
-					"identity": "id" // <- optional
-				}
+				"host": "smtp.foo.com",
+				"port": 587,
+				"user": "bar",
+				"password": "baz",
 			}
 		]
 	},
