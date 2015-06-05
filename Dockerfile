@@ -2,9 +2,6 @@ FROM golang:1.4
 
 ENV DEBIAN_FRONTEND noninteractive
 
-ADD conf.json /etc/bangarang/conf.json
-ADD alerts /etc/bangarang/alerts
-
 # fetch code generation deps
 RUN go get -u github.com/pquerna/ffjson
 RUN go get -u github.com/tinylib/msgp
