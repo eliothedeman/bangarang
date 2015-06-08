@@ -1,16 +1,11 @@
 package client
 
 import (
+	"encoding/binary"
 	"io"
 	"net"
 
 	"github.com/eliothedeman/bangarang/event"
-)
-
-var (
-
-	// an impossible string of bytes given all available encodings
-	DELIMITER = []byte{0, 0, 0, 0, 0, 0, 0, 0}
 )
 
 // A client which maintains an open tcp connection to the server
@@ -45,9 +40,16 @@ func (t *TcpClient) Send(e *event.Event) error {
 	t.encoder.Encode(func(enc event.Encoder) {
 		buff, err = enc.Encode(e)
 	})
+	if err != nil {
+		return err
+	}
 
-	buff = append(buff, DELIMITER...)
+	// encode the size of this buffer
+	l := make([]byte, 8)
+	binary.PutUvarint(l, uint64(len(buff)))
 
+	// write size of the upcomming event
+	_, err = t.conn.Write(l)
 	if err != nil {
 		return err
 	}
