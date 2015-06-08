@@ -19,7 +19,7 @@ func TestConfig(t *testing.T) {
 	p := NewTCPProvider()
 	conf := p.ConfigStruct().(*TCPConfig)
 	conf.Encoding = event.ENCODING_TYPE_JSON
-	conf.Listen = ":8080"
+	conf.Listen = ":8083"
 	conf.MaxDecoders = 4
 
 	err := p.Init(conf)

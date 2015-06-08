@@ -23,7 +23,7 @@ var (
 const (
 	DEFAULT_DB_PATH       = "event.db"
 	DEFAULT_KEEPALIVE_AGE = "25m"
-	DEFAULT_API_PORT      = 8080
+	DEFAULT_API_PORT      = 8081
 )
 
 type BasicAuth struct {
