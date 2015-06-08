@@ -29,7 +29,7 @@ bangarang uses two configurations. One main config, and a series of files that d
 ### Main Config
 ```javascript
 {
-	"alarms": {			// <- a list of policies to be used by the escalations
+	"escalations": {			// <- a list of policies to be used by the escalations
 		"demo": [
 			{
 				"type": "console" // <- will log every event that demo is called on
@@ -37,6 +37,17 @@ bangarang uses two configurations. One main config, and a series of files that d
 			{
 				"type": "pager_duty", // <- creates a pagerduty event
 				"key": "mytestkeyXYZ"
+			},
+			{
+				"type": "email", // <- send an email directly via smtp
+				"source_email": "ops@bigshotmonitoring.io", 
+				"dest_emails": [
+					"devnull@noproblemshere.com"
+				],
+				"host": "smtp.foo.com",
+				"port": 587,
+				"user": "bar",
+				"password": "baz",
 			}
 		]
 	},
