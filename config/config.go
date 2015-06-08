@@ -1,8 +1,13 @@
 package config
 
 import (
+	"bytes"
+	"crypto/md5"
 	"encoding/json"
+	"io"
 	"io/ioutil"
+	"math"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -122,4 +127,35 @@ func loadPolicy(fileName string) (*alarm.Policy, error) {
 	p.Compile()
 
 	return p, err
+}
+
+func FileHash(fileName string) ([]byte, error) {
+	//Chunksize used
+	const CHUNK = 8192
+
+	if !filepath.IsAbs(fileName) {
+		fileName, _ = filepath.Abs(fileName)
+	}
+
+	fp, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	defer fp.Close()
+	info, _ := fp.Stat()
+	size := info.Size()
+
+	blocks := uint64(math.Ceil(float64(size) / float64(CHUNK)))
+	hash := md5.New()
+	buf := bytes.NewBuffer(make([]byte, CHUNK))
+
+	for i := uint64(0); i < blocks; i++ {
+		//Could only clear the buffer when we know we won't fill it
+		buf.Reset()
+		fp.Read(buf.Bytes())
+		io.WriteString(hash, string(buf.Bytes()))
+	}
+
+	return hash.Sum(nil), nil
 }

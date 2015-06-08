@@ -49,9 +49,15 @@ func main() {
 	p := pipeline.NewPipeline(ac)
 	p.Start()
 
+	//Create the config hash used by the REST API
+	config_hash, err := config.FileHash(*confFile)
+	if err != nil {
+		logrus.Error(err)
+	}
+
 	logrus.Infof("Serving the http api on port %d", 8081)
 	// create and start a new api server
-	apiServer := api.NewServer(8081, p)
+	apiServer := api.NewServer(8081, p, config_hash)
 	apiServer.Serve()
 
 	<-make(chan struct{})
