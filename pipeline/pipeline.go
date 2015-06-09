@@ -22,6 +22,7 @@ type Pipeline struct {
 	providers          provider.EventProviderCollection
 	encodingPool       *event.EncodingPool
 	config             *config.AppConfig
+	tracker            *Tracker
 }
 
 func NewPipeline(conf *config.AppConfig) *Pipeline {
@@ -35,8 +36,15 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		policies:           conf.Policies,
 		globalPolicy:       conf.GlobalPolicy,
 		config:             conf,
+		tracker:            NewTracker(),
 	}
+
+	go p.tracker.Start()
 	return p
+}
+
+func (p *Pipeline) GetTracker() *Tracker {
+	return p.tracker
 }
 
 func (p *Pipeline) GetConfig() *config.AppConfig {
@@ -94,6 +102,10 @@ func (p *Pipeline) Process(e *event.Event) int {
 	}
 
 	p.index.PutEvent(e)
+
+	// track stas for this event
+	p.tracker.TrackEvent(e)
+
 	for _, pol := range p.policies {
 		if pol.Matches(e) {
 			act := pol.Action(e)

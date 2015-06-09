@@ -27,7 +27,10 @@ func testPipeline(p []*alarm.Policy) (*Pipeline, *test.TestAlert) {
 		escalations: map[string][]alarm.Alarm{
 			"test": []alarm.Alarm{ta},
 		},
+		tracker: NewTracker(),
 	}
+
+	go pipe.tracker.Start()
 	return pipe, ta
 }
 

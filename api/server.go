@@ -112,5 +112,6 @@ func NewServer(port int, pipe *pipeline.Pipeline,
 	s.construct(NewAllIncidents(pipe))
 	s.construct(NewIncident(pipe))
 	s.construct(NewConfigHash(pipe))
+	s.construct(NewEventStats(pipe))
 	return s
 }
