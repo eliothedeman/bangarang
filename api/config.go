@@ -1,25 +1,26 @@
 package api
 
 import (
-	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/eliothedeman/bangarang/pipeline"
 )
 
 // handles the api methods for incidents
-type ConfigInfo struct {
-	config_hash []byte
+type ConfigHash struct {
+	pipeline *pipeline.Pipeline
 }
 
-func NewConfig(config_hash []byte) *ConfigInfo {
-	return &ConfigInfo{
-		config_hash: config_hash,
+func NewConfigHash(pipe *pipeline.Pipeline) *ConfigHash {
+	return &ConfigHash{
+		pipeline: pipe,
 	}
 }
 
-func (i *ConfigInfo) EndPoint() string {
+func (i *ConfigHash) EndPoint() string {
 	return "/api/config/hash"
 }
 
@@ -27,12 +28,12 @@ type HashResponse struct {
 	Hash string `json:"hash"`
 }
 
-func (c *ConfigInfo) Get(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHash) Get(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("content-type", "application/json")
 
 	res := &HashResponse{
-		Hash: fmt.Sprintf("%x", md5.Sum(c.config_hash)),
+		Hash: fmt.Sprintf("%x", c.pipeline.GetConfig().Hash),
 	}
 
 	buf, err := json.Marshal(res)

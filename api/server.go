@@ -101,17 +101,16 @@ func (s *Server) Serve() error {
 }
 
 func NewServer(port int, pipe *pipeline.Pipeline,
-	auths []config.BasicAuth, c_hash []byte) *Server {
+	auths []config.BasicAuth) *Server {
 	s := &Server{
-		router:      mux.NewRouter(),
-		port:        port,
-		pipeline:    pipe,
-		auths:       auths,
-		config_hash: c_hash,
+		router:   mux.NewRouter(),
+		port:     port,
+		pipeline: pipe,
+		auths:    auths,
 	}
 
 	s.construct(NewAllIncidents(pipe))
 	s.construct(NewIncident(pipe))
-	s.construct(NewConfig(c_hash))
+	s.construct(NewConfigHash(pipe))
 	return s
 }
