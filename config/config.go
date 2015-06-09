@@ -23,7 +23,12 @@ var (
 const (
 	DEFAULT_DB_PATH       = "event.db"
 	DEFAULT_KEEPALIVE_AGE = "25m"
+	DEFAULT_API_PORT      = 8081
 )
+
+type BasicAuth struct {
+	UserName, PasswordHash string
+}
 
 type AppConfig struct {
 	EscalationsDir   string                            `json:"escalations_dir"`
@@ -32,19 +37,28 @@ type AppConfig struct {
 	DbPath           string                            `json:"db_path"`
 	Escalations      *alarm.AlarmCollection            `json:"escalations"`
 	GlobalPolicy     *alarm.Policy                     `json:"global_policy"`
-	Encoding         *string                           `json:"encoding"`
+	Encoding         string                            `json:"encoding"`
 	Policies         []*alarm.Policy                   `json:"-"`
 	EventProviders   *provider.EventProviderCollection `json:"event_providers"`
 	LogLevel         string                            `json:"log_level"`
+	ApiPort          int                               `json:"api_port"`
+	Auths            []BasicAuth                       `json:"basic_auth_users"`
+}
+
+func NewDefaultConfig() *AppConfig {
+	return &AppConfig{
+		Raw_KeepAliveAge: DEFAULT_KEEPALIVE_AGE,
+		DbPath:           DEFAULT_DB_PATH,
+		ApiPort:          DEFAULT_API_PORT,
+		Encoding:         DEFAULT_ENCODING,
+		Escalations:      &alarm.AlarmCollection{},
+		EventProviders:   &provider.EventProviderCollection{},
+	}
 }
 
 func parseConfigFile(buff []byte) (*AppConfig, error) {
 	var err error
-	ac := &AppConfig{
-		Raw_KeepAliveAge: DEFAULT_KEEPALIVE_AGE,
-		DbPath:           DEFAULT_DB_PATH,
-	}
-	ac.Escalations = &alarm.AlarmCollection{}
+	ac := NewDefaultConfig()
 
 	err = json.Unmarshal(buff, ac)
 	if err != nil {
@@ -68,10 +82,6 @@ func parseConfigFile(buff []byte) (*AppConfig, error) {
 		}
 
 		ac.Policies = append(ac.Policies, p)
-	}
-
-	if ac.Encoding == nil {
-		ac.Encoding = &DEFAULT_ENCODING
 	}
 
 	if ac.GlobalPolicy != nil {

@@ -18,7 +18,7 @@ var testConfigRaw = []byte(`
     "event_providers": [
     	{
 	    	"type": "tcp",
-	    	"listen": "localhost:8080",
+	    	"listen": "localhost:9999",
 	    	"encoding": "json"
     	}
     ],
