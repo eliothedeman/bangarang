@@ -1,7 +1,9 @@
 package config
 
 import (
+	"crypto/md5"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"path/filepath"
 	"time"
@@ -43,6 +45,7 @@ type AppConfig struct {
 	LogLevel         string                            `json:"log_level"`
 	ApiPort          int                               `json:"api_port"`
 	Auths            []BasicAuth                       `json:"basic_auth_users"`
+	Hash             []byte                            `json:"-"`
 }
 
 func NewDefaultConfig() *AppConfig {
@@ -96,6 +99,8 @@ func parseConfigFile(buff []byte) (*AppConfig, error) {
 		ac.LogLevel = DEFAULT_LOG_LEVEL
 	}
 
+	ac.Hash = fileHash(buff)
+
 	return ac, nil
 
 }
@@ -132,4 +137,12 @@ func loadPolicy(fileName string) (*alarm.Policy, error) {
 	p.Compile()
 
 	return p, err
+}
+
+func fileHash(buf []byte) []byte {
+	//Keeping this in a function to allow md5 to be easily swapped
+	///	out for some other algorithm in the future
+	hash := md5.New()
+	io.WriteString(hash, string(buf))
+	return hash.Sum(nil)
 }
