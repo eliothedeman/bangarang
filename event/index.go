@@ -46,7 +46,7 @@ func NewIndex(dbName string) *Index {
 
 	// if the db takes more than 100 miliseconds to open, fail out
 	select {
-	case <-time.After(1000 * time.Millisecond):
+	case <-time.After(2 * time.Second):
 		logrus.Fatalf("Unable to open db %s", dbName)
 	case <-db_wait:
 		logrus.Infof("Opened db %s", dbName)
