@@ -3,7 +3,6 @@ package config
 import (
 	"crypto/md5"
 	"encoding/json"
-	"io"
 	"io/ioutil"
 	"path/filepath"
 	"time"
@@ -63,6 +62,10 @@ func parseConfigFile(buff []byte) (*AppConfig, error) {
 	var err error
 	ac := NewDefaultConfig()
 
+	// this will be used to hash all the files thar are opened while parsing
+	hasher := md5.New()
+	hasher.Write(buff)
+
 	err = json.Unmarshal(buff, ac)
 	if err != nil {
 		return nil, err
@@ -79,9 +82,21 @@ func parseConfigFile(buff []byte) (*AppConfig, error) {
 	}
 
 	for _, path := range paths {
-		p, err := loadPolicy(path)
+		buff, err := loadFile(path)
 		if err != nil {
 			return ac, err
+		}
+
+		hasher.Write(buff)
+		p, err := loadPolicy(buff)
+		if err != nil {
+			return ac, err
+		}
+
+		// set up the file name for the policy
+		if p.Name == "" {
+			path = filepath.Base(path)
+			p.Name = path[:len(path)-4]
 		}
 
 		ac.Policies = append(ac.Policies, p)
@@ -99,7 +114,7 @@ func parseConfigFile(buff []byte) (*AppConfig, error) {
 		ac.LogLevel = DEFAULT_LOG_LEVEL
 	}
 
-	ac.Hash = fileHash(buff)
+	ac.Hash = hasher.Sum(nil)
 
 	return ac, nil
 
@@ -114,35 +129,22 @@ func LoadConfigFile(fileName string) (*AppConfig, error) {
 	return parseConfigFile(buff)
 }
 
-func loadPolicy(fileName string) (*alarm.Policy, error) {
+func loadFile(fileName string) ([]byte, error) {
 	if !filepath.IsAbs(fileName) {
 		fileName, _ = filepath.Abs(fileName)
-	}
-	buff, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return nil, err
-	}
 
+	}
+	return ioutil.ReadFile(fileName)
+}
+
+func loadPolicy(buff []byte) (*alarm.Policy, error) {
 	p := &alarm.Policy{}
-	err = json.Unmarshal(buff, p)
+	err := json.Unmarshal(buff, p)
 	if err != nil {
 		return p, err
-	}
-
-	if p.Name == "" {
-		fileName = filepath.Base(fileName)
-		p.Name = fileName[:len(fileName)-4]
 	}
 
 	p.Compile()
 
 	return p, err
-}
-
-func fileHash(buf []byte) []byte {
-	//Keeping this in a function to allow md5 to be easily swapped
-	///	out for some other algorithm in the future
-	hash := md5.New()
-	io.WriteString(hash, string(buf))
-	return hash.Sum(nil)
 }
