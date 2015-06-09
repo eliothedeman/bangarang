@@ -21,6 +21,7 @@ type Pipeline struct {
 	index              *event.Index
 	providers          provider.EventProviderCollection
 	encodingPool       *event.EncodingPool
+	config             *config.AppConfig
 }
 
 func NewPipeline(conf *config.AppConfig) *Pipeline {
@@ -33,8 +34,13 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		providers:          *conf.EventProviders,
 		policies:           conf.Policies,
 		globalPolicy:       conf.GlobalPolicy,
+		config:             conf,
 	}
 	return p
+}
+
+func (p *Pipeline) GetConfig() *config.AppConfig {
+	return p.config
 }
 
 func (p *Pipeline) checkExpired() {

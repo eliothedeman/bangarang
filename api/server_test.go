@@ -1,7 +1,6 @@
 package api
 
 import (
-	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -14,14 +13,13 @@ import (
 )
 
 var testPort = 8080
-var configHash = []byte{0}
 
 func newTestServerNoAuth() (*Server, int) {
 	c := config.NewDefaultConfig()
 	c.DbPath = fmt.Sprintf("%d.db", time.Now().UnixNano())
 	p := pipeline.NewPipeline(c)
 	testPort += 1
-	s := NewServer(testPort, p, nil, configHash)
+	s := NewServer(testPort, p, nil)
 	return s, testPort
 }
 
@@ -30,7 +28,7 @@ func newTestServerWithAuth(auths []config.BasicAuth) (*Server, int) {
 	c.DbPath = fmt.Sprintf("%d.db", time.Now().UnixNano())
 	p := pipeline.NewPipeline(c)
 	testPort += 1
-	s := NewServer(testPort, p, auths, nil)
+	s := NewServer(testPort, p, auths)
 	return s, testPort
 }
 
@@ -54,7 +52,7 @@ func TestConfigHash(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	exp_hash := fmt.Sprintf("%x", md5.Sum(configHash))
+	exp_hash := fmt.Sprintf("%x", s.pipeline.GetConfig().Hash)
 
 	if exp_hash != config_res.Hash {
 		t.Fatal(nil)
