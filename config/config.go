@@ -1,13 +1,10 @@
 package config
 
 import (
-	"bytes"
 	"crypto/md5"
 	"encoding/json"
 	"io"
 	"io/ioutil"
-	"math"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -48,6 +45,7 @@ type AppConfig struct {
 	LogLevel         string                            `json:"log_level"`
 	ApiPort          int                               `json:"api_port"`
 	Auths            []BasicAuth                       `json:"basic_auth_users"`
+	Hash             []byte                            `json:"-"`
 }
 
 func NewDefaultConfig() *AppConfig {
@@ -101,6 +99,8 @@ func parseConfigFile(buff []byte) (*AppConfig, error) {
 		ac.LogLevel = DEFAULT_LOG_LEVEL
 	}
 
+	ac.Hash = fileHash(buff)
+
 	return ac, nil
 
 }
@@ -139,33 +139,10 @@ func loadPolicy(fileName string) (*alarm.Policy, error) {
 	return p, err
 }
 
-func FileHash(fileName string) ([]byte, error) {
-	//Chunksize used
-	const CHUNK = 8192
-
-	if !filepath.IsAbs(fileName) {
-		fileName, _ = filepath.Abs(fileName)
-	}
-
-	fp, err := os.Open(fileName)
-	if err != nil {
-		return nil, err
-	}
-
-	defer fp.Close()
-	info, _ := fp.Stat()
-	size := info.Size()
-
-	blocks := uint64(math.Ceil(float64(size) / float64(CHUNK)))
+func fileHash(buf []byte) []byte {
+	//Keeping this in a function to allow md5 to be easily swapped
+	///	out for some other algorithm in the future
 	hash := md5.New()
-	buf := bytes.NewBuffer(make([]byte, CHUNK))
-
-	for i := uint64(0); i < blocks; i++ {
-		//Could only clear the buffer when we know we won't fill it
-		buf.Reset()
-		fp.Read(buf.Bytes())
-		io.WriteString(hash, string(buf.Bytes()))
-	}
-
-	return hash.Sum(nil), nil
+	io.WriteString(hash, string(buf))
+	return hash.Sum(nil)
 }

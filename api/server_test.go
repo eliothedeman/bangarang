@@ -17,7 +17,7 @@ func newTestServerNoAuth() (*Server, int) {
 	c.DbPath = fmt.Sprintf("%d.db", time.Now().UnixNano())
 	p := pipeline.NewPipeline(c)
 	testPort += 1
-	s := NewServer(testPort, p, nil)
+	s := NewServer(testPort, p, nil, nil)
 	return s, testPort
 }
 
@@ -26,7 +26,7 @@ func newTestServerWithAuth(auths []config.BasicAuth) (*Server, int) {
 	c.DbPath = fmt.Sprintf("%d.db", time.Now().UnixNano())
 	p := pipeline.NewPipeline(c)
 	testPort += 1
-	s := NewServer(testPort, p, auths)
+	s := NewServer(testPort, p, auths, nil)
 	return s, testPort
 }
 

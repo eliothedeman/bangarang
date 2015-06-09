@@ -32,10 +32,10 @@ type Deleter interface {
 
 // Serves the http api for bangarang
 type Server struct {
-	router   *mux.Router
-	port     int
-	pipeline *pipeline.Pipeline
-	auths    []config.BasicAuth
+	router      *mux.Router
+	port        int
+	pipeline    *pipeline.Pipeline
+	auths       []config.BasicAuth
 	config_hash []byte
 }
 
@@ -100,12 +100,13 @@ func (s *Server) Serve() error {
 	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), s.router)
 }
 
-func NewServer(port int, pipe *pipeline.Pipeline, auths []config.BasicAuth) *Server {
+func NewServer(port int, pipe *pipeline.Pipeline,
+	auths []config.BasicAuth, c_hash []byte) *Server {
 	s := &Server{
-		router:   mux.NewRouter(),
-		port:     port,
-		pipeline: pipe,
-		auths:    auths,
+		router:      mux.NewRouter(),
+		port:        port,
+		pipeline:    pipe,
+		auths:       auths,
 		config_hash: c_hash,
 	}
 
