@@ -17,5 +17,6 @@ RUN export PATH=$PATH:/go/bin
 
 EXPOSE 5555 
 EXPOSE 5556 
+EXPOSE 8081 
 
 ENTRYPOINT /go/bin/bangarang -conf=/etc/bangarang/conf.json
