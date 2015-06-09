@@ -25,7 +25,7 @@ type Pipeline struct {
 
 func NewPipeline(conf *config.AppConfig) *Pipeline {
 	p := &Pipeline{
-		encodingPool:       event.NewEncodingPool(event.EncoderFactories[*conf.Encoding], event.DecoderFactories[*conf.Encoding], runtime.NumCPU()),
+		encodingPool:       event.NewEncodingPool(event.EncoderFactories[conf.Encoding], event.DecoderFactories[conf.Encoding], runtime.NumCPU()),
 		keepAliveAge:       conf.KeepAliveAge,
 		keepAliveCheckTime: 30 * time.Second,
 		escalations:        *conf.Escalations,

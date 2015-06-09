@@ -57,7 +57,7 @@ func main() {
 
 	logrus.Infof("Serving the http api on port %d", 8081)
 	// create and start a new api server
-	apiServer := api.NewServer(8081, p, config_hash)
+	apiServer := api.NewServer(ac.ApiPort, p, ac.Auths, config_hash)
 	apiServer.Serve()
 
 	<-make(chan struct{})

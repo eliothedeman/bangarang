@@ -4,6 +4,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/client"
 	"github.com/eliothedeman/bangarang/event"
 )
@@ -19,7 +20,7 @@ func TestConfig(t *testing.T) {
 	p := NewTCPProvider()
 	conf := p.ConfigStruct().(*TCPConfig)
 	conf.Encoding = event.ENCODING_TYPE_JSON
-	conf.Listen = ":8080"
+	conf.Listen = ":8083"
 	conf.MaxDecoders = 4
 
 	err := p.Init(conf)
@@ -69,4 +70,40 @@ func TestStart(t *testing.T) {
 	if e2.Host != e.Host {
 		t.Fail()
 	}
+}
+
+func TestMultipleEvents(t *testing.T) {
+	p := NewTCPProvider()
+	conf := p.ConfigStruct().(*TCPConfig)
+	conf.Encoding = event.ENCODING_TYPE_MSGPACK
+	conf.Listen = ":8084"
+	conf.MaxDecoders = 4
+	p.Init(conf)
+
+	cli, err := client.NewTcpClient("localhost:8084", event.ENCODING_TYPE_MSGPACK, 1)
+	if err != nil {
+		t.Error(err)
+	}
+	e := &event.Event{}
+	e.Host = "this is a test"
+
+	dst := make(chan *event.Event, 10)
+	go p.Start(dst)
+
+	go func() {
+
+		for i := 0; i < 5; i++ {
+			e.Metric = float64(i)
+			err = cli.Send(e)
+			if err != nil {
+				t.Error(err)
+			}
+		}
+	}()
+
+	for i := 0; i < 5; i++ {
+		e2 := <-dst
+		logrus.Info(e2)
+	}
+
 }
