@@ -23,7 +23,7 @@ windows:
 
 # docker stuff
 build:
-	docker build -t $(IMAGE_NAME) .
+	docker build --no-cache -t $(IMAGE_NAME) .
 
 start: 
 	cwd=$(pwd)
