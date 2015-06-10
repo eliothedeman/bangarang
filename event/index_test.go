@@ -1,7 +1,6 @@
 package event
 
 import (
-	"fmt"
 	"log"
 	"testing"
 )
@@ -16,7 +15,7 @@ func init() {
 
 func newTestIndex() *Index {
 	numIndexes += 1
-	return NewIndex(fmt.Sprintf("test%d.db", numIndexes))
+	return NewIndex()
 }
 
 func newTestEvent(h, s, ss string, m float64) *Event {
@@ -28,39 +27,6 @@ func newTestEvent(h, s, ss string, m float64) *Event {
 	}
 }
 
-func BenchmarkIndexPutJSON(b *testing.B) {
-	index := newTestIndex()
-	index.pool = NewEncodingPool(NewJsonEncoder, NewJsonDecoder, 4)
-	defer index.Delete()
-	events := make([]*Event, 1000)
-
-	for i := 0; i < 1000; i++ {
-		events[i] = newTestEvent("h", "s", "ss", float64(i))
-	}
-
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		index.PutEvent(events[i%1000])
-	}
-}
-
-func BenchmarkIndexPutMSGP(b *testing.B) {
-	index := newTestIndex()
-	index.pool = NewEncodingPool(NewMsgPackEncoder, NewMsgPackDecoder, 4)
-	defer index.Delete()
-	events := make([]*Event, 1000)
-
-	for i := 0; i < 1000; i++ {
-		events[i] = newTestEvent("h", "s", "ss", float64(i))
-	}
-
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		index.PutEvent(events[i%1000])
-	}
-}
 func TestDeleteIncidentById(t *testing.T) {
 	i := newTestIndex()
 	defer i.Delete()

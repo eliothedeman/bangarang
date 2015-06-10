@@ -12,6 +12,10 @@ import (
 	"github.com/eliothedeman/bangarang/provider"
 )
 
+const (
+	KEEP_ALIVE_SERVICE_NAME = "KeepAlive"
+)
+
 type Pipeline struct {
 	keepAliveAge       time.Duration
 	keepAliveCheckTime time.Duration
@@ -31,7 +35,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		keepAliveAge:       conf.KeepAliveAge,
 		keepAliveCheckTime: 30 * time.Second,
 		escalations:        *conf.Escalations,
-		index:              event.NewIndex(conf.DbPath),
+		index:              event.NewIndex(),
 		providers:          *conf.EventProviders,
 		policies:           conf.Policies,
 		globalPolicy:       conf.GlobalPolicy,
@@ -52,12 +56,13 @@ func (p *Pipeline) GetConfig() *config.AppConfig {
 }
 
 func (p *Pipeline) checkExpired() {
+	var events []*event.Event
 	for {
-		logrus.Info("Checking for expired events.")
 		time.Sleep(p.keepAliveCheckTime)
+		logrus.Info("Checking for expired events.")
 
 		// get keepalive events for all known hosts
-		events := p.index.GetKeepAlives()
+		events = createKeepAliveEvents(p.tracker.HostTimes())
 		logrus.Infof("Found %d hosts with keepalives", len(events))
 
 		// process every event as if it was an incomming event
@@ -65,6 +70,23 @@ func (p *Pipeline) checkExpired() {
 			p.Process(e)
 		}
 	}
+}
+
+// create keep alive events for each hostname -> time pair
+func createKeepAliveEvents(times map[string]time.Time) []*event.Event {
+	n := time.Now()
+	events := make([]*event.Event, len(times))
+	x := 0
+	for host, t := range times {
+		events[x] = &event.Event{
+			Host:    host,
+			Metric:  n.Sub(t).Seconds(),
+			Service: KEEP_ALIVE_SERVICE_NAME,
+		}
+		x += 1
+	}
+
+	return events
 }
 
 func (p *Pipeline) Start() {
@@ -100,8 +122,6 @@ func (p *Pipeline) Process(e *event.Event) int {
 			return event.OK
 		}
 	}
-
-	p.index.PutEvent(e)
 
 	// track stas for this event
 	p.tracker.TrackEvent(e)

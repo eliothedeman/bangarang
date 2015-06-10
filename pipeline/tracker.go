@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"sync/atomic"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/event"
@@ -17,24 +18,9 @@ type Tracker struct {
 	queryChan   chan QueryFunc
 	total       *counter
 	hosts       map[string]*counter
+	hostTimes   map[string]time.Time
 	services    map[string]*counter
 	subServices map[string]*counter
-}
-
-// holds information about the current state of an event tracker
-type TrackerReport struct {
-	Total        uint64            `json:"total_events"`
-	ByHost       map[string]uint64 `json:"by_host"`
-	ByService    map[string]uint64 `json:"by_service"`
-	BySubService map[string]uint64 `json:"by_sub_service"`
-}
-
-func NewReport() *TrackerReport {
-	return &TrackerReport{
-		ByHost:       make(map[string]uint64),
-		ByService:    make(map[string]uint64),
-		BySubService: make(map[string]uint64),
-	}
 }
 
 // create and return a new *Tracker
@@ -44,11 +30,30 @@ func NewTracker() *Tracker {
 		queryChan:   make(chan QueryFunc),
 		total:       &counter{},
 		hosts:       make(map[string]*counter),
+		hostTimes:   make(map[string]time.Time),
 		services:    make(map[string]*counter),
 		subServices: make(map[string]*counter),
 	}
 
 	return t
+}
+
+// holds information about the current state of an event tracker
+type TrackerReport struct {
+	Total          uint64               `json:"total_events"`
+	ByHost         map[string]uint64    `json:"by_host"`
+	LastSeenByHost map[string]time.Time `json:"last_seen_by_host"`
+	ByService      map[string]uint64    `json:"by_service"`
+	BySubService   map[string]uint64    `json:"by_sub_service"`
+}
+
+func NewReport() *TrackerReport {
+	return &TrackerReport{
+		ByHost:         make(map[string]uint64),
+		ByService:      make(map[string]uint64),
+		BySubService:   make(map[string]uint64),
+		LastSeenByHost: make(map[string]time.Time),
+	}
 }
 
 // return a report of the current state of the tracker
@@ -66,9 +71,53 @@ func (t *Tracker) GetStats() *TrackerReport {
 		for k, v := range t.subServices {
 			r.BySubService[k] = v.get()
 		}
+		for k, v := range t.hostTimes {
+			r.LastSeenByHost[k] = v
+		}
 	})
 
 	return r
+}
+
+func (t *Tracker) GetServices() []string {
+	var services []string
+	t.query(func(t *Tracker) {
+		services = make([]string, len(t.services))
+		x := 0
+		for k, _ := range t.services {
+			services[x] = k
+			x += 1
+		}
+	})
+
+	return services
+}
+
+// GetHosts returns all of the host names we have seen thus far
+func (t *Tracker) GetHosts() []string {
+	var hosts []string
+	t.query(func(t *Tracker) {
+		hosts = make([]string, len(t.hostTimes))
+		x := 0
+		for k, _ := range t.hostTimes {
+			hosts[x] = k
+			x += 1
+		}
+	})
+
+	return hosts
+}
+
+// return a map of hostnames to the last time we have heard from them
+func (t *Tracker) HostTimes() map[string]time.Time {
+	m := make(map[string]time.Time)
+	t.Query(func(t *Tracker) {
+		for k, v := range t.hostTimes {
+			m[k] = v
+		}
+	})
+
+	return m
 }
 
 // An function that is given access to the tracker without locks
@@ -110,6 +159,9 @@ func (t *Tracker) query(f QueryFunc) {
 
 func (t *Tracker) trackEvent(e *event.Event) {
 	t.total.inc()
+
+	// update the last time we have seen this host
+	t.hostTimes[e.Host] = time.Now()
 
 	// increment host counter
 	host, ok := t.hosts[e.Host]
