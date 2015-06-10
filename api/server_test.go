@@ -55,7 +55,7 @@ func TestConfigHash(t *testing.T) {
 	exp_hash := fmt.Sprintf("%x", s.pipeline.GetConfig().Hash)
 
 	if exp_hash != config_res.Hash {
-		t.Fatal(nil)
+		t.Fatalf("Expected: %s got %s", exp_hash, config_res.Hash)
 	}
 }
 

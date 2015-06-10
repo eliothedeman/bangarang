@@ -38,15 +38,15 @@ type InfluxConfig struct {
 func (c *Influx) Send(i *event.Incident) error {
 	e := i.Event
 	c.points[c.index] = client.Point{
-		Name: e.Service,
-		Tags: e.Tags,
+		Measurement: e.Service,
+		Tags:        e.Tags,
 		Fields: map[string]interface{}{
 			"value":       e.Metric,
 			"host":        e.Host,
 			"service":     e.Service,
 			"sub_service": e.SubService,
 		},
-		Timestamp: time.Now(),
+		Time: time.Now(),
 	}
 
 	c.index += 1
