@@ -1,16 +1,10 @@
 package event
 
 import (
-	"encoding/binary"
-	"log"
-	"os"
-	"runtime"
 	"sync"
-	"time"
+	"sync/atomic"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/boltdb/bolt"
-	"github.com/pquerna/ffjson/ffjson"
 )
 
 var (
@@ -24,258 +18,91 @@ const (
 	KEEP_ALIVE_SERVICE_NAME = "KeepAlive"
 )
 
-type Index struct {
-	pool       *EncodingPool
-	db         *bolt.DB
-	dbFileName string
-	keepAlives map[string]time.Time
-	ka_lock    sync.RWMutex
+type counter struct {
+	c int64
 }
 
-func NewIndex(dbName string) *Index {
-	db_wait := make(chan struct{})
-	var db *bolt.DB
-	var err error
-	go func() {
-		db, err = bolt.Open(dbName, 0600, nil)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-		db_wait <- struct{}{}
-	}()
+func (c *counter) inc() {
+	atomic.AddInt64(&c.c, 1)
+}
+func (c *counter) set(val int64) {
+	atomic.StoreInt64(&c.c, val)
+}
 
-	// if the db takes more than 100 miliseconds to open, fail out
-	select {
-	case <-time.After(2 * time.Second):
-		logrus.Fatalf("Unable to open db %s", dbName)
-	case <-db_wait:
-		logrus.Infof("Opened db %s", dbName)
-	}
+func (c *counter) get() int64 {
+	return atomic.LoadInt64(&c.c)
+}
 
-	err = db.Update(func(tx *bolt.Tx) error {
-		logrus.Info("Setting up event bucket.")
-		_, err := tx.CreateBucketIfNotExists(EVENT_BUCKET_NAME)
-		if err != nil {
-			return err
-		}
+type Index struct {
+	i_lock          sync.RWMutex
+	incidents       map[string]Incident
+	incidentCounter *counter
+}
 
-		logrus.Info("Setting up management bucket.")
-		_, err = tx.CreateBucketIfNotExists(MANAGEMENT_BUCKET_NAME)
-		if err != nil {
-			return err
-		}
-
-		logrus.Info("Setting up incident bucket.")
-		_, err = tx.CreateBucketIfNotExists(INCIDENT_BUCKET_NAME)
-		return err
-	})
-
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
+func NewIndex() *Index {
 	return &Index{
-		pool:       NewEncodingPool(NewMsgPackEncoder, NewMsgPackDecoder, runtime.NumCPU()),
-		db:         db,
-		dbFileName: dbName,
-		keepAlives: make(map[string]time.Time),
+		incidents:       make(map[string]Incident),
+		incidentCounter: &counter{},
 	}
 }
 
 // close out the index
-func (i *Index) Close() error {
-	logrus.Infof("Closing index %s", i.dbFileName)
-	i.ka_lock.Lock()
-	i.keepAlives = make(map[string]time.Time)
-	i.ka_lock.Unlock()
-	return i.db.Close()
+func (i *Index) Close() {
+	logrus.Info("Closing index")
+	i.incidentCounter.set(0)
+	i.i_lock.Lock()
+	i.incidents = make(map[string]Incident)
+	i.i_lock.Unlock()
+
 }
 
 // delete any psersistants associated with the index
-func (i *Index) Delete() error {
-	err := i.Close()
-	if err != nil {
-		log.Println(err)
-	}
-
-	logrus.Info("Deleting index %s", i.dbFileName)
-	return os.Remove(i.dbFileName)
-}
-
-// return all keep alive's as events
-func (i *Index) GetKeepAlives() []*Event {
-	n := time.Now()
-	i.ka_lock.Lock()
-	events := make([]*Event, len(i.keepAlives))
-	x := 0
-	for host, t := range i.keepAlives {
-		events[x] = &Event{
-			Host:    host,
-			Metric:  n.Sub(t).Seconds(),
-			Service: KEEP_ALIVE_SERVICE_NAME,
-		}
-		x += 1
-	}
-	i.ka_lock.Unlock()
-	return events
+func (i *Index) Delete() {
+	logrus.Info("Deleting index")
 }
 
 func (i *Index) GetIncidentCounter() int64 {
-	var buff []byte
-
-	i.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(MANAGEMENT_BUCKET_NAME)
-		buff = b.Get(INCIDENT_COUNT_NAME)
-		return nil
-	})
-
-	// if the counter wasn't found, set it to 0 and return the value
-	if len(buff) == 0 {
-		i.UpdateIncidentCounter(0)
-		return 0
-	}
-
-	if len(buff) != 8 {
-		log.Println("incorrect size of counter buffer")
-		i.UpdateIncidentCounter(0)
-		return 0
-	}
-
-	count, _ := binary.Varint(buff)
-	return count
+	return i.incidentCounter.get()
 }
 
 func (i *Index) UpdateIncidentCounter(count int64) {
-	buff := make([]byte, 8)
-	binary.PutVarint(buff, count)
-
-	i.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(MANAGEMENT_BUCKET_NAME)
-		b.Put(INCIDENT_COUNT_NAME, buff)
-		return nil
-	})
+	i.incidentCounter.set(count)
 }
 
 // write the incident to the db
 func (i *Index) PutIncident(in *Incident) {
-	buff, err := ffjson.MarshalFast(in)
-	if err != nil {
-		logrus.Error(err)
-		return
-	}
-
-	err = i.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(INCIDENT_BUCKET_NAME)
-		return b.Put(in.IndexName(), buff)
-	})
-
-	if err != nil {
-		logrus.Error(err)
-	}
-
-	return
+	i.i_lock.Lock()
+	i.incidents[string(in.IndexName())] = *in
+	i.i_lock.Unlock()
 }
 
 // list all the known events
 func (i *Index) ListIncidents() []*Incident {
-	var ins []*Incident
-
-	err := i.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(INCIDENT_BUCKET_NAME)
-
-		// create a slice large enough to hole every value of the incidents bucket
-		ins = make([]*Incident, 0, b.Stats().KeyN)
-
-		// for every incident, parse it and add it to the incidents collection
-		err := b.ForEach(func(k, v []byte) error {
-			in := &Incident{}
-			err := ffjson.UnmarshalFast(v, in)
-			if err != nil {
-				return err
-			}
-
-			ins = append(ins, in)
-			return nil
-		})
-
-		return err
-	})
-
-	if err != nil {
-		logrus.Error(err)
+	i.i_lock.RLock()
+	ins := make([]*Incident, len(i.incidents))
+	x := 0
+	for _, v := range i.incidents {
+		ins[x] = &v
+		x += 1
 	}
-
+	i.i_lock.RUnlock()
 	return ins
 }
 
 // get an event from the index
 func (i *Index) GetIncident(id []byte) *Incident {
-	var buff []byte
+	i.i_lock.RLock()
+	defer i.i_lock.RUnlock()
 
-	// attempt to find the incident in the index
-	i.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(INCIDENT_BUCKET_NAME)
-		buff = b.Get(id)
-		return nil
-	})
-
-	// if we couldn't find the incident
-	if len(buff) == 0 {
+	in, ok := i.incidents[string(id)]
+	if !ok {
 		return nil
 	}
-
-	in := &Incident{}
-	// if we have the event, attempt to decode it
-	err := ffjson.Unmarshal(buff, in)
-
-	if err != nil {
-		logrus.Error(err)
-		return nil
-	}
-
-	return in
+	return &in
 }
 
 func (i *Index) DeleteIncidentById(id []byte) {
-	err := i.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(INCIDENT_BUCKET_NAME)
-		return b.Delete(id)
-	})
-
-	if err != nil {
-		logrus.Error(err)
-	}
-}
-
-// updates the event, will not apply any of the dedupe logic
-func (i *Index) UpdateEvent(e *Event) {
-	var buff []byte
-	var err error
-	i.pool.Encode(func(enc Encoder) {
-		buff, err = enc.Encode(e)
-	})
-	if err != nil {
-		logrus.Error(err)
-		return
-	}
-
-	err = i.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(EVENT_BUCKET_NAME)
-		return b.Put([]byte(e.IndexName()), buff)
-	})
-
-	if err != nil {
-		logrus.Error(err)
-		return
-	}
-
-}
-
-// insert the event into the index
-func (i *Index) PutEvent(e *Event) {
-
-	// update the host's keepalive value
-	i.ka_lock.Lock()
-	i.keepAlives[e.Host] = time.Now()
-	i.ka_lock.Unlock()
+	i.i_lock.Lock()
+	delete(i.incidents, string(id))
+	i.i_lock.Unlock()
 }

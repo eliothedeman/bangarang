@@ -22,7 +22,7 @@ func testPipeline(p []*alarm.Policy) (*Pipeline, *test.TestAlert) {
 	ta := test.NewTest().(*test.TestAlert)
 	pipe := &Pipeline{
 		policies:     p,
-		index:        event.NewIndex(fmt.Sprintf("test%d.db", time.Now().Nanosecond())),
+		index:        event.NewIndex(),
 		encodingPool: event.NewEncodingPool(event.EncoderFactories[config.DEFAULT_ENCODING], event.DecoderFactories[config.DEFAULT_ENCODING], runtime.NumCPU()),
 		escalations: map[string][]alarm.Alarm{
 			"test": []alarm.Alarm{ta},
@@ -169,7 +169,7 @@ func BenchmarkIndex(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		e.Service = fmt.Sprintf("%d", i)
+		e.Service = fmt.Sprintf("%d", i%1000)
 		p.Process(e)
 	}
 
@@ -194,7 +194,7 @@ func BenchmarkIndexWithStats(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		e.Service = fmt.Sprintf("%d", i)
+		e.Service = fmt.Sprintf("%d", i%10000)
 		p.Process(e)
 	}
 
