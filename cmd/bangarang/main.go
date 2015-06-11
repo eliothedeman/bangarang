@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"os"
+	"os/signal"
 
 	"github.com/Sirupsen/logrus"
 	_ "github.com/eliothedeman/bangarang/alarm/console"
@@ -24,6 +26,14 @@ func init() {
 	tf := &logrus.TextFormatter{}
 	tf.FullTimestamp = true
 	logrus.SetFormatter(tf)
+}
+
+func handleSigs() {
+	stop := make(chan os.Signal)
+	signal.Notify(stop, os.Kill, os.Interrupt)
+
+	done := <-stop
+	logrus.Fatal(done.String())
 }
 
 func main() {
@@ -54,6 +64,5 @@ func main() {
 	// create and start a new api server
 	apiServer := api.NewServer(ac.ApiPort, p, ac.Auths)
 	apiServer.Serve()
-
-	<-make(chan struct{})
+	handleSigs()
 }
