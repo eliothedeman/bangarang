@@ -161,7 +161,9 @@ func (t *Tracker) trackEvent(e *event.Event) {
 	t.total.inc()
 
 	// update the last time we have seen this host
-	t.hostTimes[e.Host] = time.Now()
+	if e.Service != KEEP_ALIVE_SERVICE_NAME {
+		t.hostTimes[e.Host] = time.Now()
+	}
 
 	// increment host counter
 	host, ok := t.hosts[e.Host]
