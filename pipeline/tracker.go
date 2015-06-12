@@ -158,12 +158,15 @@ func (t *Tracker) query(f QueryFunc) {
 }
 
 func (t *Tracker) trackEvent(e *event.Event) {
+
+	// don't track keep alives
+	if e.Service == KEEP_ALIVE_SERVICE_NAME {
+		return
+	}
 	t.total.inc()
 
 	// update the last time we have seen this host
-	if e.Service != KEEP_ALIVE_SERVICE_NAME {
-		t.hostTimes[e.Host] = time.Now()
-	}
+	t.hostTimes[e.Host] = time.Now()
 
 	// increment host counter
 	host, ok := t.hosts[e.Host]
