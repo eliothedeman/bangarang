@@ -27,6 +27,8 @@ type Pipeline struct {
 	encodingPool       *event.EncodingPool
 	config             *config.AppConfig
 	tracker            *Tracker
+	unpauseChan        chan struct{}
+	in                 chan *event.Event
 }
 
 func NewPipeline(conf *config.AppConfig) *Pipeline {
@@ -34,17 +36,80 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		encodingPool:       event.NewEncodingPool(event.EncoderFactories[conf.Encoding], event.DecoderFactories[conf.Encoding], runtime.NumCPU()),
 		keepAliveAge:       conf.KeepAliveAge,
 		keepAliveCheckTime: 30 * time.Second,
-		escalations:        *conf.Escalations,
-		index:              event.NewIndex(),
-		providers:          *conf.EventProviders,
-		policies:           conf.Policies,
-		globalPolicy:       conf.GlobalPolicy,
-		config:             conf,
-		tracker:            NewTracker(),
+		in:                 make(chan *event.Event),
+		unpauseChan:        make(chan struct{}),
 	}
 
-	go p.tracker.Start()
+	p.refresh(conf)
+
+	logrus.Debug("Starting expiration checker")
+	go p.checkExpired()
+
+	// start up all of the providers
+	logrus.Info("Starting %d providers", len(p.providers))
+	for _, ep := range p.providers {
+		go ep.Start(p.in)
+	}
+
 	return p
+}
+
+// refresh load all config params that don't require a restart
+func (p *Pipeline) refresh(conf *config.AppConfig) {
+	p.pause()
+
+	// if the config has changed at all, refresh the index
+	if p.config == nil || string(conf.Hash) != string(p.config.Hash) {
+		p.index = event.NewIndex()
+		p.tracker = NewTracker()
+	}
+
+	// update optional config options
+	if conf.Escalations != nil {
+		p.escalations = *conf.Escalations
+	}
+
+	if conf.EventProviders != nil {
+		p.providers = *conf.EventProviders
+	}
+
+	p.policies = conf.Policies
+	p.keepAliveAge = conf.KeepAliveAge
+	p.globalPolicy = conf.GlobalPolicy
+
+	// update to the new config
+	p.config = conf
+	p.unpause()
+
+	p.Start()
+}
+
+// unpause resume processing jobs
+func (p *Pipeline) unpause() {
+	p.unpauseChan <- struct{}{}
+}
+
+// pause stop processing events
+func (p *Pipeline) pause() {
+
+	// cache the old injest channel
+	old := p.in
+
+	// make a temporary channel to catch incomming events
+	p.in = nil
+
+	// make a channel to signal the end of the pause
+	done := make(chan struct{})
+	p.unpauseChan = done
+
+	// start a new goroutine to catch the incomming events
+	go func() {
+
+		// when the pause is complete, revert to the old injestion channel
+		<-done
+		p.in = old
+
+	}()
 }
 
 func (p *Pipeline) GetTracker() *Tracker {
@@ -91,28 +156,23 @@ func createKeepAliveEvents(times map[string]time.Time) []*event.Event {
 
 func (p *Pipeline) Start() {
 
-	logrus.Debug("Starting expiration checker")
-	go p.checkExpired()
-	dst := make(chan *event.Event, 25)
-
-	// start up all of the providers
-	logrus.Info("Starting %d providers", len(p.providers))
-	for _, ep := range p.providers {
-		go ep.Start(dst)
-	}
-
 	// fan in all of the providers and process them
 	go func() {
 		var e *event.Event
 		for {
+
+			// if the injest channel is nil, stop
+			if p.in == nil {
+				return
+			}
+
 			// recieve the event
-			e = <-dst
+			e = <-p.in
 
 			// process the event
 			p.Process(e)
 		}
 	}()
-
 }
 
 // Run the given event though the pipeline

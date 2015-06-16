@@ -17,6 +17,7 @@ func init() {
 // provides events from HTTP connections
 type HTTPProvider struct {
 	pool   *event.EncodingPool
+	dst    chan *event.Event
 	listen string
 }
 
