@@ -12,7 +12,7 @@ RUN go get -u github.com/tinylib/msgp
 # build the command_
 RUN go get -u github.com/eliothedeman/bangarang/cmd/bangarang/
 RUN go generate github.com/eliothedeman/bangarang/...
-RUN go build -o /go/bin/bangaran github.com/eliothedeman/bangarang/cmd/bangarang
+RUN go build -o /go/bin/bangarang github.com/eliothedeman/bangarang/cmd/bangarang
 RUN export PATH=$PATH:/go/bin
 
 EXPOSE 5555 
