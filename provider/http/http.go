@@ -6,6 +6,7 @@ import (
 	"net"
 	std_http "net/http"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/event"
 	"github.com/eliothedeman/bangarang/provider"
 )
@@ -44,16 +45,22 @@ func (t *HTTPProvider) Init(i interface{}) error {
 	// stop the test
 	err = l.Close()
 	if err != nil {
+		logrus.Error(err)
 		return err
 	}
 
+	// update the providers litening address
+	t.listen = conf.Listen
 	t.pool = event.NewEncodingPool(event.EncoderFactories[conf.Encoding], event.DecoderFactories[conf.Encoding], conf.MaxEncoders)
 
 	return nil
 }
 
 func (t *HTTPProvider) ConfigStruct() interface{} {
-	return &HTTPConfig{}
+	return &HTTPConfig{
+		MaxEncoders: 4,
+		Encoding:    event.ENCODING_TYPE_JSON,
+	}
 }
 
 // start accepting connections and consume each of them as they come in
@@ -61,7 +68,7 @@ func (h *HTTPProvider) Start(dst chan *event.Event) {
 	std_http.HandleFunc("/ingest", func(w std_http.ResponseWriter, r *std_http.Request) {
 		buff, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			log.Println(err)
+			logrus.Error(err)
 			std_http.Error(w, err.Error(), std_http.StatusInternalServerError)
 			return
 		}
@@ -70,12 +77,13 @@ func (h *HTTPProvider) Start(dst chan *event.Event) {
 			e, err = d.Decode(buff)
 		})
 		if err != nil {
-			log.Println(err)
+			logrus.Error(err)
 			std_http.Error(w, err.Error(), std_http.StatusInternalServerError)
 			return
 		}
 		dst <- e
 	})
 
+	logrus.Infof("Serving http listener on %s", h.listen)
 	log.Fatal(std_http.ListenAndServe(h.listen, nil))
 }
