@@ -17,8 +17,10 @@ var (
 	}
 )
 
+// AlarmCollection maps the name of an escalation policy to the actions to be taken by them
 type AlarmCollection map[string][]Alarm
 
+// UnmarshalJSON a custom unmarshal func for an escalation policy
 func (a AlarmCollection) UnmarshalJSON(buff []byte) error {
 	b := map[string][]json.RawMessage{}
 	name := &struct {

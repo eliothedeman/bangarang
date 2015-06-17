@@ -12,10 +12,11 @@ import (
 )
 
 var (
-	DEFAULT_WINDOW_SIZE = 100
-	STATUS_SIZE         = 10
+	DEFAULT_WINDOW_SIZE = 100 // The default size of the dataframe used in window operations
+	STATUS_SIZE         = 10  // The default size of the dataframe used to count statuses
 )
 
+// Condition holds conditional information to check events against
 type Condition struct {
 	Greater       *float64     `json:"greater"`
 	Less          *float64     `json:"less"`
@@ -66,6 +67,7 @@ func (g grouper) genIndexName(e *event.Event) string {
 			name = name + ":" + res[0]
 		case 2:
 			name = name + ":" + res[1]
+			//
 		}
 	}
 	return name
