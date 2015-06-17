@@ -56,7 +56,10 @@ func (t *HTTPProvider) Init(i interface{}) error {
 }
 
 func (t *HTTPProvider) ConfigStruct() interface{} {
-	return &HTTPConfig{}
+	return &HTTPConfig{
+		MaxEncoders: 4,
+		Encoding:    event.ENCODING_TYPE_JSON,
+	}
 }
 
 // start accepting connections and consume each of them as they come in
