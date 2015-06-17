@@ -27,6 +27,7 @@ type Pipeline struct {
 	encodingPool       *event.EncodingPool
 	config             *config.AppConfig
 	tracker            *Tracker
+	pauseCache         map[*event.Event]struct{}
 	unpauseChan        chan struct{}
 	in                 chan *event.Event
 }
@@ -86,11 +87,14 @@ func (p *Pipeline) refresh(conf *config.AppConfig) {
 
 // unpause resume processing jobs
 func (p *Pipeline) unpause() {
+	logrus.Info("Unpausing pipeline")
 	p.unpauseChan <- struct{}{}
+	<-p.unpauseChan
 }
 
 // pause stop processing events
 func (p *Pipeline) pause() {
+	logrus.Info("Pausing pipeline")
 
 	// cache the old injest channel
 	old := p.in
@@ -104,11 +108,37 @@ func (p *Pipeline) pause() {
 
 	// start a new goroutine to catch the incomming events
 	go func() {
+		// make a map to cache the incomming events
+		cache := make(map[*event.Event]struct{})
+		var e *event.Event
+		for {
+			select {
 
-		// when the pause is complete, revert to the old injestion channel
-		<-done
-		p.in = old
+			// start caching the events as they come in
+			case e = <-old:
+				logrus.Debugf("Caching event during pause %+v", *e)
+				cache[e] = struct{}{}
 
+			// when the pause is complete, revert to the old injestion channel
+			case <-done:
+
+				// set the cached event channel
+				p.in = old
+
+				// restart the pipeline
+				p.Start()
+
+				// empty the cache
+				for e, _ = range cache {
+					logrus.Debugf("Proccessing cached event after unpause %+v", *e)
+					old <- e
+				}
+
+				// signal the unpause function that we are done with the unpause
+				p.unpauseChan <- struct{}{}
+				return
+			}
+		}
 	}()
 }
 
