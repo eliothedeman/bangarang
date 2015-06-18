@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/provider"
 )
@@ -45,6 +46,11 @@ type AppConfig struct {
 	ApiPort          int                               `json:"api_port"`
 	Auths            []BasicAuth                       `json:"basic_auth_users"`
 	Hash             []byte                            `json:"-"`
+	fileName         string
+}
+
+func (c *AppConfig) FileName() string {
+	return c.fileName
 }
 
 func NewDefaultConfig() *AppConfig {
@@ -58,7 +64,7 @@ func NewDefaultConfig() *AppConfig {
 	}
 }
 
-func parseConfigFile(buff []byte) (*AppConfig, error) {
+func ParseConfigFile(buff []byte) (*AppConfig, error) {
 	var err error
 	ac := NewDefaultConfig()
 
@@ -126,7 +132,15 @@ func LoadConfigFile(fileName string) (*AppConfig, error) {
 		return nil, err
 	}
 
-	return parseConfigFile(buff)
+	ac, err := ParseConfigFile(buff)
+	if err != nil {
+		logrus.Error(err)
+		return ac, err
+	}
+
+	ac.fileName = fileName
+	return ac, err
+
 }
 
 func loadFile(fileName string) ([]byte, error) {

@@ -41,13 +41,13 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		unpauseChan:        make(chan struct{}),
 	}
 
-	p.refresh(conf)
+	p.Refresh(conf)
 
 	logrus.Debug("Starting expiration checker")
 	go p.checkExpired()
 
 	// start up all of the providers
-	logrus.Info("Starting %d providers", len(p.providers))
+	logrus.Infof("Starting %d providers", len(p.providers))
 	for _, ep := range p.providers {
 		go ep.Start(p.in)
 	}
@@ -56,7 +56,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 }
 
 // refresh load all config params that don't require a restart
-func (p *Pipeline) refresh(conf *config.AppConfig) {
+func (p *Pipeline) Refresh(conf *config.AppConfig) {
 	p.pause()
 
 	// if the config has changed at all, refresh the index

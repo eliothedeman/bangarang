@@ -5,6 +5,8 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/alarm"
+	_ "github.com/eliothedeman/bangarang/alarm/console"
+	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/event"
 )
 
@@ -34,4 +36,30 @@ func TestPausePipelineCache(t *testing.T) {
 	}
 
 	p.unpause()
+}
+
+func TestRefreshPipeline(t *testing.T) {
+	one := []byte(`{
+	"api_port": 8082,
+	"escalations": {
+		"testing": [
+			{
+				"type": "console"
+			}
+		]
+	},
+	"keep_alive_age": "10s",
+    "escalations_dir": "alerts/"
+}`)
+	ac, err := config.ParseConfigFile(one)
+	if err != nil {
+		t.Error(err)
+	}
+
+	p := NewPipeline(ac)
+
+	ac.Policies = append(ac.Policies, &alarm.Policy{})
+
+	p.Refresh(ac)
+
 }
