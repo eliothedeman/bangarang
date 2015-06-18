@@ -2,25 +2,23 @@
 A stupid simple stream processor for monitoring applications. 
 
 ## Install
+Building of bangarang is now done through [gb](https://getgb.io)
+
+The recomended use of bangarang is through the offical docker image. Simply run...
 ```bash
-go get github.com/eliothedeman/bangarang/cmd/...
+docker run -p 8081:8081 -p 5555:5555 -p 5556:5556 -v conf.json:/etc/bangarang/conf.json eliothedeman/bangarang
 ```
 
-Or if you are on a linux system and have fpm installed.
+To build and run bangarang from source, run...
 
+install gb...
 ```bash
-go get github.com/eliothedeman/bangarang/cmd/...
-cd $GOPATH/github.com/eliothedeman/bangarang/cmd/bangarang
-./mkdeb  
+go get github.com/constabulary/gb/...
 ```
 
-Which will make a debian package which you can install via dpkg or your favorite package manager.
-
-## Run
+and build bangarang
 ```bash
-cd $GOPATH/github.com/eliothedeman/bangarang/cmd/bangarang
-go build -o bangarang
-./bangarang -conf="/path/to/conf.json"
+$GOPATH/bin/gb build github.com/eliothedeman/bangarang/cmd/bangarang
 ```
 
 ## Configuration
