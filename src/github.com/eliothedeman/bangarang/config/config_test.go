@@ -29,7 +29,7 @@ var testConfigRaw = []byte(`
 `)
 
 func TestParseConfig(t *testing.T) {
-	ac, err := parseConfigFile(testConfigRaw)
+	ac, err := ParseConfigFile(testConfigRaw)
 	if err != nil {
 		t.Error(err)
 	}
