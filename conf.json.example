@@ -4,7 +4,7 @@
 		"test": [
 			{
 				"type":"console"
-			},
+			}
 		]
 	},
 	"escalations_dir": "alerts/"

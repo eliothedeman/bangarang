@@ -3,6 +3,6 @@ go:
     - 1.4
 
 script:
-    - go get
-    - go get github.com/eliothedeman/bangarang/cmd/bangarang
-    - make test
+    - go get github.com/constabulary/gb/...
+    - export PATH=$PATH:$GOPATH/bin
+    - gb test

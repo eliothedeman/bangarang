@@ -1,6 +1,8 @@
 cmd/bangarang/conf.json
 conf.json
 alerts
+pkg
 *.deb
 *.db
-bin/*
+bin
+*sublime*

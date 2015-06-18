@@ -2,18 +2,19 @@ FROM golang:1.4
 
 ENV DEBIAN_FRONTEND noninteractive
 
+RUN export PATH=$PATH:/go/bin
 ADD conf.json.example /etc/bangarang/conf.json
 RUN mkdir /etc/bangarang/alerts
 
-# fetch code generation deps
-RUN go get -u github.com/pquerna/ffjson
-RUN go get -u github.com/tinylib/msgp
+# fetch gb
+RUN go get github.com/constabulary/gb/...
 
 # build the command_
-RUN go get -u github.com/eliothedeman/bangarang/cmd/bangarang/
-RUN go generate github.com/eliothedeman/bangarang/...
-RUN go build -o /go/bin/bangarang github.com/eliothedeman/bangarang/cmd/bangarang
-RUN export PATH=$PATH:/go/bin
+RUN mkdir /tmp/bangarang
+COPY src /tmp/bangarang/src
+COPY vendor /tmp/bangarang/vendor
+RUN cd /tmp/bangarang && gb build github.com/eliothedeman/bangarang/cmd/bangarang
+RUN cp /tmp/bangarang/bin/bangarang /go/bin/bangarang
 
 EXPOSE 5555 
 EXPOSE 5556 
