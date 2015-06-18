@@ -28,6 +28,7 @@ func testPipeline(p []*alarm.Policy) (*Pipeline, *test.TestAlert) {
 			"test": []alarm.Alarm{ta},
 		},
 		tracker: NewTracker(),
+		in:      make(chan *event.Event),
 	}
 
 	go pipe.tracker.Start()

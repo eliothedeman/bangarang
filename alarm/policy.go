@@ -39,7 +39,7 @@ func (p *Policy) Matches(e *event.Event) bool {
 
 // compile the regex patterns for this policy
 func (p *Policy) Compile() {
-	logrus.Info("Compiling regex maches for %s", p.Name)
+	logrus.Infof("Compiling regex maches for %s", p.Name)
 
 	if p.r_match == nil {
 		p.r_match = make(map[string]*regexp.Regexp)

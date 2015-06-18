@@ -2,7 +2,6 @@ package http
 
 import (
 	"io/ioutil"
-	"log"
 	"net"
 	std_http "net/http"
 
@@ -18,6 +17,7 @@ func init() {
 // provides events from HTTP connections
 type HTTPProvider struct {
 	pool   *event.EncodingPool
+	dst    chan *event.Event
 	listen string
 }
 
@@ -84,5 +84,5 @@ func (h *HTTPProvider) Start(dst chan *event.Event) {
 	})
 
 	logrus.Infof("Serving http listener on %s", h.listen)
-	log.Fatal(std_http.ListenAndServe(h.listen, nil))
+	logrus.Fatal(std_http.ListenAndServe(h.listen, nil))
 }
