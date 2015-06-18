@@ -49,33 +49,3 @@ func (i *Incident) Post(w http.ResponseWriter, r *http.Request) {
 
 	i.pipeline.PutIncident(in)
 }
-
-// // list all the current incidents for the pipeline
-// func (i *Incident) Get(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Add("content-type", "application/json")
-// 	vars := mux.Vars(r)
-
-// 	if id, ok := vars["id"]; !ok {
-// 		log.Println(MUST_INCLUDE_ID.Error())
-// 		http.Error(w, MUST_INCLUDE_ID.Error(), http.StatusBadRequest)
-// 		return
-// 	} else {
-// 		// all is well
-// 		incidentId, _ := strconv.Atoi(id)
-// 		incident := i.pipeline.GetIncident(int64(incidentId))
-// 		if incident == nil {
-// 			w.Write([]byte("{}"))
-// 			return
-// 		}
-
-// 		// encode incident
-// 		buff, err := ffjson.MarshalFast(incident)
-// 		if err != nil {
-// 			http.Error(w, err.Error(), http.StatusInternalServerError)
-// 			log.Println(err)
-// 			return
-// 		}
-
-// 		w.Write(buff)
-// 	}
-// }

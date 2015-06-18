@@ -25,8 +25,7 @@ func (i *ConfigRefresh) EndPoint() string {
 	return "/api/config/refresh"
 }
 
-func (c *ConfigRefresh) Get(w http.ResponseWriter, r *http.Request) {
-
+func (c *ConfigRefresh) refresh(w http.ResponseWriter, r *http.Request) {
 	// if there is no path given, reload the file currently configed
 	path := r.URL.Query().Get("path")
 	if path == "" {
@@ -59,4 +58,12 @@ func (c *ConfigRefresh) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(buf)
+
+}
+func (c *ConfigRefresh) Post(w http.ResponseWriter, r *http.Request) {
+	c.refresh(w, r)
+}
+
+func (c *ConfigRefresh) Get(w http.ResponseWriter, r *http.Request) {
+	c.refresh(w, r)
 }
