@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"log"
+	"net/http"
 	"os"
 	"os/signal"
 
@@ -15,10 +17,12 @@ import (
 	"github.com/eliothedeman/bangarang/pipeline"
 	_ "github.com/eliothedeman/bangarang/provider/http"
 	_ "github.com/eliothedeman/bangarang/provider/tcp"
+	"github.com/eliothedeman/bangarang/ui"
 )
 
 var (
 	confFile = flag.String("conf", "/etc/bangarang/conf.json", "path main config file")
+	dev      = flag.Bool("dev", false, "puts bangarang in a dev testing mode")
 )
 
 func init() {
@@ -63,6 +67,15 @@ func main() {
 	logrus.Infof("Serving the http api on port %d", 8081)
 	// create and start a new api server
 	apiServer := api.NewServer(ac.ApiPort, p, ac.Auths)
-	apiServer.Serve()
+	go apiServer.Serve()
+
+	// start the ui
+	go func() {
+		uiServer := &ui.Server{}
+		err := http.ListenAndServe(":9090", uiServer)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 	handleSigs()
 }

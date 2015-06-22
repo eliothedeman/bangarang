@@ -17,7 +17,6 @@ func init() {
 // provides events from HTTP connections
 type HTTPProvider struct {
 	pool   *event.EncodingPool
-	dst    chan *event.Event
 	listen string
 }
 
@@ -71,16 +70,21 @@ func (h *HTTPProvider) Start(dst chan *event.Event) {
 			std_http.Error(w, err.Error(), std_http.StatusInternalServerError)
 			return
 		}
+
+		logrus.Debug(string(buff))
 		var e *event.Event
 		h.pool.Decode(func(d event.Decoder) {
 			e, err = d.Decode(buff)
+			logrus.Debug(e)
 		})
+
 		if err != nil {
 			logrus.Error(err)
 			std_http.Error(w, err.Error(), std_http.StatusInternalServerError)
 			return
 		}
 		dst <- e
+		logrus.Debug("Done processing http event")
 	})
 
 	logrus.Infof("Serving http listener on %s", h.listen)

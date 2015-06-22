@@ -43,6 +43,7 @@ type Server struct {
 func (s *Server) wrapAuth(h http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Access-Control-Allow-Origin", "*")
 
 		// if the server is configured to use basic auth, check the auth before proceeding to the request
 		if len(s.auths) > 0 {

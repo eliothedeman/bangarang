@@ -49,6 +49,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 	// start up all of the providers
 	logrus.Infof("Starting %d providers", len(p.providers))
 	for _, ep := range p.providers {
+		logrus.Infof("Starting event provider %+v", ep)
 		go ep.Start(p.in)
 	}
 
@@ -63,6 +64,7 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 	if p.config == nil || string(conf.Hash) != string(p.config.Hash) {
 		p.index = event.NewIndex()
 		p.tracker = NewTracker()
+		go p.tracker.Start()
 	}
 
 	// update optional config options
@@ -185,6 +187,7 @@ func createKeepAliveEvents(times map[string]time.Time) []*event.Event {
 }
 
 func (p *Pipeline) Start() {
+	logrus.Info("Starting pipeline")
 
 	// fan in all of the providers and process them
 	go func() {
@@ -193,14 +196,17 @@ func (p *Pipeline) Start() {
 
 			// if the injest channel is nil, stop
 			if p.in == nil {
+				logrus.Info("Pipeline is paused, stoping pipeline")
 				return
 			}
 
 			// recieve the event
 			e = <-p.in
 
+			logrus.Debugf("Beginning processing %+v", e)
 			// process the event
 			p.Process(e)
+			logrus.Debugf("Done processing %+v", e)
 		}
 	}()
 }

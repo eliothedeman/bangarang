@@ -40,11 +40,11 @@ func NewTracker() *Tracker {
 
 // holds information about the current state of an event tracker
 type TrackerReport struct {
-	Total          uint64               `json:"total_events"`
-	ByHost         map[string]uint64    `json:"by_host"`
-	LastSeenByHost map[string]time.Time `json:"last_seen_by_host"`
-	ByService      map[string]uint64    `json:"by_service"`
-	BySubService   map[string]uint64    `json:"by_sub_service"`
+	Total          uint64            `json:"total_events"`
+	ByHost         map[string]uint64 `json:"by_host"`
+	LastSeenByHost map[string]int64  `json:"last_seen_by_host"`
+	ByService      map[string]uint64 `json:"by_service"`
+	BySubService   map[string]uint64 `json:"by_sub_service"`
 }
 
 func NewReport() *TrackerReport {
@@ -52,7 +52,7 @@ func NewReport() *TrackerReport {
 		ByHost:         make(map[string]uint64),
 		ByService:      make(map[string]uint64),
 		BySubService:   make(map[string]uint64),
-		LastSeenByHost: make(map[string]time.Time),
+		LastSeenByHost: make(map[string]int64),
 	}
 }
 
@@ -72,7 +72,7 @@ func (t *Tracker) GetStats() *TrackerReport {
 			r.BySubService[k] = v.get()
 		}
 		for k, v := range t.hostTimes {
-			r.LastSeenByHost[k] = v
+			r.LastSeenByHost[k] = v.Unix()
 		}
 	})
 
