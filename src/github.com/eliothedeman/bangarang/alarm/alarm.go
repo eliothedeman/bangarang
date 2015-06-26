@@ -79,7 +79,7 @@ func GetFactory(name string) AlarmFactory {
 }
 
 func LoadFactory(name string, f AlarmFactory) {
-	logrus.Infof("Loading alarm factory %s", name)
+	logrus.Debugf("Loading alarm factory %s", name)
 	alarms.Lock()
 	alarms.factories[name] = f
 	alarms.Unlock()
