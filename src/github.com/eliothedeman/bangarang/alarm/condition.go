@@ -198,7 +198,7 @@ func (c *Condition) compileChecks() []satisfier {
 	if c.Exactly != nil {
 		logrus.Info("Adding exactly check:", *c.Exactly)
 		s = append(s, func(e *event.Event) bool {
-			return e.Metric == *c.Less
+			return e.Metric == *c.Exactly
 		})
 	}
 
