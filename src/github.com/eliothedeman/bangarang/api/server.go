@@ -10,36 +10,37 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// return the end point for this method
+// An EndPointer returns the end point for this method
 type EndPointer interface {
 	EndPoint() string
 }
 
-// provides an http "GET" method
+// A Getter provides an http "GET" method
 type Getter interface {
 	Get(http.ResponseWriter, *http.Request)
 }
 
-// provides an http "POST" method
+// A Poster provides an http "POST" method
 type Poster interface {
 	Post(http.ResponseWriter, *http.Request)
 }
 
-// provides an http "DELETE" method
+// A Deleter provides an http "DELETE" method
 type Deleter interface {
 	Delete(http.ResponseWriter, *http.Request)
 }
 
-// Serves the http api for bangarang
+// Server Serves the http api for bangarang
 type Server struct {
-	router      *mux.Router
-	port        int
-	pipeline    *pipeline.Pipeline
-	auths       []config.BasicAuth
-	config_hash []byte
+	router     *mux.Router
+	port       int
+	pipeline   *pipeline.Pipeline
+	auths      []config.BasicAuth
+	configHash []byte
 }
 
-// wrap the given handler func in a closure that checks for auth first if the server is configured to use basic auth
+// wrap the given handler func in a closure that checks for auth first if the
+// server is configured to use basic auth
 func (s *Server) wrapAuth(h http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -97,10 +98,12 @@ func (s *Server) construct(e EndPointer) {
 	}
 }
 
+// Serve the bangarang api via HTTP
 func (s *Server) Serve() error {
 	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), s.router)
 }
 
+// NewServer creates and returns a new server
 func NewServer(port int, pipe *pipeline.Pipeline,
 	auths []config.BasicAuth) *Server {
 	s := &Server{
