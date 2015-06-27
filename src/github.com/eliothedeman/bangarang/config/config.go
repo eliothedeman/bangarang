@@ -37,7 +37,7 @@ type AppConfig struct {
 	KeepAliveAge     time.Duration                     `json:"-"`
 	Raw_KeepAliveAge string                            `json:"keep_alive_age"`
 	DbPath           string                            `json:"db_path"`
-	Escalations      *alarm.AlarmCollection            `json:"escalations"`
+	Escalations      *alarm.Collection            `json:"escalations"`
 	GlobalPolicy     *alarm.Policy                     `json:"global_policy"`
 	Encoding         string                            `json:"encoding"`
 	Policies         []*alarm.Policy                   `json:"-"`
@@ -59,7 +59,7 @@ func NewDefaultConfig() *AppConfig {
 		DbPath:           DEFAULT_DB_PATH,
 		ApiPort:          DEFAULT_API_PORT,
 		Encoding:         DEFAULT_ENCODING,
-		Escalations:      &alarm.AlarmCollection{},
+		Escalations:      &alarm.Collection{},
 		EventProviders:   &provider.EventProviderCollection{},
 	}
 }
