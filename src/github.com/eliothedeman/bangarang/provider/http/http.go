@@ -10,6 +10,11 @@ import (
 	"github.com/eliothedeman/bangarang/provider"
 )
 
+const (
+	START_HANDSHAKE = "BANGARANG: HTTP_PROVIDER"
+	ENDPOINT        = "/ingest"
+)
+
 func init() {
 	provider.LoadEventProviderFactory("http", NewHTTPProvider)
 }
@@ -37,7 +42,19 @@ func (t *HTTPProvider) Init(i interface{}) error {
 	// make sure the port is open
 	l, err := net.Listen("tcp", conf.Listen)
 	if err != nil {
-		return err
+		logrus.Error(err)
+
+		// check to see if the busy port is due to another provider
+		resp, err := std_http.Get("http://" + conf.Listen + ENDPOINT + "?init_check=true")
+		if err != nil {
+			return err
+		}
+
+		buff, _ := ioutil.ReadAll(resp.Body)
+		if string(buff) != START_HANDSHAKE {
+			return err
+
+		}
 	}
 
 	// stop the test
@@ -63,7 +80,12 @@ func (t *HTTPProvider) ConfigStruct() interface{} {
 
 // start accepting connections and consume each of them as they come in
 func (h *HTTPProvider) Start(dst chan *event.Event) {
-	std_http.HandleFunc("/ingest", func(w std_http.ResponseWriter, r *std_http.Request) {
+	std_http.HandleFunc(ENDPOINT, func(w std_http.ResponseWriter, r *std_http.Request) {
+
+		// handle the case where a provider is restarting and needs to check if a listener is a bangarang provider or not
+		if r.URL.Query().Get("init_check") == "true" {
+			w.Write([]byte(START_HANDSHAKE))
+		}
 		buff, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			logrus.Error(err)

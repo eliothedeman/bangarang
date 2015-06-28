@@ -20,7 +20,7 @@ type Pipeline struct {
 	keepAliveAge       time.Duration
 	keepAliveCheckTime time.Duration
 	globalPolicy       *alarm.Policy
-	escalations        alarm.AlarmCollection
+	escalations        alarm.Collection
 	policies           []*alarm.Policy
 	index              *event.Index
 	providers          provider.EventProviderCollection

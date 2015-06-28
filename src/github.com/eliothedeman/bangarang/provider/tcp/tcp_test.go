@@ -1,109 +1,100 @@
 package tcp
 
-import (
-	"net"
-	"testing"
+// func TestNewTCPProvider(t *testing.T) {
+// 	p := NewTCPProvider()
+// 	if p == nil {
+// 		t.Fail()
+// 	}
+// }
 
-	"github.com/Sirupsen/logrus"
-	"github.com/eliothedeman/bangarang/client"
-	"github.com/eliothedeman/bangarang/event"
-)
+// func TestConfig(t *testing.T) {
+// 	p := NewTCPProvider()
+// 	conf := p.ConfigStruct().(*TCPConfig)
+// 	conf.Encoding = event.ENCODING_TYPE_JSON
+// 	conf.Listen = ":8083"
+// 	conf.MaxDecoders = 4
 
-func TestNewTCPProvider(t *testing.T) {
-	p := NewTCPProvider()
-	if p == nil {
-		t.Fail()
-	}
-}
+// 	err := p.Init(conf)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
 
-func TestConfig(t *testing.T) {
-	p := NewTCPProvider()
-	conf := p.ConfigStruct().(*TCPConfig)
-	conf.Encoding = event.ENCODING_TYPE_JSON
-	conf.Listen = ":8083"
-	conf.MaxDecoders = 4
+// func TestBadAddr(t *testing.T) {
+// 	p := NewTCPProvider()
+// 	conf := p.ConfigStruct().(*TCPConfig)
+// 	conf.Listen = "10.0.0.1:8081"
+// 	conf.MaxDecoders = 4
 
-	err := p.Init(conf)
-	if err != nil {
-		t.Error(err)
-	}
-}
+// 	err := p.Init(conf)
+// 	if _, ok := err.(*net.OpError); !ok {
+// 		t.Fatalf("Expecting bad listening address")
+// 	}
+// }
 
-func TestBadAddr(t *testing.T) {
-	p := NewTCPProvider()
-	conf := p.ConfigStruct().(*TCPConfig)
-	conf.Listen = "10.0.0.1:8081"
-	conf.MaxDecoders = 4
+// func TestStart(t *testing.T) {
+// 	p := NewTCPProvider()
+// 	conf := p.ConfigStruct().(*TCPConfig)
+// 	conf.Encoding = event.ENCODING_TYPE_JSON
+// 	conf.Listen = ":8082"
+// 	conf.MaxDecoders = 4
+// 	p.Init(conf)
 
-	err := p.Init(conf)
-	if _, ok := err.(*net.OpError); !ok {
-		t.Fatalf("Expecting bad listening address")
-	}
-}
+// 	cli, err := client.NewTcpClient("localhost:8082", event.ENCODING_TYPE_JSON, 1)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	e := &event.Event{}
+// 	e.Host = "this is a test"
 
-func TestStart(t *testing.T) {
-	p := NewTCPProvider()
-	conf := p.ConfigStruct().(*TCPConfig)
-	conf.Encoding = event.ENCODING_TYPE_JSON
-	conf.Listen = ":8082"
-	conf.MaxDecoders = 4
-	p.Init(conf)
+// 	dst := make(chan *event.Event)
+// 	go p.Start(dst)
 
-	cli, err := client.NewTcpClient("localhost:8082", event.ENCODING_TYPE_JSON, 1)
-	if err != nil {
-		t.Error(err)
-	}
-	e := &event.Event{}
-	e.Host = "this is a test"
+// 	go func() {
+// 		err = cli.Send(e)
+// 		if err != nil {
+// 			t.Error(err)
+// 		}
+// 	}()
 
-	dst := make(chan *event.Event)
-	go p.Start(dst)
+// 	e2 := <-dst
+// 	if e2.Host != e.Host {
+// 		t.Fail()
+// 	}
+// }
 
-	go func() {
-		err = cli.Send(e)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+// func TestMultipleEvents(t *testing.T) {
+// 	p := NewTCPProvider()
+// 	conf := p.ConfigStruct().(*TCPConfig)
+// 	conf.Encoding = event.ENCODING_TYPE_MSGPACK
+// 	conf.Listen = ":8084"
+// 	conf.MaxDecoders = 4
+// 	p.Init(conf)
 
-	e2 := <-dst
-	if e2.Host != e.Host {
-		t.Fail()
-	}
-}
+// 	cli, err := client.NewTcpClient("localhost:8084", event.ENCODING_TYPE_MSGPACK, 1)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	e := &event.Event{}
+// 	e.Host = "this is a test"
 
-func TestMultipleEvents(t *testing.T) {
-	p := NewTCPProvider()
-	conf := p.ConfigStruct().(*TCPConfig)
-	conf.Encoding = event.ENCODING_TYPE_MSGPACK
-	conf.Listen = ":8084"
-	conf.MaxDecoders = 4
-	p.Init(conf)
+// 	dst := make(chan *event.Event, 10)
+// 	go p.Start(dst)
 
-	cli, err := client.NewTcpClient("localhost:8084", event.ENCODING_TYPE_MSGPACK, 1)
-	if err != nil {
-		t.Error(err)
-	}
-	e := &event.Event{}
-	e.Host = "this is a test"
+// 	go func() {
 
-	dst := make(chan *event.Event, 10)
-	go p.Start(dst)
+// 		for i := 0; i < 5; i++ {
+// 			e.Metric = float64(i)
+// 			err = cli.Send(e)
+// 			if err != nil {
+// 				t.Error(err)
+// 			}
+// 		}
+// 	}()
 
-	go func() {
+// 	for i := 0; i < 5; i++ {
+// 		e2 := <-dst
+// 		logrus.Info(e2)
+// 	}
 
-		for i := 0; i < 5; i++ {
-			e.Metric = float64(i)
-			err = cli.Send(e)
-			if err != nil {
-				t.Error(err)
-			}
-		}
-	}()
-
-	for i := 0; i < 5; i++ {
-		e2 := <-dst
-		logrus.Info(e2)
-	}
-
-}
+// }

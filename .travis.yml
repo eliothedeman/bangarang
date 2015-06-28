@@ -4,4 +4,4 @@ go:
 
 script:
     - make install
-    - make test
+    - gb test

@@ -11,6 +11,8 @@ import (
 	"github.com/eliothedeman/bangarang/provider"
 )
 
+const START_HANDSHAKE = "BANGARANG: TCP_PROVIDER"
+
 func init() {
 	provider.LoadEventProviderFactory("tcp", NewTCPProvider)
 }
@@ -85,6 +87,9 @@ func (t *TCPProvider) consume(conn *net.TCPConn, dst chan *event.Event) {
 	var nextEventSize uint64
 	var n int
 	var err error
+
+	// write the start of the handshake so the client can verify this is a bangarang client
+	conn.Write([]byte(START_HANDSHAKE))
 	for {
 
 		// read the size of the next event
@@ -129,7 +134,19 @@ func (t *TCPProvider) consume(conn *net.TCPConn, dst chan *event.Event) {
 func (t *TCPProvider) listen() error {
 	l, err := net.ListenTCP("tcp", t.laddr)
 	if err != nil {
-		return err
+		logrus.Error(err)
+
+		// check to see if it is an already initilized bangarang provider
+		conn, err := net.Dial("tcp", t.laddr.String())
+		if err != nil {
+			return err
+		}
+		buff := make([]byte, len(START_HANDSHAKE))
+		conn.Read(buff)
+		if string(buff) != START_HANDSHAKE {
+			logrus.Error(string(buff))
+			return err
+		}
 	}
 
 	t.listener = l

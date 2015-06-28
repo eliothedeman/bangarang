@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -23,12 +24,18 @@ import (
 var (
 	confFile = flag.String("conf", "/etc/bangarang/conf.json", "path main config file")
 	dev      = flag.Bool("dev", false, "puts bangarang in a dev testing mode")
+	version  = flag.Bool("version", false, "display the version of this binary")
+)
+
+const (
+	VERSION = "0.3.2"
 )
 
 func init() {
 	logrus.SetLevel(logrus.WarnLevel)
 	tf := &logrus.TextFormatter{}
 	tf.FullTimestamp = true
+	tf.ForceColors = true
 	logrus.SetFormatter(tf)
 }
 
@@ -42,6 +49,13 @@ func handleSigs() {
 
 func main() {
 	flag.Parse()
+
+	// display the current version and exit
+	if *version {
+		fmt.Print(VERSION)
+		os.Exit(0)
+	}
+
 	logrus.Infof("Loading config file %s", *confFile)
 	ac, err := config.LoadConfigFile(*confFile)
 	if err != nil {

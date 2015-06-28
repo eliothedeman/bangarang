@@ -210,6 +210,20 @@
 			"revision": "215affda49addc4c8ef7e2534915df2c8c35c6cd",
 			"branch": "master",
 			"path": ""
+		},
+		{
+			"importpath": "github.com/pquerna/ffjson/inception",
+			"repository": "https://github.com/pquerna/ffjson",
+			"revision": "3c3e6a43f09a2f2ab57c801dcffa3378cc603126",
+			"branch": "master",
+			"path": "/inception"
+		},
+		{
+			"importpath": "github.com/pquerna/ffjson",
+			"repository": "https://github.com/pquerna/ffjson",
+			"revision": "3c3e6a43f09a2f2ab57c801dcffa3378cc603126",
+			"branch": "master",
+			"path": ""
 		}
 	]
 }
