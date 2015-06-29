@@ -77,6 +77,12 @@ type AppConfig struct {
 	APIPort         int                               `json:"API_port"`
 	Hash            []byte                            `json:"-"`
 	fileName        string
+	provider        Provider
+}
+
+// Provider returns the Provider that created this AppConfig
+func (c *AppConfig) Provider() Provider {
+	return c.Provider()
 }
 
 // FileName returns the name of the file that was used to create this AppConfig

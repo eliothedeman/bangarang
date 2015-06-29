@@ -20,18 +20,28 @@ func (i INVALID_PROVIDER_TYPE) Error() string {
 	return fmt.Sprintf("Unknown provider type: %s", i)
 }
 
-type EventProviderCollection []EventProvider
+type EventProviderCollection struct {
+	raw        map[string]json.RawMessage
+	Collection map[string]EventProvider
+}
+
+// Raw returns the raw configs for all the known event providers
+func (e *EventProviderCollection) Raw() map[string]json.RawMessage {
+	return e.raw
+}
 
 func (e *EventProviderCollection) UnmarshalJSON(buff []byte) error {
 	typer := struct {
 		Type string `json:"type"`
 	}{}
 
-	// turn the buff into an array of buffs
-	eps := make([]json.RawMessage, 0)
-	err := json.Unmarshal(buff, &eps)
+	e.Collection = make(map[string]EventProvider)
+	e.raw = make(map[string]json.RawMessage)
 
-	for _, b := range eps {
+	// turn the buff into an array of buffs
+	err := json.Unmarshal(buff, e.raw)
+
+	for id, b := range e.raw {
 		typer.Type = ""
 
 		// get the type of the provider
@@ -61,7 +71,7 @@ func (e *EventProviderCollection) UnmarshalJSON(buff []byte) error {
 			return err
 		}
 
-		*e = append(*e, p)
+		e.Collection[id] = p
 	}
 	return nil
 }

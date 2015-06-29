@@ -47,8 +47,8 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 	go p.checkExpired()
 
 	// start up all of the providers
-	logrus.Infof("Starting %d providers", len(p.providers))
-	for _, ep := range p.providers {
+	logrus.Infof("Starting %d providers", len(p.providers.Collection))
+	for _, ep := range p.providers.Collection {
 		logrus.Infof("Starting event provider %+v", ep)
 		go ep.Start(p.in)
 	}

@@ -135,6 +135,7 @@ func (d *DBConf) getVersion(version string) (*AppConfig, error) {
 	for _, p := range s.App.Policies {
 		p.Compile()
 	}
+	s.App.provider = d
 
 	return s.App, nil
 }
