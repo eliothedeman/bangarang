@@ -25,10 +25,11 @@ var (
 	confFile = flag.String("conf", "/etc/bangarang/conf.json", "path main config file")
 	dev      = flag.Bool("dev", false, "puts bangarang in a dev testing mode")
 	version  = flag.Bool("version", false, "display the version of this binary")
+	confType = flag.String("conf-type", "db", `type of configuration used ["db", "json"]`)
 )
 
 const (
-	VERSION = "0.3.2"
+	versionNumber = "0.3.2"
 )
 
 func init() {
@@ -52,18 +53,22 @@ func main() {
 
 	// display the current version and exit
 	if *version {
-		fmt.Print(VERSION)
+		fmt.Print(versionNumber)
 		os.Exit(0)
 	}
 
-	logrus.Infof("Loading config file %s", *confFile)
-	ac, err := config.LoadConfigFile(*confFile)
+	// load configuration
+	cp := config.GetProvider(*confType, *confFile)
+	if cp == nil {
+		logrus.Fatalf("Unable to load config of type %s at location %s", *confType, *confFile)
+	}
+	ac, err := cp.GetCurrent()
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
 	if ac.LogLevel == "" {
-		ac.LogLevel = config.DEFAULT_LOG_LEVEL
+		ac.LogLevel = "info"
 	}
 
 	ll, err := logrus.ParseLevel(ac.LogLevel)
@@ -80,7 +85,7 @@ func main() {
 
 	logrus.Infof("Serving the http api on port %d", 8081)
 	// create and start a new api server
-	apiServer := api.NewServer(ac.ApiPort, p, ac.Auths)
+	apiServer := api.NewServer(ac.APIPort, p)
 	go apiServer.Serve()
 
 	// start the ui

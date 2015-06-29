@@ -23,7 +23,7 @@ func testPipeline(p []*alarm.Policy) (*Pipeline, *test.TestAlert) {
 	pipe := &Pipeline{
 		policies:     p,
 		index:        event.NewIndex(),
-		encodingPool: event.NewEncodingPool(event.EncoderFactories[config.DEFAULT_ENCODING], event.DecoderFactories[config.DEFAULT_ENCODING], runtime.NumCPU()),
+		encodingPool: event.NewEncodingPool(event.EncoderFactories[config.DefaultEncoding], event.DecoderFactories[config.DefaultEncoding], runtime.NumCPU()),
 		escalations: map[string][]alarm.Alarm{
 			"test": []alarm.Alarm{ta},
 		},
