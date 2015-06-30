@@ -24,6 +24,7 @@ type Provider interface {
 	GetConfig(version string) (*AppConfig, error)
 	GetCurrent() (*AppConfig, error)
 	PutConfig(*AppConfig) (string, error)
+	ListSnapshots() []*Snapshot
 }
 
 // GetProvider returns a config provider at that given path.

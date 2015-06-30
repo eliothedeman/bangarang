@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -28,16 +27,22 @@ func (c *ConfigHash) EndPoint() string {
 
 // HashResponse will be marshaled as json as the successful response
 type HashResponse struct {
-	Hash string `json:"hash"`
+	Hash      string `json:"hash"`
+	Timestamp int64  `json:"time"`
 }
 
 // Get HTTP get method
 func (c *ConfigHash) Get(w http.ResponseWriter, r *http.Request) {
-
 	w.Header().Add("content-type", "application/json")
 
-	res := &HashResponse{
-		Hash: fmt.Sprintf("%x", c.pipeline.GetConfig().Hash),
+	snaps := c.pipeline.GetConfig().Provider().ListSnapshots()
+	res := make([]*HashResponse, 0, len(snaps))
+
+	for _, s := range snaps {
+		res = append(res, &HashResponse{
+			Hash:      s.Hash,
+			Timestamp: s.Timestamp.Unix(),
+		})
 	}
 
 	buf, err := json.Marshal(res)
@@ -46,7 +51,6 @@ func (c *ConfigHash) Get(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	w.Header()
 
 	w.Write(buf)
 }

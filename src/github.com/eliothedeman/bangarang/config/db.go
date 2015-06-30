@@ -81,13 +81,13 @@ func (d *DBConf) decode(buff []byte, i interface{}) error {
 // Snapshot represents a bangarang config at a given point in time
 type Snapshot struct {
 	Hash      string
-	TimeStamp time.Time
+	Timestamp time.Time
 	App       *AppConfig
 }
 
 func newSnapshot(ac *AppConfig) *Snapshot {
 	return &Snapshot{
-		TimeStamp: time.Now(),
+		Timestamp: time.Now(),
 		App:       ac,
 		Hash:      fmt.Sprintf("%x", HashConfig(ac)),
 	}
@@ -147,6 +147,27 @@ func (d *DBConf) GetCurrent() (*AppConfig, error) {
 // GetConfig get the config file which has the hash of given version
 func (d *DBConf) GetConfig(versionHash string) (*AppConfig, error) {
 	return d.getVersion(versionHash)
+}
+
+func (d *DBConf) ListSnapshots() []*Snapshot {
+	snaps := []*Snapshot{}
+	err := d.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(appConfigBucketName))
+		return b.ForEach(func(k, v []byte) error {
+			s := &Snapshot{}
+			err := d.decode(v, s)
+			if err != nil {
+				return err
+			}
+			s.Hash = string(k)
+			snaps = append(snaps, s)
+			return nil
+		})
+	})
+	if err != nil {
+		logrus.Error(err)
+	}
+	return snaps
 }
 
 // PutConfig writes the given config to the database and returns
