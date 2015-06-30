@@ -33,7 +33,7 @@ const (
 )
 
 func init() {
-	logrus.SetLevel(logrus.WarnLevel)
+	logrus.SetLevel(logrus.InfoLevel)
 	tf := &logrus.TextFormatter{}
 	tf.FullTimestamp = true
 	tf.ForceColors = true

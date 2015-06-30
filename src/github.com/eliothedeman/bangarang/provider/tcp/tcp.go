@@ -47,12 +47,6 @@ func (t *TCPProvider) Init(i interface{}) error {
 
 	t.laddr = addr
 
-	// start listening on that addr
-	err = t.listen()
-	if err != nil {
-		return err
-	}
-
 	// build an encoding pool
 	t.pool = event.NewEncodingPool(event.EncoderFactories[c.Encoding], event.DecoderFactories[c.Encoding], c.MaxDecoders)
 	return nil
@@ -67,6 +61,14 @@ func (t *TCPProvider) ConfigStruct() interface{} {
 
 // start accepting connections and consume each of them as they come in
 func (t *TCPProvider) Start(dst chan *event.Event) {
+
+	logrus.Infof("TCP Provider listening on %s", t.laddr.String())
+	// start listening on that addr
+	err := t.listen()
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
 
 	// listen for ever
 	for {
@@ -146,7 +148,10 @@ func (t *TCPProvider) listen() error {
 		if string(buff) != START_HANDSHAKE {
 			logrus.Error(string(buff))
 			return err
+		} else {
+			logrus.Infof("TCP provider already running on %s", t.laddr.String())
 		}
+		conn.Close()
 	}
 
 	t.listener = l

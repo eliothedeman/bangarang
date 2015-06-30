@@ -5,7 +5,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/pipeline"
+	"github.com/eliothedeman/bangarang/provider"
 	"github.com/gorilla/mux"
 )
 
@@ -44,18 +46,82 @@ func (c *ProviderConfig) Get(w http.ResponseWriter, r *http.Request) {
 	w.Write(conf)
 }
 
+// Delete the given event provider
+func (p *ProviderConfig) Delete(w http.ResponseWriter, r *http.Request) {
+	conf := p.pipeline.GetConfig()
+	cp := conf.Provider()
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		logrus.Error("Must append provider id", r.URL.String())
+		http.Error(w, "must append provider id", http.StatusBadRequest)
+		return
+	}
+
+	delete(conf.EventProviders.Collection, id)
+	delete(conf.EventProviders.Raw(), id)
+
+	// refresh the config without the provider
+	cp.PutConfig(conf)
+	p.pipeline.Refresh(conf)
+}
+
 // Post HTTP get method
 func (c *ProviderConfig) Post(w http.ResponseWriter, r *http.Request) {
 
 	// get the config.Provider for our current config
 	conf := c.pipeline.GetConfig()
 	p := conf.Provider()
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		logrus.Error("Must append provider id", r.URL.String())
+		http.Error(w, "must append provider id", http.StatusBadRequest)
+		return
+	}
+	if _, inMap := conf.EventProviders.Collection[id]; inMap {
+		http.Error(w, fmt.Sprintf("Provider \"%s\" already exists", id), http.StatusBadRequest)
+		return
+	}
 
 	// read out the new raw provider
 	buff, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "must append provider id", http.StatusBadRequest)
+		logrus.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	ep, err := provider.ParseProvider(buff)
+	if err != nil {
+		if err != nil {
+			logrus.Error(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	if conf.EventProviders.Collection == nil {
+		conf.EventProviders.Collection = make(map[string]provider.EventProvider)
+	}
+
+	conf.EventProviders.Add(id, ep, buff)
+
+	// write the new config
+	_, err = p.PutConfig(conf)
+	if err != nil {
+		logrus.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// pull the new config out, and restart the pipeline
+	conf, err = conf.Provider().GetCurrent()
+	if err != nil {
+		logrus.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	c.pipeline.Refresh(conf)
 }

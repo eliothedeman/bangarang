@@ -71,7 +71,7 @@ type AppConfig struct {
 	Escalations     *alarm.Collection                 `json:"escalations"`
 	GlobalPolicy    *alarm.Policy                     `json:"global_policy"`
 	Encoding        string                            `json:"encoding"`
-	Policies        []*alarm.Policy                   `json:"-"`
+	Policies        map[string]*alarm.Policy          `json:"policies"`
 	EventProviders  *provider.EventProviderCollection `json:"event_providers"`
 	LogLevel        string                            `json:"log_level"`
 	APIPort         int                               `json:"API_port"`
@@ -82,7 +82,7 @@ type AppConfig struct {
 
 // Provider returns the Provider that created this AppConfig
 func (c *AppConfig) Provider() Provider {
-	return c.Provider()
+	return c.provider
 }
 
 // FileName returns the name of the file that was used to create this AppConfig
@@ -144,7 +144,7 @@ func ParseConfigFile(buff []byte) (*AppConfig, error) {
 			p.Name = path[:len(path)-4]
 		}
 
-		ac.Policies = append(ac.Policies, p)
+		ac.Policies[p.Name] = p
 	}
 
 	if ac.GlobalPolicy != nil {

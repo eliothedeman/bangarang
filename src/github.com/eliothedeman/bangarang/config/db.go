@@ -2,6 +2,8 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -35,16 +37,11 @@ var (
 func (d *DBConf) initBuckets() {
 	err := d.db.Update(func(tx *bolt.Tx) error {
 		for _, name := range BucketNames {
-			b, err := tx.CreateBucketIfNotExists([]byte(name))
+			_, err := tx.CreateBucketIfNotExists([]byte(name))
 			if err != nil {
 				return err
 			}
 
-			// create an inner bucket for "current" versions of all of these
-			_, err = b.CreateBucketIfNotExists([]byte(CurrentBucketName))
-			if err != nil {
-				return err
-			}
 		}
 		return nil
 	})
@@ -78,7 +75,7 @@ func (d *DBConf) encode(i interface{}) ([]byte, error) {
 }
 
 func (d *DBConf) decode(buff []byte, i interface{}) error {
-	return nil
+	return json.Unmarshal(buff, i)
 }
 
 // Snapshot represents a bangarang config at a given point in time
@@ -88,10 +85,11 @@ type Snapshot struct {
 	App       *AppConfig
 }
 
-func newSnapshot() *Snapshot {
+func newSnapshot(ac *AppConfig) *Snapshot {
 	return &Snapshot{
 		TimeStamp: time.Now(),
-		App:       NewDefaultConfig(),
+		App:       ac,
+		Hash:      fmt.Sprintf("%x", HashConfig(ac)),
 	}
 }
 
@@ -117,7 +115,8 @@ func (d *DBConf) getVersion(version string) (*AppConfig, error) {
 	}
 
 	// decode the snapshot
-	s := newSnapshot()
+	s := newSnapshot(NewDefaultConfig())
+	s.App.provider = d
 
 	// if the buffer is of zero size, then the config was not found
 	if len(buff) == 0 {
@@ -157,22 +156,25 @@ func (d *DBConf) PutConfig(a *AppConfig) (string, error) {
 		b := tx.Bucket([]byte(appConfigBucketName))
 		oldBuff := b.Get([]byte(CurrentVersionHash))
 		if len(oldBuff) > 0 {
-			old := newSnapshot()
+			old := newSnapshot(NewDefaultConfig())
 			err := d.decode(oldBuff, old)
 			if err != nil {
+				log.Println(err)
 				return err
 			}
 
 			// write the old snapshot at it's
 			err = b.Put([]byte(old.Hash), oldBuff)
 			if err != nil {
+				log.Println(err)
 				return err
 			}
 		}
 
 		// write the new snapshot to disk
-		newBuff, err := d.encode(a)
+		newBuff, err := d.encode(newSnapshot(a))
 		if err != nil {
+			log.Println(err)
 			return err
 		}
 
@@ -180,6 +182,7 @@ func (d *DBConf) PutConfig(a *AppConfig) (string, error) {
 	})
 
 	if err != nil {
+		log.Println(err)
 		return "", err
 	}
 
