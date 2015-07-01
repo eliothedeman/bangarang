@@ -44,8 +44,14 @@ func GetProvider(kind string, path string) Provider {
 		return d
 
 	case "json":
-		logrus.Error("The json config provider has not been implimented yet")
-		return nil
+		f := &FileConf{}
+		f.path = path
+		err := f.initPath()
+		if err != nil {
+			logrus.Error(err)
+			return nil
+		}
+		return f
 	}
 
 	logrus.Errorf("Unknown config provider type %s", kind)
