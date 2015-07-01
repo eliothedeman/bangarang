@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 )
@@ -46,7 +47,7 @@ func (f *FileConf) GetCurrent() (*AppConfig, error) {
 }
 
 func (f *FileConf) initPath() error {
-	return os.MkdirAll(f.path, 0660)
+	return os.MkdirAll(f.path, 0775)
 }
 
 func (f *FileConf) PutConfig(ac *AppConfig) (string, error) {
@@ -101,6 +102,10 @@ func (f *FileConf) ListSnapshots() []*Snapshot {
 		if err != nil {
 			logrus.Error(err)
 			return snaps
+		}
+
+		if strings.Contains(p, "current") {
+			s.Hash = "current"
 		}
 
 		snaps = append(snaps, s)
