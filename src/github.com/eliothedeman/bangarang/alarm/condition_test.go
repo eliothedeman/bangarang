@@ -30,9 +30,9 @@ func newTestEvent(h, s string, m float64) *event.Event {
 }
 
 func TestAggregation(t *testing.T) {
-	c := newTestCondition(10, -1, 5)
+	c := newTestCondition(10, -1, 500)
 	c.Aggregation = &Aggregation{
-		WindowLength: 100,
+		WindowLength: 110,
 	}
 
 	c.init(map[string]string{
@@ -41,7 +41,7 @@ func TestAggregation(t *testing.T) {
 
 	for i := 0; i < 110; i++ {
 		if c.TrackEvent(newTestEvent(fmt.Sprintf("machine.deployment%d.com", i%10), "service", 1)) {
-			t.Error()
+			t.Fatal(i)
 		}
 	}
 
@@ -57,7 +57,7 @@ func TestAggCloseout(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	c := newTestCondition(10, -1, 5)
+	c := newTestCondition(10, -1, 500)
 	c.Aggregation = &Aggregation{
 		WindowLength: 1,
 	}
@@ -68,7 +68,7 @@ func TestAggCloseout(t *testing.T) {
 
 	for i := 0; i < 110; i++ {
 		if c.TrackEvent(newTestEvent(fmt.Sprintf("machine.deployment%d.com", i%10), "service", 1)) {
-			t.Error()
+			t.Fatal()
 		}
 	}
 
