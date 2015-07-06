@@ -87,6 +87,11 @@ type AppConfig struct {
 	provider        Provider
 }
 
+// SetProvider changes the AppConfigs provider to the givin one
+func (a *AppConfig) SetProvider(p Provider) {
+	a.provider = p
+}
+
 // Provider returns the Provider that created this AppConfig
 func (c *AppConfig) Provider() Provider {
 	return c.provider

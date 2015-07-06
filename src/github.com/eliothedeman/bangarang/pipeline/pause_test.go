@@ -13,7 +13,7 @@ import (
 func TestPausePipeline(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, map[string]string{"service": "KeepAlive"}, nil)
-	p, _ := testPipeline([]*alarm.Policy{pipe})
+	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	p.Start()
 
 	p.pause()
@@ -27,7 +27,7 @@ func TestPausePipelineCache(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, map[string]string{"service": "KeepAlive"}, nil)
-	p, _ := testPipeline([]*alarm.Policy{pipe})
+	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	p.Start()
 	insert := p.in
 	p.pause()
@@ -57,8 +57,7 @@ func TestRefreshPipeline(t *testing.T) {
 	}
 
 	p := NewPipeline(ac)
-
-	ac.Policies = append(ac.Policies, &alarm.Policy{})
+	ac.Policies = map[string]*alarm.Policy{"test": &alarm.Policy{}}
 
 	p.Refresh(ac)
 
