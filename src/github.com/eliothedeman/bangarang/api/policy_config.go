@@ -43,6 +43,18 @@ func (p *PolicyConfig) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if id == "*" {
+		buff, err := json.Marshal(conf.Policies)
+		if err != nil {
+			logrus.Error(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		w.Write(buff)
+		return
+	}
+
 	// special case for global
 	var pol *alarm.Policy
 	if id == "global" {

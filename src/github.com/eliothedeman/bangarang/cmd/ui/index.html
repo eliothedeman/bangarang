@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html ng-app="bangarang">
+<head>
+	<title>Bangarang</title>
+	<script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+	<script type="text/javascript" src="bower_components/angular/angular.js"></script>
+	<script type="text/javascript" src="js/policy.js"></script>
+	<link rel="import" href="bower_components/polymer/polymer.html">
+	<link rel="import" href="bower_components/paper-material/paper-material.html">
+</head>
+<body>
+	<script type="text/javascript">
+		angular.module("bangarang").config(function($httpProvider) {
+			$httpProvider.defaults.headers.common["Access-Control-Allow-Origin"] = "*";
+		});
+	</script>
+	<h2>Policies</h2>
+	<div ng-controller="PolicyController as pc">
+		<ul>
+			<div ng-repeat="(key, value) in policies">
+				<li ng-model>{{key}},{{value}}</li>
+			</div>
+		</ul>
+	</div>
+</body>
+</html>
+<!--  -->

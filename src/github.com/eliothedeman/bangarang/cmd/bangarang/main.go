@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
-	"net/http"
 	"os"
 	"os/signal"
 
@@ -18,7 +16,6 @@ import (
 	"github.com/eliothedeman/bangarang/pipeline"
 	_ "github.com/eliothedeman/bangarang/provider/http"
 	_ "github.com/eliothedeman/bangarang/provider/tcp"
-	"github.com/eliothedeman/bangarang/ui"
 )
 
 var (
@@ -88,13 +85,5 @@ func main() {
 	apiServer := api.NewServer(ac.APIPort, p)
 	go apiServer.Serve()
 
-	// start the ui
-	go func() {
-		uiServer := &ui.Server{}
-		err := http.ListenAndServe(":9090", uiServer)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
 	handleSigs()
 }
