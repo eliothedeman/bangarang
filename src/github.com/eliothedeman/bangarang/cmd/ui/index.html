@@ -2,11 +2,15 @@
 <html ng-app="bangarang">
 <head>
 	<title>Bangarang</title>
+	<link rel="stylesheet" type="text/css" href="css/header.css">
 	<script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
 	<script type="text/javascript" src="bower_components/angular/angular.js"></script>
+	<script type="text/javascript" src="bower_components/angular-route/angular-route.js"></script>
+	<script type="text/javascript" src="bower_components/angular-material/angular-material.js"></script>
 	<script type="text/javascript" src="js/policy.js"></script>
-	<link rel="import" href="bower_components/polymer/polymer.html">
-	<link rel="import" href="bower_components/paper-material/paper-material.html">
+	<script type="text/javascript" src="js/provider.js"></script>
+	<script type="text/javascript" src="js/events.js"></script>
+	<script type="text/javascript" src="js/router.js"></script>
 </head>
 <body>
 	<script type="text/javascript">
@@ -14,14 +18,17 @@
 			$httpProvider.defaults.headers.common["Access-Control-Allow-Origin"] = "*";
 		});
 	</script>
-	<h2>Policies</h2>
-	<div ng-controller="PolicyController as pc">
-		<ul>
-			<div ng-repeat="(key, value) in policies">
-				<li ng-model>{{key}},{{value}}</li>
-			</div>
-		</ul>
-	</div>
+	<md-content>
+		<div ng-controller="RouterController as rc">
+			<section layout="row" layout-sm="colunm" layout-align="center center">
+				<div ng-repeat="r in rc.routes">
+					<button class="md-raised md-button">
+						<span class="ng-scope">{{r}}</span>
+					</button>
+				</div>
+			</section>
+		</div>
+	</md-content>
 </body>
 </html>
 <!--  -->
