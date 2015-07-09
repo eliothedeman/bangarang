@@ -567,7 +567,6 @@
 // js/main.js
 // js/policy.js
 // js/provider.js
-// js/router.js
 // main.go
 // ui
 // DO NOT EDIT!
@@ -10802,24 +10801,6 @@ func jsProviderJs() (*asset, error) {
 	return a, err
 }
 
-// jsRouterJs reads file data from disk. It returns an error on failure.
-func jsRouterJs() (*asset, error) {
-	path := filepath.Join(rootDir, "js/router.js")
-	name := "js/router.js"
-	bytes, err := bindataRead(path, name)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := os.Stat(path)
-	if err != nil {
-		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
-	}
-
-	a := &asset{bytes: bytes, info: fi}
-	return a, err
-}
-
 // mainGo reads file data from disk. It returns an error on failure.
 func mainGo() (*asset, error) {
 	path := filepath.Join(rootDir, "main.go")
@@ -11475,7 +11456,6 @@ var _bindata = map[string]func() (*asset, error){
 	"js/main.js": jsMainJs,
 	"js/policy.js": jsPolicyJs,
 	"js/provider.js": jsProviderJs,
-	"js/router.js": jsRouterJs,
 	"main.go": mainGo,
 	"ui": ui,
 }
@@ -12960,8 +12940,6 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"policy.js": &bintree{jsPolicyJs, map[string]*bintree{
 		}},
 		"provider.js": &bintree{jsProviderJs, map[string]*bintree{
-		}},
-		"router.js": &bintree{jsRouterJs, map[string]*bintree{
 		}},
 	}},
 	"main.go": &bintree{mainGo, map[string]*bintree{

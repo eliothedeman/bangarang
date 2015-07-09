@@ -12,6 +12,24 @@ import (
 type Server struct {
 }
 
+func getContentType(fileName string) string {
+	n := strings.Split(fileName, ".")
+	if len(n) == 0 {
+		return "application/json"
+	}
+	switch n[len(n)-1] {
+	case "css":
+		return "text/css"
+	case "html", "htm":
+		return "text/html"
+	case "js":
+		return "application/javascript"
+	default:
+		return "application/json"
+	}
+	return ""
+}
+
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", "*")
 	path := r.URL.Path
@@ -42,6 +60,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	} else {
 		path = path[1:]
 	}
+
+	w.Header().Add("Content-Type", getContentType(path))
 
 	buff, err := Asset(path)
 	if err != nil {
