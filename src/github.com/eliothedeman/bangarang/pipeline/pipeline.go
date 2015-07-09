@@ -20,7 +20,7 @@ type Pipeline struct {
 	keepAliveAge       time.Duration
 	keepAliveCheckTime time.Duration
 	globalPolicy       *alarm.Policy
-	escalations        alarm.Collection
+	escalations        *alarm.Collection
 	policies           map[string]*alarm.Policy
 	index              *event.Index
 	providers          provider.EventProviderCollection
@@ -62,7 +62,7 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 
 	// update optional config options
 	if conf.Escalations != nil {
-		p.escalations = *conf.Escalations
+		p.escalations = conf.Escalations
 	}
 
 	if conf.EventProviders != nil {
@@ -240,7 +240,7 @@ func (p *Pipeline) Process(e *event.Event) int {
 					}
 
 					// fetch the escalation to take
-					esc, ok := p.escalations[act]
+					esc, ok := p.escalations.Collection()[act]
 					if ok {
 
 						// send to every alarm in the escalation

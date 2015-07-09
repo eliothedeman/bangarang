@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net"
 	std_http "net/http"
@@ -80,6 +81,11 @@ func (t *HTTPProvider) ConfigStruct() interface{} {
 
 // start accepting connections and consume each of them as they come in
 func (h *HTTPProvider) Start(dst chan *event.Event) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered in f", r)
+		}
+	}()
 	std_http.HandleFunc(ENDPOINT, func(w std_http.ResponseWriter, r *std_http.Request) {
 
 		// handle the case where a provider is restarting and needs to check if a listener is a bangarang provider or not

@@ -11,16 +11,26 @@ import (
 var (
 	alarms = &alarmCollection{
 		// maps an alarm type name to an alarm
-		factories:   make(map[string]Factory),
-		collections: Collection{},
+		factories: make(map[string]Factory),
 	}
 )
 
 // Collection maps the name of an escalation policy to the actions to be taken by them
-type Collection map[string][]Alarm
+type Collection struct {
+	c   map[string][]Alarm
+	raw map[string][]json.RawMessage
+}
+
+func (c *Collection) Collection() map[string][]Alarm {
+	return c.c
+}
+
+func (c *Collection) MarshalJSON() ([]byte, error) {
+	return json.Marshal(c.raw)
+}
 
 // UnmarshalJSON a custom unmarshal func for an escalation policy
-func (c Collection) UnmarshalJSON(buff []byte) error {
+func (c *Collection) UnmarshalJSON(buff []byte) error {
 	b := map[string][]json.RawMessage{}
 	name := &struct {
 		Type *string `json:"type"`
@@ -32,8 +42,11 @@ func (c Collection) UnmarshalJSON(buff []byte) error {
 		return err
 	}
 
+	c.raw = make(map[string][]json.RawMessage)
+	c.c = make(map[string][]Alarm)
 	for k, v := range b {
-		c[k] = make([]Alarm, 0)
+		c.c[k] = make([]Alarm, 0)
+		c.raw[k] = v
 		for _, raw := range v {
 			name.Name = nil
 			name.Type = nil
@@ -47,31 +60,12 @@ func (c Collection) UnmarshalJSON(buff []byte) error {
 			if err != nil {
 				return err
 			}
-			c[k] = append(c[k], newAlarm)
+			c.c[k] = append(c.c[k], newAlarm)
 
 		}
-		LoadCollection(k, c[k])
 	}
 
 	return nil
-}
-
-// LoadCollection load a collection into the global alarm collection
-func LoadCollection(name string, coll []Alarm) {
-	alarms.Lock()
-	alarms.collections[name] = coll
-	alarms.Unlock()
-}
-
-// GetCollection returns the collection associated with the given name
-func GetCollection(name string) []Alarm {
-	alarms.Lock()
-	a, ok := alarms.collections[name]
-	alarms.Unlock()
-	if !ok {
-		return nil
-	}
-	return a
 }
 
 // GetFactory returns the Factory associated with the given name

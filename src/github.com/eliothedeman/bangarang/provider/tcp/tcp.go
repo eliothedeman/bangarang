@@ -2,7 +2,6 @@ package tcp
 
 import (
 	"encoding/binary"
-	"log"
 	"net"
 	"runtime"
 
@@ -74,7 +73,8 @@ func (t *TCPProvider) Start(dst chan *event.Event) {
 	for {
 		c, err := t.listener.AcceptTCP()
 		if err != nil {
-			log.Println(err)
+			logrus.Errorf("Cannot accept new tcp connection %s", err.Error())
+			return
 		} else {
 			// consume the connection
 			logrus.Infof("Accpeted new tcp connection from %s", c.RemoteAddr().String())
