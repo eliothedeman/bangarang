@@ -22,4 +22,4 @@ EXPOSE 8081
 
 VOLUME /etc/bangarang
 
-ENTRYPOINT /go/bin/bangarang -conf-type=json -conf=/etc/bangarang/conf.json
+ENTRYPOINT /go/bin/bangarang -conf-type=json -conf=/etc/bangarang/confs
