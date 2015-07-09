@@ -77,7 +77,8 @@ func (t *TCPProvider) Start(dst chan *event.Event) {
 			log.Println(err)
 		} else {
 			// consume the connection
-			t.consume(c, dst)
+			logrus.Infof("Accpeted new tcp connection from %s", c.RemoteAddr().String())
+			go t.consume(c, dst)
 		}
 	}
 }

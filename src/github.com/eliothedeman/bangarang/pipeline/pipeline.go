@@ -69,13 +69,6 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 		p.providers = *conf.EventProviders
 	}
 
-	// start up all of the providers
-	logrus.Infof("Starting %d providers", len(p.providers.Collection))
-	for name, ep := range p.providers.Collection {
-		logrus.Infof("Starting event provider %s", name)
-		go ep.Start(p.in)
-	}
-
 	p.policies = conf.Policies
 	p.keepAliveAge = conf.KeepAliveAge
 	p.globalPolicy = conf.GlobalPolicy
@@ -83,6 +76,12 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 	// update to the new config
 	p.config = conf
 	p.unpause()
+	// start up all of the providers
+	logrus.Infof("Starting %d providers", len(p.providers.Collection))
+	for name, ep := range p.providers.Collection {
+		logrus.Infof("Starting event provider %s", name)
+		go ep.Start(p.in)
+	}
 }
 
 // unpause resume processing jobs
