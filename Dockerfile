@@ -20,4 +20,6 @@ EXPOSE 5555
 EXPOSE 5556 
 EXPOSE 8081 
 
-ENTRYPOINT /go/bin/bangarang -conf=/etc/bangarang/conf.json
+VOLUME /etc/bangarang
+
+ENTRYPOINT /go/bin/bangarang -conf-type=json -conf=/etc/bangarang/conf.json
