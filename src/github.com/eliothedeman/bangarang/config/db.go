@@ -80,9 +80,9 @@ func (d *DBConf) decode(buff []byte, i interface{}) error {
 
 // Snapshot represents a bangarang config at a given point in time
 type Snapshot struct {
-	Hash      string
-	Timestamp time.Time
-	App       *AppConfig
+	Hash      string     `json:"hash"`
+	Timestamp time.Time  `json:"time_stamp"`
+	App       *AppConfig `json:"app"`
 }
 
 func newSnapshot(ac *AppConfig) *Snapshot {
