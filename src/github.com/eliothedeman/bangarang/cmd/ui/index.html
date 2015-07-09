@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<base href="/" target="_blank" />
+	<title>Bangarang</title>
+	<link rel="stylesheet" type="text/css" href="css/header.css">
+	<link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Roboto:400,500,700,400italic'>
+	<script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+	<script type="text/javascript" src="bower_components/angular/angular.js"></script>
+	<script type="text/javascript" src="bower_components/angular-animate/angular-animate.js"></script>
+	<script type="text/javascript" src="bower_components/angular-aria/angular-aria.js"></script>
+	<script type="text/javascript" src="bower_components/angular-route/angular-route.js"></script>
+	<script type="text/javascript" src="bower_components/angular-material/angular-material.js"></script>
+	<link rel="stylesheet" href="bower_components/angular-material/angular-material.css"></script>
+
+</head>
+<body ng-app="bangarang">
+	<script type="text/javascript">
+		angular.module("bangarang", ["ngMaterial", "ngAnimate"])
+		.config(function($httpProvider, $mdThemingProvider, $mdIconProvider) {
+			$httpProvider.defaults.headers.common["Access-Control-Allow-Origin"] = "*";
+			$mdThemingProvider.theme("default").primaryPalette("brown");
+			$mdThemingProvider.theme("default").accentPalette("red");
+		});
+	</script>
+	<script type="text/javascript" src="js/policy.js"></script>
+	<script type="text/javascript" src="js/provider.js"></script>
+	<script type="text/javascript" src="js/events.js"></script>
+	<md-tabs md-dynamic-height md-border-bottom>
+		<md-tab label="policy">
+			<div ng-controller="PolicyController as pc">
+				<md-tabs md-dynamic-height md-border-bottom>
+					<md-tab label="list">
+						<md-card md-dynamic-height>
+							<md-card-content md-dynamic-height>
+								<md-list>
+									<md-list-item md-dynamic-height ng-repeat="(name, p) in policies">
+										<p>
+											Name: {{name}}
+											<br>
+											Match: {{p.match}}
+											<br>
+											Not Match: {{p.not_match}}
+											<br>
+											Crit: {{p.crit}}
+											<br>
+											Warn: {{p.warn}}
+											<br>
+										</p>
+										<md-divider></md-divider>
+									</md-list-item>
+								</md-list>
+							</md-card-content>
+						</md-card>
+					</md-tab>
+					<md-tab label="new">
+					</md-tab>
+					<md-tab label="delete">
+					</md-tab>
+				</md-tabs>
+			</div>
+		</md-tab>
+		<md-tab label="provider">
+			<div ng-controller="ProviderController as pc">
+			</div>
+		</md-tab>
+		<md-tab label="events">
+			<div ng-controller="EventsController as pc">
+			</div>
+		</md-tab>
+	</md-tabs>
+</body>
+</html>

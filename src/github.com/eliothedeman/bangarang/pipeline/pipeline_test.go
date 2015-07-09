@@ -9,7 +9,6 @@ import (
 
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/alarm/test"
-	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/event"
 )
 
@@ -17,13 +16,13 @@ var (
 	tests_ran = 0
 )
 
-func testPipeline(p []*alarm.Policy) (*Pipeline, *test.TestAlert) {
+func testPipeline(p map[string]*alarm.Policy) (*Pipeline, *test.TestAlert) {
 	tests_ran += 1
 	ta := test.NewTest().(*test.TestAlert)
 	pipe := &Pipeline{
 		policies:     p,
 		index:        event.NewIndex(),
-		encodingPool: event.NewEncodingPool(event.EncoderFactories[config.DEFAULT_ENCODING], event.DecoderFactories[config.DEFAULT_ENCODING], runtime.NumCPU()),
+		encodingPool: event.NewEncodingPool(event.EncoderFactories["json"], event.DecoderFactories["json"], runtime.NumCPU()),
 		escalations: map[string][]alarm.Alarm{
 			"test": []alarm.Alarm{ta},
 		},
@@ -64,7 +63,7 @@ func test_f(f float64) *float64 {
 func TestKeepAlive(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, map[string]string{"service": "KeepAlive"}, nil)
-	p, ta := testPipeline([]*alarm.Policy{pipe})
+	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := &event.Event{
 		Host:    "test",
@@ -89,7 +88,7 @@ func TestKeepAlive(t *testing.T) {
 func TestMatchPolicy(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
-	p, ta := testPipeline([]*alarm.Policy{pipe})
+	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 
 	e := &event.Event{
@@ -112,7 +111,7 @@ func TestMatchPolicy(t *testing.T) {
 func TestOccurences(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 2)
 	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
-	p, _ := testPipeline([]*alarm.Policy{pipe})
+	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 
 	e := &event.Event{
@@ -139,7 +138,7 @@ func TestOccurences(t *testing.T) {
 func BenchmarkProcessOk(b *testing.B) {
 	c := testCondition(test_f(0), nil, nil, 0)
 	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
-	p, _ := testPipeline([]*alarm.Policy{pipe})
+	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 
 	e := &event.Event{
@@ -158,7 +157,7 @@ func BenchmarkProcessOk(b *testing.B) {
 func BenchmarkIndex(b *testing.B) {
 	c := testCondition(test_f(0), nil, nil, 0)
 	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
-	p, _ := testPipeline([]*alarm.Policy{pipe})
+	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 
 	e := &event.Event{
@@ -183,7 +182,7 @@ func BenchmarkIndexWithStats(b *testing.B) {
 	}
 
 	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
-	p, _ := testPipeline([]*alarm.Policy{pipe})
+	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 
 	e := &event.Event{
@@ -204,7 +203,7 @@ func BenchmarkIndexWithStats(b *testing.B) {
 func TestProcess(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 0)
 	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
-	p, _ := testPipeline([]*alarm.Policy{pipe})
+	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 
 	e := &event.Event{
@@ -232,7 +231,7 @@ func TestProcess(t *testing.T) {
 func TestProcessDedupe(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 0)
 	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
-	p, ta := testPipeline([]*alarm.Policy{pipe})
+	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 
 	events := make([]*event.Event, 100)

@@ -67,7 +67,6 @@ func (g grouper) genIndexName(e *event.Event) string {
 			name = name + ":" + res[0]
 		case 2:
 			name = name + ":" + res[1]
-			//
 		}
 	}
 	return name
@@ -218,7 +217,7 @@ func (c *Condition) compileChecks() []satisfier {
 
 	// if we are using aggregation, replace all with the aggregation form
 	if c.Aggregation != nil {
-		logrus.Info("Converting checks to using aggregation")
+		logrus.Infof("Converting %d checks to using aggregation", len(s))
 		for i := range s {
 			s[i] = c.wrapAggregation(s[i])
 		}

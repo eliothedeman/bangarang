@@ -20,8 +20,8 @@ type Pipeline struct {
 	keepAliveAge       time.Duration
 	keepAliveCheckTime time.Duration
 	globalPolicy       *alarm.Policy
-	escalations        alarm.AlarmCollection
-	policies           []*alarm.Policy
+	escalations        alarm.Collection
+	policies           map[string]*alarm.Policy
 	index              *event.Index
 	providers          provider.EventProviderCollection
 	encodingPool       *event.EncodingPool
@@ -46,13 +46,6 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 	logrus.Debug("Starting expiration checker")
 	go p.checkExpired()
 
-	// start up all of the providers
-	logrus.Infof("Starting %d providers", len(p.providers))
-	for _, ep := range p.providers {
-		logrus.Infof("Starting event provider %+v", ep)
-		go ep.Start(p.in)
-	}
-
 	return p
 }
 
@@ -76,6 +69,13 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 		p.providers = *conf.EventProviders
 	}
 
+	// start up all of the providers
+	logrus.Infof("Starting %d providers", len(p.providers.Collection))
+	for name, ep := range p.providers.Collection {
+		logrus.Infof("Starting event provider %s", name)
+		go ep.Start(p.in)
+	}
+
 	p.policies = conf.Policies
 	p.keepAliveAge = conf.KeepAliveAge
 	p.globalPolicy = conf.GlobalPolicy
@@ -83,8 +83,6 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 	// update to the new config
 	p.config = conf
 	p.unpause()
-
-	p.Start()
 }
 
 // unpause resume processing jobs

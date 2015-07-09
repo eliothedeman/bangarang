@@ -10,7 +10,7 @@ import (
 func TestResolve(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
-	p, ta := testPipeline([]*alarm.Policy{pipe})
+	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 
 	e := &event.Event{}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -12,55 +13,105 @@ import (
 	"github.com/eliothedeman/bangarang/provider"
 )
 
+// A Configer provides an interface to dynamicaly load configuration
 type Configer interface {
 	ConfigStruct() interface{}
 	Init(interface{}) error
 }
 
+// A Provider can read and write configs, along with querying for versions
+type Provider interface {
+	GetConfig(version string) (*AppConfig, error)
+	GetCurrent() (*AppConfig, error)
+	PutConfig(*AppConfig) (string, error)
+	ListSnapshots() []*Snapshot
+}
+
+// GetProvider returns a config provider at that given path.
+// If nothing exists at that path, one will be created.
+// If a bad kind id provided, a nil value will be returned
+func GetProvider(kind string, path string) Provider {
+	switch strings.ToLower(kind) {
+	case "db":
+		d := &DBConf{}
+		d.fileName = path
+		err := d.initDB()
+		if err != nil {
+			logrus.Error(err)
+			return nil
+		}
+
+		return d
+
+	case "json":
+		f := &FileConf{}
+		f.path = path
+		err := f.initPath()
+		if err != nil {
+			logrus.Error(err)
+			return nil
+		}
+		return f
+	}
+
+	logrus.Errorf("Unknown config provider type %s", kind)
+	return nil
+}
+
 var (
-	DEFAULT_ENCODING  = "json"
-	DEFAULT_LOG_LEVEL = "info"
+	defaultEncoding = "json"
+	defaultLogLevel = "info"
 )
 
 const (
-	DEFAULT_DB_PATH       = "event.db"
-	DEFAULT_KEEPALIVE_AGE = "25m"
-	DEFAULT_API_PORT      = 8081
+	defaultDBPath       = "event.db"
+	defaultKeepaliveAge = "25m"
+	defaultAPIPort      = 8081
 )
 
-type BasicAuth struct {
-	UserName, PasswordHash string
-}
-
+// AppConfig provides configuration options for setting up the application
 type AppConfig struct {
-	EscalationsDir   string                            `json:"escalations_dir"`
-	KeepAliveAge     time.Duration                     `json:"-"`
-	Raw_KeepAliveAge string                            `json:"keep_alive_age"`
-	DbPath           string                            `json:"db_path"`
-	Escalations      *alarm.AlarmCollection            `json:"escalations"`
-	GlobalPolicy     *alarm.Policy                     `json:"global_policy"`
-	Encoding         string                            `json:"encoding"`
-	Policies         []*alarm.Policy                   `json:"-"`
-	EventProviders   *provider.EventProviderCollection `json:"event_providers"`
-	LogLevel         string                            `json:"log_level"`
-	ApiPort          int                               `json:"api_port"`
-	Auths            []BasicAuth                       `json:"basic_auth_users"`
-	Hash             []byte                            `json:"-"`
-	fileName         string
+	EscalationsDir  string                            `json:"escalations_dir"`
+	KeepAliveAge    time.Duration                     `json:"-"`
+	RawKeepAliveAge string                            `json:"keep_alive_age"`
+	DbPath          string                            `json:"db_path"`
+	Escalations     *alarm.Collection                 `json:"escalations"`
+	GlobalPolicy    *alarm.Policy                     `json:"global_policy"`
+	Encoding        string                            `json:"encoding"`
+	Policies        map[string]*alarm.Policy          `json:"policies"`
+	EventProviders  *provider.EventProviderCollection `json:"event_providers"`
+	LogLevel        string                            `json:"log_level"`
+	APIPort         int                               `json:"API_port"`
+	Hash            []byte                            `json:"-"`
+	fileName        string
+	provider        Provider
 }
 
+// SetProvider changes the AppConfigs provider to the givin one
+func (a *AppConfig) SetProvider(p Provider) {
+	a.provider = p
+}
+
+// Provider returns the Provider that created this AppConfig
+func (c *AppConfig) Provider() Provider {
+	return c.provider
+}
+
+// FileName returns the name of the file that was used to create this AppConfig
 func (c *AppConfig) FileName() string {
 	return c.fileName
 }
 
+// NewDefaultConfig create and return a new instance of the default configuration
 func NewDefaultConfig() *AppConfig {
 	return &AppConfig{
-		Raw_KeepAliveAge: DEFAULT_KEEPALIVE_AGE,
-		DbPath:           DEFAULT_DB_PATH,
-		ApiPort:          DEFAULT_API_PORT,
-		Encoding:         DEFAULT_ENCODING,
-		Escalations:      &alarm.AlarmCollection{},
-		EventProviders:   &provider.EventProviderCollection{},
+		RawKeepAliveAge: defaultKeepaliveAge,
+		DbPath:          defaultDBPath,
+		APIPort:         defaultAPIPort,
+		Encoding:        defaultEncoding,
+		Escalations:     &alarm.Collection{},
+		LogLevel:        defaultLogLevel,
+		EventProviders:  &provider.EventProviderCollection{},
 	}
 }
 
@@ -77,7 +128,7 @@ func ParseConfigFile(buff []byte) (*AppConfig, error) {
 		return nil, err
 	}
 
-	ac.KeepAliveAge, err = time.ParseDuration(ac.Raw_KeepAliveAge)
+	ac.KeepAliveAge, err = time.ParseDuration(ac.RawKeepAliveAge)
 	if err != nil {
 		return ac, err
 	}
@@ -105,7 +156,7 @@ func ParseConfigFile(buff []byte) (*AppConfig, error) {
 			p.Name = path[:len(path)-4]
 		}
 
-		ac.Policies = append(ac.Policies, p)
+		ac.Policies[p.Name] = p
 	}
 
 	if ac.GlobalPolicy != nil {
@@ -117,7 +168,7 @@ func ParseConfigFile(buff []byte) (*AppConfig, error) {
 	}
 
 	if ac.LogLevel == "" {
-		ac.LogLevel = DEFAULT_LOG_LEVEL
+		ac.LogLevel = defaultLogLevel
 	}
 
 	ac.Hash = hasher.Sum(nil)

@@ -20,50 +20,95 @@ func (i INVALID_PROVIDER_TYPE) Error() string {
 	return fmt.Sprintf("Unknown provider type: %s", i)
 }
 
-type EventProviderCollection []EventProvider
+type EventProviderCollection struct {
+	raw        map[string]json.RawMessage
+	Collection map[string]EventProvider
+}
+
+// Raw returns the raw configs for all the known event providers
+func (e *EventProviderCollection) Raw() map[string]json.RawMessage {
+	return e.raw
+}
+
+func (e *EventProviderCollection) MarshalJSON() ([]byte, error) {
+	m := make(map[string]map[string]interface{})
+	for k, v := range e.raw {
+		n := make(map[string]interface{})
+		err := json.Unmarshal(v, &n)
+		if err != nil {
+			return nil, err
+		}
+
+		m[k] = n
+	}
+	return json.Marshal(m)
+}
+
+func (e *EventProviderCollection) Add(name string, ep EventProvider, raw []byte) {
+	if e.raw == nil {
+		e.raw = make(map[string]json.RawMessage)
+	}
+
+	e.raw[name] = raw
+	e.Collection[name] = ep
+
+}
 
 func (e *EventProviderCollection) UnmarshalJSON(buff []byte) error {
+	e.Collection = make(map[string]EventProvider)
+	e.raw = make(map[string]json.RawMessage)
+
+	// turn the buff into an array of buffs
+	err := json.Unmarshal(buff, &e.raw)
+	if err != nil {
+		return err
+	}
+
+	for id, b := range e.raw {
+		p, err := ParseProvider(b)
+		if err != nil {
+			return err
+		}
+
+		e.Collection[id] = p
+	}
+	return nil
+}
+
+func ParseProvider(raw []byte) (EventProvider, error) {
 	typer := struct {
 		Type string `json:"type"`
 	}{}
 
-	// turn the buff into an array of buffs
-	eps := make([]json.RawMessage, 0)
-	err := json.Unmarshal(buff, &eps)
-
-	for _, b := range eps {
-		typer.Type = ""
-
-		// get the type of the provider
-		err = json.Unmarshal(b, &typer)
-		if err != nil {
-			return err
-		}
-
-		// if no type was found, error out
-		if typer.Type == "" {
-			return PROVIDER_TYPE_NOT_FOUND
-		}
-
-		p := GetEventProvider(typer.Type)
-		if p == nil {
-			return INVALID_PROVIDER_TYPE(typer.Type)
-		}
-
-		conf := p.ConfigStruct()
-		err = json.Unmarshal(b, conf)
-		if err != nil {
-			return err
-		}
-
-		err = p.Init(conf)
-		if err != nil {
-			return err
-		}
-
-		*e = append(*e, p)
+	// get the type of the provider
+	err := json.Unmarshal(raw, &typer)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+
+	// if no type was found, error out
+	if typer.Type == "" {
+		return nil, PROVIDER_TYPE_NOT_FOUND
+	}
+
+	p := GetEventProvider(typer.Type)
+	if p == nil {
+		return nil, INVALID_PROVIDER_TYPE(typer.Type)
+	}
+
+	conf := p.ConfigStruct()
+	err = json.Unmarshal(raw, conf)
+	if err != nil {
+		return nil, err
+	}
+
+	err = p.Init(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	return p, nil
+
 }
 
 // Load a given event provider factory
