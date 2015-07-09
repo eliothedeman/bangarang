@@ -126,7 +126,7 @@ func (t *TCPProvider) consume(conn *net.TCPConn, dst chan *event.Event) {
 		})
 
 		if err != nil {
-			log.Println(err)
+			logrus.Error(err, string(buff[:nextEventSize]))
 		} else {
 			dst <- e
 		}
