@@ -26,15 +26,15 @@
 	<script type="text/javascript" src="js/policy.js"></script>
 	<script type="text/javascript" src="js/provider.js"></script>
 	<script type="text/javascript" src="js/events.js"></script>
+	<script type="text/javascript" src="js/escalation.js"></script>
 	<md-tabs md-dynamic-height md-border-bottom>
 		<md-tab label="policy">
 			<div ng-controller="PolicyController as pc">
 				<md-tabs md-dynamic-height md-border-bottom>
 					<md-tab label="list">
-						<md-card md-dynamic-height>
+						<md-card md-dynamic-height ng-repeat="(name, p) in policies">
 							<md-card-content md-dynamic-height>
 								<md-list>
-									<md-list-item md-dynamic-height ng-repeat="(name, p) in policies">
 										<p>
 											Name: {{name}}
 											<br>
@@ -48,16 +48,110 @@
 											<br>
 										</p>
 										<md-divider></md-divider>
-									</md-list-item>
 								</md-list>
 							</md-card-content>
 						</md-card>
 					</md-tab>
 					<md-tab label="new">
+						<md-card md-dynamic-height>
+							<md-card-content md-dynamic-height>
+								<md-input-container>
+									<label>Name</label>
+									<input  ng-model="pc.np.name">
+								</md-input-container>
+								<label>Match</label>
+								<div layout layout-sm="colunm">
+									<md-input-container>
+										<label>Key</label>
+										<input  ng-model="pc.np.newMatchKey">
+									</md-input-container>
+									<md-input-container>
+										<label>Value</label>
+										<input  ng-model="pc.np.newMatchValue">
+									</md-input-container>
+									<md-button ng-click=pc.addNewMatch()>Add</md-button>
+								</div>
+								<md-chips ng-model="pc.matchChips">
+									<md-chip-template>
+										Key: <strong>{{$chip.key}}</strong>
+										Val: <strong>{{$chip.val}}</strong>
+									</md-chip-template>
+								</md-chips>
+								<div layout layout-sm="colunm">
+									<md-input-container>
+										<label>Key</label>
+										<input  ng-model="pc.np.newNotMatchKey">
+									</md-input-container>
+									<md-input-container>
+										<label>Value</label>
+										<input  ng-model="pc.np.newNotMatchValue">
+									</md-input-container>
+									<md-button ng-click=pc.addNewNotMatch()>Add</md-button>
+								</div>
+								<md-chips ng-model="pc.notMatchChips">
+									<md-chip-template>
+										Key: <strong>{{$chip.key}}</strong>
+										Val: <strong>{{$chip.val}}</strong>
+									</md-chip-template>
+								</md-chips>
+								<br>
+								<label>Critical</label>
+								<div layout layout-sm="colunm">
+									<md-select ng-model="pc.np.cOpKey">
+										<md-select-label>
+											{{pc.np.cOpKey ? pc.np.cOpKey : "Select One"}}
+										</md-select-label>
+										<md-option ng-value="opt" ng-repeat="opt in pc.compOps">
+											{{opt}}
+										</md-option>
+									</md-select>
+									<md-input-container>
+										<label>Value</label>
+										<input type="number" ng-model="pc.np.cOpVal">
+									</md-input-container>
+									<md-button ng-click="pc.addNewCritOp()">Add</md-button>
+								</div>
+								<md-chips ng-model="pc.critOpChips">
+									<md-chip-template>
+										<strong>{{$chip.key}}</strong>: <strong>{{$chip.val}}</strong>
+									</md-chip-template>
+								</md-chips>
+								<br>
+								<label>Warning</label>
+								<div layout layout-sm="colunm">
+									<md-select ng-model="pc.np.wOpKey">
+										<md-select-label>
+											{{pc.np.cOpKey ? pc.np.cOpKey : "Select One"}}
+										</md-select-label>
+										<md-option ng-value="opt" ng-repeat="opt in pc.compOps">
+											{{opt}}
+										</md-option>
+									</md-select>
+									<md-input-container>
+										<label>Value</label>
+										<input type="number" ng-model="pc.np.wOpVal">
+									</md-input-container>
+									<md-button ng-click="pc.addNewWarnOp()">Add</md-button>
+								</div>
+								<md-chips ng-model="pc.warnOpChips">
+									<md-chip-template>
+										<strong>{{$chip.key}}</strong>: <strong>{{$chip.val}}</strong>
+									</md-chip-template>
+								</md-chips>
+
+								<br>
+								<md-button ng-click="pc.addPolicy()">Submit</md-button>
+
+							</md-card-content>
+						</md-card>
 					</md-tab>
 					<md-tab label="delete">
 					</md-tab>
 				</md-tabs>
+			</div>
+		</md-tab>
+		<md-tab label="escalation">
+			<div ng-controller="EscalationController as ec">
 			</div>
 		</md-tab>
 		<md-tab label="provider">
@@ -65,7 +159,7 @@
 			</div>
 		</md-tab>
 		<md-tab label="events">
-			<div ng-controller="EventsController as pc">
+			<div ng-controller="EventsController as ec">
 			</div>
 		</md-tab>
 	</md-tabs>
