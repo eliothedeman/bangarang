@@ -73,6 +73,10 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 	p.keepAliveAge = conf.KeepAliveAge
 	p.globalPolicy = conf.GlobalPolicy
 
+	if p.globalPolicy != nil {
+		p.globalPolicy.Compile()
+	}
+
 	// update to the new config
 	p.config = conf
 	p.unpause()
