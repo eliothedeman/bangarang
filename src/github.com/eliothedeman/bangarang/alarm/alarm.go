@@ -17,12 +17,12 @@ var (
 
 // Collection maps the name of an escalation policy to the actions to be taken by them
 type Collection struct {
-	c   map[string][]Alarm
-	raw map[string][]json.RawMessage
+	Coll map[string][]Alarm
+	raw  map[string][]json.RawMessage
 }
 
 func (c *Collection) Collection() map[string][]Alarm {
-	return c.c
+	return c.Coll
 }
 
 func (c *Collection) MarshalJSON() ([]byte, error) {
@@ -43,9 +43,9 @@ func (c *Collection) UnmarshalJSON(buff []byte) error {
 	}
 
 	c.raw = make(map[string][]json.RawMessage)
-	c.c = make(map[string][]Alarm)
+	c.Coll = make(map[string][]Alarm)
 	for k, v := range b {
-		c.c[k] = make([]Alarm, 0)
+		c.Coll[k] = make([]Alarm, 0)
 		c.raw[k] = v
 		for _, raw := range v {
 			name.Name = nil
@@ -60,7 +60,7 @@ func (c *Collection) UnmarshalJSON(buff []byte) error {
 			if err != nil {
 				return err
 			}
-			c.c[k] = append(c.c[k], newAlarm)
+			c.Coll[k] = append(c.Coll[k], newAlarm)
 
 		}
 	}

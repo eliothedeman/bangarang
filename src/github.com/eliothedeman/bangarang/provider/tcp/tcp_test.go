@@ -1,100 +1,154 @@
 package tcp
 
-// func TestNewTCPProvider(t *testing.T) {
-// 	p := NewTCPProvider()
-// 	if p == nil {
-// 		t.Fail()
-// 	}
-// }
+import (
+	"encoding/binary"
+	"encoding/json"
+	"fmt"
+	"log"
+	"math/rand"
+	"net"
+	"testing"
 
-// func TestConfig(t *testing.T) {
-// 	p := NewTCPProvider()
-// 	conf := p.ConfigStruct().(*TCPConfig)
-// 	conf.Encoding = event.ENCODING_TYPE_JSON
-// 	conf.Listen = ":8083"
-// 	conf.MaxDecoders = 4
+	"github.com/eliothedeman/bangarang/event"
+	"github.com/eliothedeman/bangarang/provider"
+)
 
-// 	err := p.Init(conf)
+var num = 1000
+
+func newTestTCP() (provider.EventProvider, int) {
+	num += 1
+	p := NewTCPProvider()
+	conf := p.ConfigStruct().(*TCPConfig)
+	listen := fmt.Sprintf("0.0.0.0:%d", 9099+num)
+	conf.Listen = listen
+	err := p.Init(conf)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return p, 9099 + num
+}
+
+func randomString(l int) string {
+	buff := make([]byte, l)
+	for i := range buff {
+		buff[i] = uint8(65 + (rand.Uint32() % 26))
+	}
+
+	return string(buff)
+}
+
+func newTestEvent() *event.Event {
+	e := &event.Event{}
+	e.Host = randomString(rand.Int() % 50)
+	e.Service = randomString(rand.Int() % 50)
+	e.SubService = randomString(rand.Int() % 50)
+	e.Metric = rand.Float64() * 100
+	return e
+}
+
+// func TestConnect(t *testing.T) {
+// 	p, port := newTestTCP()
+// 	go p.Start(nil)
+
+// 	c, err := net.Dial("tcp", fmt.Sprintf("localhost:%d", port))
 // 	if err != nil {
-// 		t.Error(err)
+// 		t.Fatal(err)
 // 	}
+
+// 	c.Close()
+
 // }
 
-// func TestBadAddr(t *testing.T) {
-// 	p := NewTCPProvider()
-// 	conf := p.ConfigStruct().(*TCPConfig)
-// 	conf.Listen = "10.0.0.1:8081"
-// 	conf.MaxDecoders = 4
+func TestSendSingle(t *testing.T) {
+	p, port := newTestTCP()
 
-// 	err := p.Init(conf)
-// 	if _, ok := err.(*net.OpError); !ok {
-// 		t.Fatalf("Expecting bad listening address")
-// 	}
-// }
+	dst := make(chan *event.Event)
+	p.Start(dst)
 
-// func TestStart(t *testing.T) {
-// 	p := NewTCPProvider()
-// 	conf := p.ConfigStruct().(*TCPConfig)
-// 	conf.Encoding = event.ENCODING_TYPE_JSON
-// 	conf.Listen = ":8082"
-// 	conf.MaxDecoders = 4
-// 	p.Init(conf)
+	conn, err := net.Dial("tcp", fmt.Sprintf("localhost:%d", port))
+	if err != nil {
+		t.Fatal(err)
+	}
 
-// 	cli, err := client.NewTcpClient("localhost:8082", event.ENCODING_TYPE_JSON, 1)
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-// 	e := &event.Event{}
-// 	e.Host = "this is a test"
+	e := newTestEvent()
 
-// 	dst := make(chan *event.Event)
-// 	go p.Start(dst)
+	buff, err := json.Marshal(e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sizeBuff := make([]byte, 8)
+	binary.PutUvarint(sizeBuff, uint64(len(buff)))
+	n, err := conn.Write(sizeBuff)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 8 {
+		t.Fail()
+	}
+	n, err = conn.Write(buff)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != len(buff) {
+		t.Fail()
+	}
 
-// 	go func() {
-// 		err = cli.Send(e)
-// 		if err != nil {
-// 			t.Error(err)
-// 		}
-// 	}()
+	ne := <-dst
 
-// 	e2 := <-dst
-// 	if e2.Host != e.Host {
-// 		t.Fail()
-// 	}
-// }
+	if ne.Host != e.Host {
+		t.Fatal(ne.Host, e.Host)
+	}
 
-// func TestMultipleEvents(t *testing.T) {
-// 	p := NewTCPProvider()
-// 	conf := p.ConfigStruct().(*TCPConfig)
-// 	conf.Encoding = event.ENCODING_TYPE_MSGPACK
-// 	conf.Listen = ":8084"
-// 	conf.MaxDecoders = 4
-// 	p.Init(conf)
+	if ne.Service != e.Service {
+		t.Fatal()
+	}
+	if ne.SubService != e.SubService {
+		t.Fatal()
+	}
 
-// 	cli, err := client.NewTcpClient("localhost:8084", event.ENCODING_TYPE_MSGPACK, 1)
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-// 	e := &event.Event{}
-// 	e.Host = "this is a test"
+	if ne.Metric != e.Metric {
+		t.Fatal()
+	}
+}
 
-// 	dst := make(chan *event.Event, 10)
-// 	go p.Start(dst)
+func TestMany(t *testing.T) {
+	p, port := newTestTCP()
 
-// 	go func() {
+	dst := make(chan *event.Event, 100)
+	p.Start(dst)
 
-// 		for i := 0; i < 5; i++ {
-// 			e.Metric = float64(i)
-// 			err = cli.Send(e)
-// 			if err != nil {
-// 				t.Error(err)
-// 			}
-// 		}
-// 	}()
+	conn, err := net.Dial("tcp", fmt.Sprintf("localhost:%d", port))
+	if err != nil {
+		t.Fatal(err)
+	}
 
-// 	for i := 0; i < 5; i++ {
-// 		e2 := <-dst
-// 		logrus.Info(e2)
-// 	}
+	// send 10000 events
+	for i := 0; i < 10000; i++ {
+		e := newTestEvent()
+		buff, err := json.Marshal(e)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sizeBuff := make([]byte, 8)
+		binary.PutUvarint(sizeBuff, uint64(len(buff)))
+		n, err := conn.Write(sizeBuff)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if n != 8 {
+			t.Fail()
+		}
+		n, err = conn.Write(buff)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if n != len(buff) {
+			t.Fail()
+		}
+	}
 
-// }
+	for i := 0; i < 10000; i++ {
+		<-dst
+
+	}
+}

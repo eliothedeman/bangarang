@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	tests_ran = 0
+	tests_ran = 100
 )
 
 func testPipeline(p map[string]*alarm.Policy) (*Pipeline, *test.TestAlert) {
@@ -23,8 +23,10 @@ func testPipeline(p map[string]*alarm.Policy) (*Pipeline, *test.TestAlert) {
 		policies:     p,
 		index:        event.NewIndex(),
 		encodingPool: event.NewEncodingPool(event.EncoderFactories["json"], event.DecoderFactories["json"], runtime.NumCPU()),
-		escalations: map[string][]alarm.Alarm{
-			"test": []alarm.Alarm{ta},
+		escalations: &alarm.Collection{
+			Coll: map[string][]alarm.Alarm{
+				"test": []alarm.Alarm{ta},
+			},
 		},
 		tracker: NewTracker(),
 		in:      make(chan *event.Event),

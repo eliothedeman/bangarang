@@ -2,8 +2,10 @@ package tcp
 
 import (
 	"encoding/binary"
+	"io"
 	"net"
 	"runtime"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/event"
@@ -69,18 +71,32 @@ func (t *TCPProvider) Start(dst chan *event.Event) {
 		return
 	}
 
-	// listen for ever
-	for {
-		c, err := t.listener.AcceptTCP()
-		if err != nil {
-			logrus.Errorf("Cannot accept new tcp connection %s", err.Error())
-			return
-		} else {
-			// consume the connection
-			logrus.Infof("Accpeted new tcp connection from %s", c.RemoteAddr().String())
-			go t.consume(c, dst)
+	go func() {
+		// listen for ever
+		for {
+			c, err := t.listener.AcceptTCP()
+			if err != nil {
+				logrus.Errorf("Cannot accept new tcp connection %s", err.Error())
+				return
+			} else {
+				// consume the connection
+				logrus.Infof("Accpeted new tcp connection from %s", c.RemoteAddr().String())
+				go t.consume(c, dst)
+			}
 		}
+	}()
+}
+
+func readFull(conn *net.TCPConn, buff []byte) error {
+	off := 0
+	for off < len(buff) {
+		n, err := conn.Read(buff[off:])
+		if err != nil {
+			return err
+		}
+		off += n
 	}
+	return nil
 }
 
 func (t *TCPProvider) consume(conn *net.TCPConn, dst chan *event.Event) {
@@ -98,39 +114,45 @@ func (t *TCPProvider) consume(conn *net.TCPConn, dst chan *event.Event) {
 		// read the size of the next event
 		n, err = conn.Read(size_buff)
 		if err != nil {
-			logrus.Error(err)
-			conn.Close()
-			return
-		}
 
-		if n != 8 {
-			logrus.Errorf("tcp-provider: Expecting 8byte 64bit unsigned int. Only got %d bytes", n)
-			conn.Close()
-			return
-		}
-
-		nextEventSize, _ = binary.Uvarint(size_buff)
-		logrus.Debugf("Next event from tcp provider is %d bytes", nextEventSize)
-
-		// read the next event
-		n, err = conn.Read(buff[:int(nextEventSize)])
-		if err != nil {
-			logrus.Error(err)
-			conn.Close()
-			return
-		}
-
-		logrus.Debugf("New event from tcp provider: %s", string(buff[:int(nextEventSize)]))
-
-		t.pool.Decode(func(d event.Decoder) {
-			e, err = d.Decode(buff[:nextEventSize])
-		})
-
-		if err != nil {
-			logrus.Error(err, string(buff[:nextEventSize]))
+			if err == io.EOF {
+				time.Sleep(50 * time.Millisecond)
+			} else {
+				logrus.Error(err)
+				return
+			}
 		} else {
-			dst <- e
+			if n != 8 {
+				logrus.Errorf("tcp-provider: Expecting 8byte 64bit unsigned int. Only got %d bytes", n)
+				conn.Close()
+				return
+			}
+
+			nextEventSize, _ = binary.Uvarint(size_buff)
+			logrus.Debugf("Next event from tcp provider is %d bytes", nextEventSize)
+
+			// read the next event
+			err = readFull(conn, buff[:nextEventSize])
+			if err != nil {
+				logrus.Error(err)
+				conn.Close()
+				return
+			}
+
+			logrus.Debugf("New event from tcp provider: %s", string(buff[:nextEventSize]))
+
+			t.pool.Decode(func(d event.Decoder) {
+				e, err = d.Decode(buff[:nextEventSize])
+			})
+
+			if err != nil {
+				logrus.Error(err, string(buff[:nextEventSize]))
+			} else {
+				dst <- e
+			}
+
 		}
+
 	}
 }
 
