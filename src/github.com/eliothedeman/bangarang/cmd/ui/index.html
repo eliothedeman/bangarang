@@ -77,6 +77,8 @@
 										Val: <strong>{{$chip.val}}</strong>
 									</md-chip-template>
 								</md-chips>
+								<br>
+								<label>Not Match</label>
 								<div layout layout-sm="colunm">
 									<md-input-container>
 										<label>Key</label>
@@ -109,6 +111,10 @@
 										<label>Value</label>
 										<input type="number" ng-model="pc.np.cOpVal">
 									</md-input-container>
+									<md-select ng-model="pc.np.cOcc">
+										<md-select-label>
+										</md-select-label>
+									</md-select>
 									<md-button ng-click="pc.addNewCritOp()">Add</md-button>
 								</div>
 								<md-chips ng-model="pc.critOpChips">
@@ -138,9 +144,9 @@
 										<strong>{{$chip.key}}</strong>: <strong>{{$chip.val}}</strong>
 									</md-chip-template>
 								</md-chips>
-
 								<br>
-								<md-button ng-click="pc.addPolicy()">Submit</md-button>
+								<md-button class="md-raised" ng-click="pc.addPolicy()">Submit</md-button>
+								<md-button class="md-raised md-warn" ng-click="pc.cancelPolicy()">Cancel</md-button>
 
 							</md-card-content>
 						</md-card>

@@ -8,6 +8,12 @@ function PolicyController($scope, $http) {
 		});
 	}
 
+	this.fetchEscalations = function() {
+		$http.get("api/escalation/config/*").success(function(data, status) {
+			this.escalations = data;
+		});
+	}
+
 	this.createPolicyStruct = function() {
 		if (!this.np.name) {
 			return null;
@@ -53,6 +59,10 @@ function PolicyController($scope, $http) {
 		}
 	}
 
+	this.cancelPolicy = function() {
+		this.reset();
+	}
+
 	this.addNewMatch = function() {
 		var np = this.np;
 		if (np.match != {}) {
@@ -64,36 +74,38 @@ function PolicyController($scope, $http) {
 		}
 		this.matchChips.push({"key": np.newMatchKey, "val": np.newMatchValue});
 		np.newMatchKey = "";
-		np.newMatchValue = "";
+		np.newMatchVal = "";
 	}
 
-	this.addNewMatch = function() {
+	this.addNewNotMatch = function() {
 		var np = this.np;
 		if (np.not_match != {}) {
 			np.match = {}
 		}
-		np.match[np.newMatchKey] = np.newMatchValue;
+		np.match[np.newNotMatchKey] = np.newNotMatchValue;
 
 		if (np.not_matchChips != []) {
 			np.not_matchChips = [];
 		}
-		this.matchChips.push({"key": np.newMatchKey, "val": np.newMatchValue});
+		this.notMatchChips.push({"key": np.newNotMatchKey, "val": np.newNotMatchValue});
 		np.newNotMatchKey = "";
-		np.newNotMatchValue = "";
+		np.newNotMatchVal = "";
 	}
 
 	this.addNewCritOp = function() {
 		var np = this.np;
 		if (np.cOpKey && np.cOpVal ) {
 			this.critOpChips.push({"key": np.cOpKey, "val": np.cOpVal});
-			this.init();
+			np.cOpKey = "";
+			np.cOpVal = "";
 		}
 	}
 	this.addNewWarnOp = function() {
 		var np = this.np;
 		if (np.wOpKey && np.wOpVal ) {
 			this.warnOpChips.push({"key": np.wOpKey, "val": np.wOpVal});
-			this.init();
+			np.wOpVal = "";
+			np.wOpKey = "";
 		}
 	}
 
@@ -102,9 +114,11 @@ function PolicyController($scope, $http) {
 	this.init = function() {
 		this.np = {
 			cOpVal: "",
-			cOpVal: "",
+			cOpKey: "",
 			wOpVal: "",
-			wOpVal: ""
+			wOpKey: "",
+			wOcc: 1,
+			cOcc: 1
 		};
 		this.fetchPolicies();
 	}
