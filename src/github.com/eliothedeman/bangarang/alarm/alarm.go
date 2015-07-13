@@ -25,34 +25,28 @@ func (c *Collection) Collection() map[string][]Alarm {
 	return c.Coll
 }
 
+func (c *Collection) AddRaw(name string, raw []json.RawMessage) {
+	c.raw[name] = raw
+}
+
 func (c *Collection) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.raw)
 }
 
-// UnmarshalJSON a custom unmarshal func for an escalation policy
-func (c *Collection) UnmarshalJSON(buff []byte) error {
-	b := map[string][]json.RawMessage{}
+func (c *Collection) UnmarshalRaw() error {
 	name := &struct {
-		Type *string `json:"type"`
-		Name *string `json:"name"`
+		Type string `json:"type"`
+		Name string `json:"name"`
 	}{}
-
-	err := json.Unmarshal(buff, &b)
-	if err != nil {
-		return err
-	}
-
-	c.raw = make(map[string][]json.RawMessage)
 	c.Coll = make(map[string][]Alarm)
-	for k, v := range b {
+	for k, v := range c.raw {
 		c.Coll[k] = make([]Alarm, 0)
-		c.raw[k] = v
 		for _, raw := range v {
-			name.Name = nil
-			name.Type = nil
+			name.Name = ""
+			name.Type = ""
 			json.Unmarshal(raw, name)
 
-			fact := GetFactory(*name.Type)
+			fact := GetFactory(name.Type)
 			newAlarm := fact()
 			conf := newAlarm.ConfigStruct()
 			json.Unmarshal(raw, conf)
@@ -61,11 +55,20 @@ func (c *Collection) UnmarshalJSON(buff []byte) error {
 				return err
 			}
 			c.Coll[k] = append(c.Coll[k], newAlarm)
-
 		}
 	}
 
 	return nil
+}
+
+// UnmarshalJSON a custom unmarshal func for an escalation policy
+func (c *Collection) UnmarshalJSON(buff []byte) error {
+	c.raw = make(map[string][]json.RawMessage)
+	err := json.Unmarshal(buff, &c.raw)
+	if err != nil {
+		return err
+	}
+	return c.UnmarshalRaw()
 }
 
 // GetFactory returns the Factory associated with the given name

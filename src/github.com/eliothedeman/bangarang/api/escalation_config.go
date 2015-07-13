@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
@@ -57,4 +58,37 @@ func (p *EscalationConfig) Delete(w http.ResponseWriter, r *http.Request) {
 
 // Post HTTP get method
 func (p *EscalationConfig) Post(w http.ResponseWriter, r *http.Request) {
+	conf := p.pipeline.GetConfig()
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		logrus.Error("Must append escalation id", r.URL.String())
+		http.Error(w, "must append escalation id", http.StatusBadRequest)
+		return
+	}
+
+	buff, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		logrus.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	t := []json.RawMessage{}
+	err = json.Unmarshal(buff, &t)
+	if err != nil {
+		logrus.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	conf.Escalations.AddRaw(id, t)
+	err = conf.Escalations.UnmarshalRaw()
+	if err != nil {
+		logrus.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	p.pipeline.Refresh(conf)
 }

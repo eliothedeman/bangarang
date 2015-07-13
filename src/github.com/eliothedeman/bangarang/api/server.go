@@ -96,5 +96,6 @@ func NewServer(port int, pipe *pipeline.Pipeline) *Server {
 	s.construct(NewProviderConfig(pipe))
 	s.construct(NewPolicyConfig(pipe))
 	s.construct(NewConfigVersion(pipe))
+	s.construct(NewEscalationConfig(pipe))
 	return s
 }
