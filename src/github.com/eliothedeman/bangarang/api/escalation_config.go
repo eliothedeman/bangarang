@@ -90,5 +90,7 @@ func (p *EscalationConfig) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	conf.Provider().PutConfig(conf)
+
 	p.pipeline.Refresh(conf)
 }

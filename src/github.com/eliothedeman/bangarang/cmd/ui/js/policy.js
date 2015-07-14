@@ -1,16 +1,18 @@
-function NewPolicyController($scope, $http) {
+function NewPolicyController($scope, $http, $timeout) {
 	this.np = {};
 	this.compOps = ["greater", "less", "exactly"];
-	this.escalations = [];
 
-	this.fetchEscalations = function() {
-		$http.get("api/escalation/config/*").success(function(data, status) {
-			if (data != null) {
-				this.escalations = data;
-			}
-		}).error(function(data, status) {
-			this.escalations = ["No Escalations Available"]
-		});
+	$scope.loadEscalationNames = function() {
+		$scope.escalation_names = [];
+		return $timeout(function() {
+			$http.get("api/escalation/config/*").success(function(data, status) {
+				for (name in data) {
+					$scope.escalation_names.push(name);
+				}
+			}).error(function(data, status) {
+				$scope.escalation_names = ["Unable to fetch escalations"];
+			});
+		}, 650);
 	}
 
 	this.createPolicyStruct = function() {
@@ -37,16 +39,20 @@ function NewPolicyController($scope, $http) {
 				p.not_match[this.notMatchChips[i].key] = this.notMatchChips[i].val;
 			}
 		}
-		if (this.critOpChips.length > 0) {
+		if (this.critOpChips.length > 0 && this.cEsc) {
 			p.crit = {
-				occurences: this.cOcc
+				occurences: this.cOcc,
+				escalation: this.cEsc
 			};
 			for (var i = 0; i < this.critOpChips.length; i++) {
 				p.crit[this.critOpChips[i].key] = this.critOpChips[i].val;
 			}
 		}
-		if (this.warnOpChips.length > 0) {
-			p.warn = {};
+		if (this.warnOpChips.length > 0 && this.wEsc) {
+			p.warn = {
+				occurences: this.wOcc,
+				escalation: this.wEsc
+			};
 			for (var i = 0; i < this.warnOpChips.length; i++) {
 				p.warn[this.warnOpChips[i].key] = this.warnOpChips[i].val;
 			}
@@ -103,13 +109,13 @@ function NewPolicyController($scope, $http) {
 
 
 	this.init = function() {
-		this.cOpVal = ""
-		this.cOpKey = ""
-		this.wOpVal = ""
-		this.wOpKey = ""
-		this.wOcc = 1
-		this.cOcc = 1
-		this.fetchEscalations();
+		this.cOpVal = "";
+		this.cOpKey = "";
+		this.wOpVal = "";
+		this.wOpKey = "";
+		this.wOcc = 1;
+		this.cOcc = 1;
+		this.escalations = [];
 	}
 
 	this.reset = function() {
@@ -117,7 +123,7 @@ function NewPolicyController($scope, $http) {
 		this.matchChips = [];
 		this.notMatchChips = [];
 		this.critOpChips = [];
-		this.warnOpChips = []
+		this.warnOpChips = [];
 	}
 
 	this.reset();

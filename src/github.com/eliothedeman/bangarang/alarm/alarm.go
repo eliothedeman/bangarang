@@ -30,7 +30,7 @@ func (c *Collection) AddRaw(name string, raw []json.RawMessage) {
 }
 
 func (c *Collection) MarshalJSON() ([]byte, error) {
-	return json.Marshal(c.raw)
+	return json.Marshal(&c.raw)
 }
 
 func (c *Collection) UnmarshalRaw() error {

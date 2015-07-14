@@ -4,7 +4,6 @@
 	<base href="/" target="_blank" />
 	<title>Bangarang</title>
 	<link rel="stylesheet" type="text/css" href="css/header.css">
-	<link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Roboto:400,500,700,400italic'>
 	<script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
 	<script type="text/javascript" src="bower_components/angular/angular.js"></script>
 	<script type="text/javascript" src="bower_components/angular-animate/angular-animate.js"></script>
@@ -120,17 +119,15 @@
 											<label>Occurences</label>
 											<input type="number" min="1" max="99999999" ng-model="npc.cOcc">
 										</md-input-container>
-										<md-select ng-model="npc.cEsc">
+										<md-select md-on-open="loadEscalationNames()" ng-model="npc.cEsc">
 											<md-select-label>
 												{{npc.cEsc ? npc.cEsc : "Escalation"}}
 											</md-select-label>
+											<md-option ng-value="name" ng-repeat="name in escalation_names">
+												{{name}}
+											</md-option>
 										</md-select>
-
-
-
 									</div>
-
-
 									<md-chips ng-model="npc.critOpChips">
 										<md-chip-template>
 											<strong>{{$chip.key}}</strong>: <strong>{{$chip.val}}</strong>
@@ -158,10 +155,11 @@
 											<label>Occurences</label>
 											<input type="number" min="1" max="99999999" ng-model="npc.wOcc">
 										</md-input-container>
-										<md-select ng-model="npc.wEsc">
+										<md-select ng-model="npc.wEsc" md-on-open="loadEscalationNames()">
 											<md-select-label>
 												{{npc.wEsc ? npc.wEsc : "Escalation"}}
 											</md-select-label>
+											<md-option ng-value="name" ng-repeat="name in escalation_names">{{name}}</md-option>
 										</md-select>
 									</div>
 									<md-chips ng-model="npc.warnOpChips">
