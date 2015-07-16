@@ -1,8 +1,20 @@
-function EscalationController($scope, $http) {
+function EscalationController($scope, $http, $cookies) {
 	this.fetchEscalations = function() {
 		$http.get("api/escalation/config/*").success(function(data, status) {
 			$scope.escalations = data;
 		});
+	}
+	this.selected = 0;
+	this.getSelected = function() {
+		var s = $cookies.get("nec:tab");
+		if (s) {
+			this.selected = s;
+		}
+		return this.selected;
+	}
+	this.updateSelected = function(name) {
+		$cookies.put("nec:tab", name);
+		this.selected = name;
 	}
 }
 angular.module("bangarang").controller("EscalationController", EscalationController);
@@ -42,6 +54,7 @@ function NewEscalationController($scope, $http) {
 	];
 	this.emailOpts = [];
 	this.consoleOpts = [];
+	this.chips = [];
 
 	this.getOpts = function(type) {
 		switch (type) {
@@ -59,13 +72,11 @@ function NewEscalationController($scope, $http) {
 		}
 	}
 
+
+
 	this.newEscalation = function() {
 
 		if (!this.type) {
-			return;
-		}
-
-		if (!this.name) {
 			return;
 		}
 
@@ -78,7 +89,18 @@ function NewEscalationController($scope, $http) {
 			e[opts[i].name] = opts[i].value;
 		}
 
-		$http.post("api/escalation/config/" + this.name, [e]);
+		this.chips.push(e);
+	}
+
+	this.submitNew = function() {
+		if (!this.name) {
+			return;
+		}
+		$http.post("api/escalation/config/" + this.name, this.chips);
+	}
+
+	this.reset = function() {
+		this.type = null;
 	}
 }
 

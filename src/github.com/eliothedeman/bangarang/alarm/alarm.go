@@ -29,6 +29,10 @@ func (c *Collection) AddRaw(name string, raw []json.RawMessage) {
 	c.raw[name] = raw
 }
 
+func (c *Collection) RemoveRaw(name string) {
+	delete(c.raw, name)
+}
+
 func (c *Collection) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&c.raw)
 }

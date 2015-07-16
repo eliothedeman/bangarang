@@ -28,6 +28,14 @@
 // bower_components/angular-aria/bower.json
 // bower_components/angular-aria/index.js
 // bower_components/angular-aria/package.json
+// bower_components/angular-cookies/.bower.json
+// bower_components/angular-cookies/README.md
+// bower_components/angular-cookies/angular-cookies.js
+// bower_components/angular-cookies/angular-cookies.min.js
+// bower_components/angular-cookies/angular-cookies.min.js.map
+// bower_components/angular-cookies/bower.json
+// bower_components/angular-cookies/index.js
+// bower_components/angular-cookies/package.json
 // bower_components/angular-material/.bower.json
 // bower_components/angular-material/.gitignore
 // bower_components/angular-material/CHANGELOG.md
@@ -459,6 +467,96 @@
 // bower_components/iron-flex-layout/demo/index.html
 // bower_components/iron-flex-layout/demo/x-app.html
 // bower_components/iron-flex-layout/iron-flex-layout.html
+// bower_components/jquery/.bower.json
+// bower_components/jquery/MIT-LICENSE.txt
+// bower_components/jquery/bower.json
+// bower_components/jquery/dist/jquery.js
+// bower_components/jquery/dist/jquery.min.js
+// bower_components/jquery/dist/jquery.min.map
+// bower_components/jquery/src/ajax/jsonp.js
+// bower_components/jquery/src/ajax/load.js
+// bower_components/jquery/src/ajax/parseJSON.js
+// bower_components/jquery/src/ajax/parseXML.js
+// bower_components/jquery/src/ajax/script.js
+// bower_components/jquery/src/ajax/var/nonce.js
+// bower_components/jquery/src/ajax/var/rquery.js
+// bower_components/jquery/src/ajax/xhr.js
+// bower_components/jquery/src/ajax.js
+// bower_components/jquery/src/attributes/attr.js
+// bower_components/jquery/src/attributes/classes.js
+// bower_components/jquery/src/attributes/prop.js
+// bower_components/jquery/src/attributes/support.js
+// bower_components/jquery/src/attributes/val.js
+// bower_components/jquery/src/attributes.js
+// bower_components/jquery/src/callbacks.js
+// bower_components/jquery/src/core/access.js
+// bower_components/jquery/src/core/init.js
+// bower_components/jquery/src/core/parseHTML.js
+// bower_components/jquery/src/core/ready.js
+// bower_components/jquery/src/core/var/rsingleTag.js
+// bower_components/jquery/src/core.js
+// bower_components/jquery/src/css/addGetHookIf.js
+// bower_components/jquery/src/css/curCSS.js
+// bower_components/jquery/src/css/defaultDisplay.js
+// bower_components/jquery/src/css/hiddenVisibleSelectors.js
+// bower_components/jquery/src/css/support.js
+// bower_components/jquery/src/css/swap.js
+// bower_components/jquery/src/css/var/cssExpand.js
+// bower_components/jquery/src/css/var/getStyles.js
+// bower_components/jquery/src/css/var/isHidden.js
+// bower_components/jquery/src/css/var/rmargin.js
+// bower_components/jquery/src/css/var/rnumnonpx.js
+// bower_components/jquery/src/css.js
+// bower_components/jquery/src/data/Data.js
+// bower_components/jquery/src/data/accepts.js
+// bower_components/jquery/src/data/var/data_priv.js
+// bower_components/jquery/src/data/var/data_user.js
+// bower_components/jquery/src/data.js
+// bower_components/jquery/src/deferred.js
+// bower_components/jquery/src/deprecated.js
+// bower_components/jquery/src/dimensions.js
+// bower_components/jquery/src/effects/Tween.js
+// bower_components/jquery/src/effects/animatedSelector.js
+// bower_components/jquery/src/effects.js
+// bower_components/jquery/src/event/ajax.js
+// bower_components/jquery/src/event/alias.js
+// bower_components/jquery/src/event/support.js
+// bower_components/jquery/src/event.js
+// bower_components/jquery/src/exports/amd.js
+// bower_components/jquery/src/exports/global.js
+// bower_components/jquery/src/intro.js
+// bower_components/jquery/src/jquery.js
+// bower_components/jquery/src/manipulation/_evalUrl.js
+// bower_components/jquery/src/manipulation/support.js
+// bower_components/jquery/src/manipulation/var/rcheckableType.js
+// bower_components/jquery/src/manipulation.js
+// bower_components/jquery/src/offset.js
+// bower_components/jquery/src/outro.js
+// bower_components/jquery/src/queue/delay.js
+// bower_components/jquery/src/queue.js
+// bower_components/jquery/src/selector-native.js
+// bower_components/jquery/src/selector-sizzle.js
+// bower_components/jquery/src/selector.js
+// bower_components/jquery/src/serialize.js
+// bower_components/jquery/src/sizzle/dist/sizzle.js
+// bower_components/jquery/src/sizzle/dist/sizzle.min.js
+// bower_components/jquery/src/sizzle/dist/sizzle.min.map
+// bower_components/jquery/src/traversing/findFilter.js
+// bower_components/jquery/src/traversing/var/rneedsContext.js
+// bower_components/jquery/src/traversing.js
+// bower_components/jquery/src/var/arr.js
+// bower_components/jquery/src/var/class2type.js
+// bower_components/jquery/src/var/concat.js
+// bower_components/jquery/src/var/hasOwn.js
+// bower_components/jquery/src/var/indexOf.js
+// bower_components/jquery/src/var/pnum.js
+// bower_components/jquery/src/var/push.js
+// bower_components/jquery/src/var/rnotwhite.js
+// bower_components/jquery/src/var/slice.js
+// bower_components/jquery/src/var/strundefined.js
+// bower_components/jquery/src/var/support.js
+// bower_components/jquery/src/var/toString.js
+// bower_components/jquery/src/wrap.js
 // bower_components/paper-behaviors/.bower.json
 // bower_components/paper-behaviors/.gitignore
 // bower_components/paper-behaviors/README.md
@@ -579,6 +677,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"os"
+	"path"
 	"path/filepath"
 )
 
@@ -1086,6 +1185,150 @@ func bower_componentsAngularAriaIndexJs() (*asset, error) {
 func bower_componentsAngularAriaPackageJson() (*asset, error) {
 	path := filepath.Join(rootDir, "bower_components/angular-aria/package.json")
 	name := "bower_components/angular-aria/package.json"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularCookiesBowerJson reads file data from disk. It returns an error on failure.
+func bower_componentsAngularCookiesBowerJson() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-cookies/.bower.json")
+	name := "bower_components/angular-cookies/.bower.json"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularCookiesReadmeMd reads file data from disk. It returns an error on failure.
+func bower_componentsAngularCookiesReadmeMd() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-cookies/README.md")
+	name := "bower_components/angular-cookies/README.md"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularCookiesAngularCookiesJs reads file data from disk. It returns an error on failure.
+func bower_componentsAngularCookiesAngularCookiesJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-cookies/angular-cookies.js")
+	name := "bower_components/angular-cookies/angular-cookies.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularCookiesAngularCookiesMinJs reads file data from disk. It returns an error on failure.
+func bower_componentsAngularCookiesAngularCookiesMinJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-cookies/angular-cookies.min.js")
+	name := "bower_components/angular-cookies/angular-cookies.min.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularCookiesAngularCookiesMinJsMap reads file data from disk. It returns an error on failure.
+func bower_componentsAngularCookiesAngularCookiesMinJsMap() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-cookies/angular-cookies.min.js.map")
+	name := "bower_components/angular-cookies/angular-cookies.min.js.map"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularCookiesBowerJson2 reads file data from disk. It returns an error on failure.
+func bower_componentsAngularCookiesBowerJson2() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-cookies/bower.json")
+	name := "bower_components/angular-cookies/bower.json"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularCookiesIndexJs reads file data from disk. It returns an error on failure.
+func bower_componentsAngularCookiesIndexJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-cookies/index.js")
+	name := "bower_components/angular-cookies/index.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularCookiesPackageJson reads file data from disk. It returns an error on failure.
+func bower_componentsAngularCookiesPackageJson() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-cookies/package.json")
+	name := "bower_components/angular-cookies/package.json"
 	bytes, err := bindataRead(path, name)
 	if err != nil {
 		return nil, err
@@ -8858,6 +9101,1626 @@ func bower_componentsIronFlexLayoutIronFlexLayoutHtml() (*asset, error) {
 	return a, err
 }
 
+// bower_componentsJqueryBowerJson reads file data from disk. It returns an error on failure.
+func bower_componentsJqueryBowerJson() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/.bower.json")
+	name := "bower_components/jquery/.bower.json"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJqueryMitLicenseTxt reads file data from disk. It returns an error on failure.
+func bower_componentsJqueryMitLicenseTxt() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/MIT-LICENSE.txt")
+	name := "bower_components/jquery/MIT-LICENSE.txt"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJqueryBowerJson2 reads file data from disk. It returns an error on failure.
+func bower_componentsJqueryBowerJson2() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/bower.json")
+	name := "bower_components/jquery/bower.json"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJqueryDistJqueryJs reads file data from disk. It returns an error on failure.
+func bower_componentsJqueryDistJqueryJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/dist/jquery.js")
+	name := "bower_components/jquery/dist/jquery.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJqueryDistJqueryMinJs reads file data from disk. It returns an error on failure.
+func bower_componentsJqueryDistJqueryMinJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/dist/jquery.min.js")
+	name := "bower_components/jquery/dist/jquery.min.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJqueryDistJqueryMinMap reads file data from disk. It returns an error on failure.
+func bower_componentsJqueryDistJqueryMinMap() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/dist/jquery.min.map")
+	name := "bower_components/jquery/dist/jquery.min.map"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAjaxJsonpJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAjaxJsonpJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/ajax/jsonp.js")
+	name := "bower_components/jquery/src/ajax/jsonp.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAjaxLoadJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAjaxLoadJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/ajax/load.js")
+	name := "bower_components/jquery/src/ajax/load.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAjaxParsejsonJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAjaxParsejsonJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/ajax/parseJSON.js")
+	name := "bower_components/jquery/src/ajax/parseJSON.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAjaxParsexmlJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAjaxParsexmlJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/ajax/parseXML.js")
+	name := "bower_components/jquery/src/ajax/parseXML.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAjaxScriptJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAjaxScriptJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/ajax/script.js")
+	name := "bower_components/jquery/src/ajax/script.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAjaxVarNonceJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAjaxVarNonceJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/ajax/var/nonce.js")
+	name := "bower_components/jquery/src/ajax/var/nonce.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAjaxVarRqueryJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAjaxVarRqueryJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/ajax/var/rquery.js")
+	name := "bower_components/jquery/src/ajax/var/rquery.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAjaxXhrJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAjaxXhrJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/ajax/xhr.js")
+	name := "bower_components/jquery/src/ajax/xhr.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAjaxJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAjaxJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/ajax.js")
+	name := "bower_components/jquery/src/ajax.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAttributesAttrJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAttributesAttrJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/attributes/attr.js")
+	name := "bower_components/jquery/src/attributes/attr.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAttributesClassesJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAttributesClassesJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/attributes/classes.js")
+	name := "bower_components/jquery/src/attributes/classes.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAttributesPropJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAttributesPropJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/attributes/prop.js")
+	name := "bower_components/jquery/src/attributes/prop.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAttributesSupportJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAttributesSupportJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/attributes/support.js")
+	name := "bower_components/jquery/src/attributes/support.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAttributesValJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAttributesValJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/attributes/val.js")
+	name := "bower_components/jquery/src/attributes/val.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcAttributesJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcAttributesJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/attributes.js")
+	name := "bower_components/jquery/src/attributes.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCallbacksJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCallbacksJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/callbacks.js")
+	name := "bower_components/jquery/src/callbacks.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCoreAccessJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCoreAccessJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/core/access.js")
+	name := "bower_components/jquery/src/core/access.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCoreInitJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCoreInitJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/core/init.js")
+	name := "bower_components/jquery/src/core/init.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCoreParsehtmlJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCoreParsehtmlJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/core/parseHTML.js")
+	name := "bower_components/jquery/src/core/parseHTML.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCoreReadyJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCoreReadyJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/core/ready.js")
+	name := "bower_components/jquery/src/core/ready.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCoreVarRsingletagJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCoreVarRsingletagJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/core/var/rsingleTag.js")
+	name := "bower_components/jquery/src/core/var/rsingleTag.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCoreJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCoreJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/core.js")
+	name := "bower_components/jquery/src/core.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCssAddgethookifJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCssAddgethookifJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/css/addGetHookIf.js")
+	name := "bower_components/jquery/src/css/addGetHookIf.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCssCurcssJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCssCurcssJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/css/curCSS.js")
+	name := "bower_components/jquery/src/css/curCSS.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCssDefaultdisplayJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCssDefaultdisplayJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/css/defaultDisplay.js")
+	name := "bower_components/jquery/src/css/defaultDisplay.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCssHiddenvisibleselectorsJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCssHiddenvisibleselectorsJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/css/hiddenVisibleSelectors.js")
+	name := "bower_components/jquery/src/css/hiddenVisibleSelectors.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCssSupportJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCssSupportJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/css/support.js")
+	name := "bower_components/jquery/src/css/support.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCssSwapJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCssSwapJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/css/swap.js")
+	name := "bower_components/jquery/src/css/swap.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCssVarCssexpandJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCssVarCssexpandJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/css/var/cssExpand.js")
+	name := "bower_components/jquery/src/css/var/cssExpand.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCssVarGetstylesJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCssVarGetstylesJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/css/var/getStyles.js")
+	name := "bower_components/jquery/src/css/var/getStyles.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCssVarIshiddenJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCssVarIshiddenJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/css/var/isHidden.js")
+	name := "bower_components/jquery/src/css/var/isHidden.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCssVarRmarginJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCssVarRmarginJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/css/var/rmargin.js")
+	name := "bower_components/jquery/src/css/var/rmargin.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCssVarRnumnonpxJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCssVarRnumnonpxJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/css/var/rnumnonpx.js")
+	name := "bower_components/jquery/src/css/var/rnumnonpx.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcCssJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcCssJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/css.js")
+	name := "bower_components/jquery/src/css.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcDataDataJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcDataDataJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/data/Data.js")
+	name := "bower_components/jquery/src/data/Data.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcDataAcceptsJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcDataAcceptsJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/data/accepts.js")
+	name := "bower_components/jquery/src/data/accepts.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcDataVarData_privJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcDataVarData_privJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/data/var/data_priv.js")
+	name := "bower_components/jquery/src/data/var/data_priv.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcDataVarData_userJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcDataVarData_userJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/data/var/data_user.js")
+	name := "bower_components/jquery/src/data/var/data_user.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcDataJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcDataJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/data.js")
+	name := "bower_components/jquery/src/data.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcDeferredJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcDeferredJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/deferred.js")
+	name := "bower_components/jquery/src/deferred.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcDeprecatedJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcDeprecatedJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/deprecated.js")
+	name := "bower_components/jquery/src/deprecated.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcDimensionsJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcDimensionsJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/dimensions.js")
+	name := "bower_components/jquery/src/dimensions.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcEffectsTweenJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcEffectsTweenJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/effects/Tween.js")
+	name := "bower_components/jquery/src/effects/Tween.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcEffectsAnimatedselectorJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcEffectsAnimatedselectorJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/effects/animatedSelector.js")
+	name := "bower_components/jquery/src/effects/animatedSelector.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcEffectsJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcEffectsJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/effects.js")
+	name := "bower_components/jquery/src/effects.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcEventAjaxJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcEventAjaxJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/event/ajax.js")
+	name := "bower_components/jquery/src/event/ajax.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcEventAliasJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcEventAliasJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/event/alias.js")
+	name := "bower_components/jquery/src/event/alias.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcEventSupportJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcEventSupportJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/event/support.js")
+	name := "bower_components/jquery/src/event/support.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcEventJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcEventJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/event.js")
+	name := "bower_components/jquery/src/event.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcExportsAmdJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcExportsAmdJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/exports/amd.js")
+	name := "bower_components/jquery/src/exports/amd.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcExportsGlobalJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcExportsGlobalJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/exports/global.js")
+	name := "bower_components/jquery/src/exports/global.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcIntroJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcIntroJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/intro.js")
+	name := "bower_components/jquery/src/intro.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcJqueryJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcJqueryJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/jquery.js")
+	name := "bower_components/jquery/src/jquery.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcManipulation_evalurlJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcManipulation_evalurlJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/manipulation/_evalUrl.js")
+	name := "bower_components/jquery/src/manipulation/_evalUrl.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcManipulationSupportJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcManipulationSupportJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/manipulation/support.js")
+	name := "bower_components/jquery/src/manipulation/support.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcManipulationVarRcheckabletypeJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcManipulationVarRcheckabletypeJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/manipulation/var/rcheckableType.js")
+	name := "bower_components/jquery/src/manipulation/var/rcheckableType.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcManipulationJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcManipulationJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/manipulation.js")
+	name := "bower_components/jquery/src/manipulation.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcOffsetJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcOffsetJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/offset.js")
+	name := "bower_components/jquery/src/offset.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcOutroJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcOutroJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/outro.js")
+	name := "bower_components/jquery/src/outro.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcQueueDelayJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcQueueDelayJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/queue/delay.js")
+	name := "bower_components/jquery/src/queue/delay.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcQueueJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcQueueJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/queue.js")
+	name := "bower_components/jquery/src/queue.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcSelectorNativeJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcSelectorNativeJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/selector-native.js")
+	name := "bower_components/jquery/src/selector-native.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcSelectorSizzleJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcSelectorSizzleJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/selector-sizzle.js")
+	name := "bower_components/jquery/src/selector-sizzle.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcSelectorJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcSelectorJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/selector.js")
+	name := "bower_components/jquery/src/selector.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcSerializeJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcSerializeJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/serialize.js")
+	name := "bower_components/jquery/src/serialize.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcSizzleDistSizzleJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcSizzleDistSizzleJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/sizzle/dist/sizzle.js")
+	name := "bower_components/jquery/src/sizzle/dist/sizzle.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcSizzleDistSizzleMinJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcSizzleDistSizzleMinJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/sizzle/dist/sizzle.min.js")
+	name := "bower_components/jquery/src/sizzle/dist/sizzle.min.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcSizzleDistSizzleMinMap reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcSizzleDistSizzleMinMap() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/sizzle/dist/sizzle.min.map")
+	name := "bower_components/jquery/src/sizzle/dist/sizzle.min.map"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcTraversingFindfilterJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcTraversingFindfilterJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/traversing/findFilter.js")
+	name := "bower_components/jquery/src/traversing/findFilter.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcTraversingVarRneedscontextJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcTraversingVarRneedscontextJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/traversing/var/rneedsContext.js")
+	name := "bower_components/jquery/src/traversing/var/rneedsContext.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcTraversingJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcTraversingJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/traversing.js")
+	name := "bower_components/jquery/src/traversing.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcVarArrJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcVarArrJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/var/arr.js")
+	name := "bower_components/jquery/src/var/arr.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcVarClass2typeJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcVarClass2typeJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/var/class2type.js")
+	name := "bower_components/jquery/src/var/class2type.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcVarConcatJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcVarConcatJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/var/concat.js")
+	name := "bower_components/jquery/src/var/concat.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcVarHasownJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcVarHasownJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/var/hasOwn.js")
+	name := "bower_components/jquery/src/var/hasOwn.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcVarIndexofJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcVarIndexofJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/var/indexOf.js")
+	name := "bower_components/jquery/src/var/indexOf.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcVarPnumJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcVarPnumJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/var/pnum.js")
+	name := "bower_components/jquery/src/var/pnum.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcVarPushJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcVarPushJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/var/push.js")
+	name := "bower_components/jquery/src/var/push.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcVarRnotwhiteJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcVarRnotwhiteJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/var/rnotwhite.js")
+	name := "bower_components/jquery/src/var/rnotwhite.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcVarSliceJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcVarSliceJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/var/slice.js")
+	name := "bower_components/jquery/src/var/slice.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcVarStrundefinedJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcVarStrundefinedJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/var/strundefined.js")
+	name := "bower_components/jquery/src/var/strundefined.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcVarSupportJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcVarSupportJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/var/support.js")
+	name := "bower_components/jquery/src/var/support.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcVarTostringJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcVarTostringJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/var/toString.js")
+	name := "bower_components/jquery/src/var/toString.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJquerySrcWrapJs reads file data from disk. It returns an error on failure.
+func bower_componentsJquerySrcWrapJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/jquery/src/wrap.js")
+	name := "bower_components/jquery/src/wrap.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
 // bower_componentsPaperBehaviorsBowerJson reads file data from disk. It returns an error on failure.
 func bower_componentsPaperBehaviorsBowerJson() (*asset, error) {
 	path := filepath.Join(rootDir, "bower_components/paper-behaviors/.bower.json")
@@ -10936,6 +12799,14 @@ var _bindata = map[string]func() (*asset, error){
 	"bower_components/angular-aria/bower.json": bower_componentsAngularAriaBowerJson2,
 	"bower_components/angular-aria/index.js": bower_componentsAngularAriaIndexJs,
 	"bower_components/angular-aria/package.json": bower_componentsAngularAriaPackageJson,
+	"bower_components/angular-cookies/.bower.json": bower_componentsAngularCookiesBowerJson,
+	"bower_components/angular-cookies/README.md": bower_componentsAngularCookiesReadmeMd,
+	"bower_components/angular-cookies/angular-cookies.js": bower_componentsAngularCookiesAngularCookiesJs,
+	"bower_components/angular-cookies/angular-cookies.min.js": bower_componentsAngularCookiesAngularCookiesMinJs,
+	"bower_components/angular-cookies/angular-cookies.min.js.map": bower_componentsAngularCookiesAngularCookiesMinJsMap,
+	"bower_components/angular-cookies/bower.json": bower_componentsAngularCookiesBowerJson2,
+	"bower_components/angular-cookies/index.js": bower_componentsAngularCookiesIndexJs,
+	"bower_components/angular-cookies/package.json": bower_componentsAngularCookiesPackageJson,
 	"bower_components/angular-material/.bower.json": bower_componentsAngularMaterialBowerJson,
 	"bower_components/angular-material/.gitignore": bower_componentsAngularMaterialGitignore,
 	"bower_components/angular-material/CHANGELOG.md": bower_componentsAngularMaterialChangelogMd,
@@ -11367,6 +13238,96 @@ var _bindata = map[string]func() (*asset, error){
 	"bower_components/iron-flex-layout/demo/index.html": bower_componentsIronFlexLayoutDemoIndexHtml,
 	"bower_components/iron-flex-layout/demo/x-app.html": bower_componentsIronFlexLayoutDemoXAppHtml,
 	"bower_components/iron-flex-layout/iron-flex-layout.html": bower_componentsIronFlexLayoutIronFlexLayoutHtml,
+	"bower_components/jquery/.bower.json": bower_componentsJqueryBowerJson,
+	"bower_components/jquery/MIT-LICENSE.txt": bower_componentsJqueryMitLicenseTxt,
+	"bower_components/jquery/bower.json": bower_componentsJqueryBowerJson2,
+	"bower_components/jquery/dist/jquery.js": bower_componentsJqueryDistJqueryJs,
+	"bower_components/jquery/dist/jquery.min.js": bower_componentsJqueryDistJqueryMinJs,
+	"bower_components/jquery/dist/jquery.min.map": bower_componentsJqueryDistJqueryMinMap,
+	"bower_components/jquery/src/ajax/jsonp.js": bower_componentsJquerySrcAjaxJsonpJs,
+	"bower_components/jquery/src/ajax/load.js": bower_componentsJquerySrcAjaxLoadJs,
+	"bower_components/jquery/src/ajax/parseJSON.js": bower_componentsJquerySrcAjaxParsejsonJs,
+	"bower_components/jquery/src/ajax/parseXML.js": bower_componentsJquerySrcAjaxParsexmlJs,
+	"bower_components/jquery/src/ajax/script.js": bower_componentsJquerySrcAjaxScriptJs,
+	"bower_components/jquery/src/ajax/var/nonce.js": bower_componentsJquerySrcAjaxVarNonceJs,
+	"bower_components/jquery/src/ajax/var/rquery.js": bower_componentsJquerySrcAjaxVarRqueryJs,
+	"bower_components/jquery/src/ajax/xhr.js": bower_componentsJquerySrcAjaxXhrJs,
+	"bower_components/jquery/src/ajax.js": bower_componentsJquerySrcAjaxJs,
+	"bower_components/jquery/src/attributes/attr.js": bower_componentsJquerySrcAttributesAttrJs,
+	"bower_components/jquery/src/attributes/classes.js": bower_componentsJquerySrcAttributesClassesJs,
+	"bower_components/jquery/src/attributes/prop.js": bower_componentsJquerySrcAttributesPropJs,
+	"bower_components/jquery/src/attributes/support.js": bower_componentsJquerySrcAttributesSupportJs,
+	"bower_components/jquery/src/attributes/val.js": bower_componentsJquerySrcAttributesValJs,
+	"bower_components/jquery/src/attributes.js": bower_componentsJquerySrcAttributesJs,
+	"bower_components/jquery/src/callbacks.js": bower_componentsJquerySrcCallbacksJs,
+	"bower_components/jquery/src/core/access.js": bower_componentsJquerySrcCoreAccessJs,
+	"bower_components/jquery/src/core/init.js": bower_componentsJquerySrcCoreInitJs,
+	"bower_components/jquery/src/core/parseHTML.js": bower_componentsJquerySrcCoreParsehtmlJs,
+	"bower_components/jquery/src/core/ready.js": bower_componentsJquerySrcCoreReadyJs,
+	"bower_components/jquery/src/core/var/rsingleTag.js": bower_componentsJquerySrcCoreVarRsingletagJs,
+	"bower_components/jquery/src/core.js": bower_componentsJquerySrcCoreJs,
+	"bower_components/jquery/src/css/addGetHookIf.js": bower_componentsJquerySrcCssAddgethookifJs,
+	"bower_components/jquery/src/css/curCSS.js": bower_componentsJquerySrcCssCurcssJs,
+	"bower_components/jquery/src/css/defaultDisplay.js": bower_componentsJquerySrcCssDefaultdisplayJs,
+	"bower_components/jquery/src/css/hiddenVisibleSelectors.js": bower_componentsJquerySrcCssHiddenvisibleselectorsJs,
+	"bower_components/jquery/src/css/support.js": bower_componentsJquerySrcCssSupportJs,
+	"bower_components/jquery/src/css/swap.js": bower_componentsJquerySrcCssSwapJs,
+	"bower_components/jquery/src/css/var/cssExpand.js": bower_componentsJquerySrcCssVarCssexpandJs,
+	"bower_components/jquery/src/css/var/getStyles.js": bower_componentsJquerySrcCssVarGetstylesJs,
+	"bower_components/jquery/src/css/var/isHidden.js": bower_componentsJquerySrcCssVarIshiddenJs,
+	"bower_components/jquery/src/css/var/rmargin.js": bower_componentsJquerySrcCssVarRmarginJs,
+	"bower_components/jquery/src/css/var/rnumnonpx.js": bower_componentsJquerySrcCssVarRnumnonpxJs,
+	"bower_components/jquery/src/css.js": bower_componentsJquerySrcCssJs,
+	"bower_components/jquery/src/data/Data.js": bower_componentsJquerySrcDataDataJs,
+	"bower_components/jquery/src/data/accepts.js": bower_componentsJquerySrcDataAcceptsJs,
+	"bower_components/jquery/src/data/var/data_priv.js": bower_componentsJquerySrcDataVarData_privJs,
+	"bower_components/jquery/src/data/var/data_user.js": bower_componentsJquerySrcDataVarData_userJs,
+	"bower_components/jquery/src/data.js": bower_componentsJquerySrcDataJs,
+	"bower_components/jquery/src/deferred.js": bower_componentsJquerySrcDeferredJs,
+	"bower_components/jquery/src/deprecated.js": bower_componentsJquerySrcDeprecatedJs,
+	"bower_components/jquery/src/dimensions.js": bower_componentsJquerySrcDimensionsJs,
+	"bower_components/jquery/src/effects/Tween.js": bower_componentsJquerySrcEffectsTweenJs,
+	"bower_components/jquery/src/effects/animatedSelector.js": bower_componentsJquerySrcEffectsAnimatedselectorJs,
+	"bower_components/jquery/src/effects.js": bower_componentsJquerySrcEffectsJs,
+	"bower_components/jquery/src/event/ajax.js": bower_componentsJquerySrcEventAjaxJs,
+	"bower_components/jquery/src/event/alias.js": bower_componentsJquerySrcEventAliasJs,
+	"bower_components/jquery/src/event/support.js": bower_componentsJquerySrcEventSupportJs,
+	"bower_components/jquery/src/event.js": bower_componentsJquerySrcEventJs,
+	"bower_components/jquery/src/exports/amd.js": bower_componentsJquerySrcExportsAmdJs,
+	"bower_components/jquery/src/exports/global.js": bower_componentsJquerySrcExportsGlobalJs,
+	"bower_components/jquery/src/intro.js": bower_componentsJquerySrcIntroJs,
+	"bower_components/jquery/src/jquery.js": bower_componentsJquerySrcJqueryJs,
+	"bower_components/jquery/src/manipulation/_evalUrl.js": bower_componentsJquerySrcManipulation_evalurlJs,
+	"bower_components/jquery/src/manipulation/support.js": bower_componentsJquerySrcManipulationSupportJs,
+	"bower_components/jquery/src/manipulation/var/rcheckableType.js": bower_componentsJquerySrcManipulationVarRcheckabletypeJs,
+	"bower_components/jquery/src/manipulation.js": bower_componentsJquerySrcManipulationJs,
+	"bower_components/jquery/src/offset.js": bower_componentsJquerySrcOffsetJs,
+	"bower_components/jquery/src/outro.js": bower_componentsJquerySrcOutroJs,
+	"bower_components/jquery/src/queue/delay.js": bower_componentsJquerySrcQueueDelayJs,
+	"bower_components/jquery/src/queue.js": bower_componentsJquerySrcQueueJs,
+	"bower_components/jquery/src/selector-native.js": bower_componentsJquerySrcSelectorNativeJs,
+	"bower_components/jquery/src/selector-sizzle.js": bower_componentsJquerySrcSelectorSizzleJs,
+	"bower_components/jquery/src/selector.js": bower_componentsJquerySrcSelectorJs,
+	"bower_components/jquery/src/serialize.js": bower_componentsJquerySrcSerializeJs,
+	"bower_components/jquery/src/sizzle/dist/sizzle.js": bower_componentsJquerySrcSizzleDistSizzleJs,
+	"bower_components/jquery/src/sizzle/dist/sizzle.min.js": bower_componentsJquerySrcSizzleDistSizzleMinJs,
+	"bower_components/jquery/src/sizzle/dist/sizzle.min.map": bower_componentsJquerySrcSizzleDistSizzleMinMap,
+	"bower_components/jquery/src/traversing/findFilter.js": bower_componentsJquerySrcTraversingFindfilterJs,
+	"bower_components/jquery/src/traversing/var/rneedsContext.js": bower_componentsJquerySrcTraversingVarRneedscontextJs,
+	"bower_components/jquery/src/traversing.js": bower_componentsJquerySrcTraversingJs,
+	"bower_components/jquery/src/var/arr.js": bower_componentsJquerySrcVarArrJs,
+	"bower_components/jquery/src/var/class2type.js": bower_componentsJquerySrcVarClass2typeJs,
+	"bower_components/jquery/src/var/concat.js": bower_componentsJquerySrcVarConcatJs,
+	"bower_components/jquery/src/var/hasOwn.js": bower_componentsJquerySrcVarHasownJs,
+	"bower_components/jquery/src/var/indexOf.js": bower_componentsJquerySrcVarIndexofJs,
+	"bower_components/jquery/src/var/pnum.js": bower_componentsJquerySrcVarPnumJs,
+	"bower_components/jquery/src/var/push.js": bower_componentsJquerySrcVarPushJs,
+	"bower_components/jquery/src/var/rnotwhite.js": bower_componentsJquerySrcVarRnotwhiteJs,
+	"bower_components/jquery/src/var/slice.js": bower_componentsJquerySrcVarSliceJs,
+	"bower_components/jquery/src/var/strundefined.js": bower_componentsJquerySrcVarStrundefinedJs,
+	"bower_components/jquery/src/var/support.js": bower_componentsJquerySrcVarSupportJs,
+	"bower_components/jquery/src/var/toString.js": bower_componentsJquerySrcVarTostringJs,
+	"bower_components/jquery/src/wrap.js": bower_componentsJquerySrcWrapJs,
 	"bower_components/paper-behaviors/.bower.json": bower_componentsPaperBehaviorsBowerJson,
 	"bower_components/paper-behaviors/.gitignore": bower_componentsPaperBehaviorsGitignore,
 	"bower_components/paper-behaviors/README.md": bower_componentsPaperBehaviorsReadmeMd,
@@ -11581,6 +13542,24 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"index.js": &bintree{bower_componentsAngularAriaIndexJs, map[string]*bintree{
 			}},
 			"package.json": &bintree{bower_componentsAngularAriaPackageJson, map[string]*bintree{
+			}},
+		}},
+		"angular-cookies": &bintree{nil, map[string]*bintree{
+			".bower.json": &bintree{bower_componentsAngularCookiesBowerJson, map[string]*bintree{
+			}},
+			"README.md": &bintree{bower_componentsAngularCookiesReadmeMd, map[string]*bintree{
+			}},
+			"angular-cookies.js": &bintree{bower_componentsAngularCookiesAngularCookiesJs, map[string]*bintree{
+			}},
+			"angular-cookies.min.js": &bintree{bower_componentsAngularCookiesAngularCookiesMinJs, map[string]*bintree{
+			}},
+			"angular-cookies.min.js.map": &bintree{bower_componentsAngularCookiesAngularCookiesMinJsMap, map[string]*bintree{
+			}},
+			"bower.json": &bintree{bower_componentsAngularCookiesBowerJson2, map[string]*bintree{
+			}},
+			"index.js": &bintree{bower_componentsAngularCookiesIndexJs, map[string]*bintree{
+			}},
+			"package.json": &bintree{bower_componentsAngularCookiesPackageJson, map[string]*bintree{
 			}},
 		}},
 		"angular-material": &bintree{nil, map[string]*bintree{
@@ -12695,6 +14674,232 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"iron-flex-layout.html": &bintree{bower_componentsIronFlexLayoutIronFlexLayoutHtml, map[string]*bintree{
 			}},
 		}},
+		"jquery": &bintree{nil, map[string]*bintree{
+			".bower.json": &bintree{bower_componentsJqueryBowerJson, map[string]*bintree{
+			}},
+			"MIT-LICENSE.txt": &bintree{bower_componentsJqueryMitLicenseTxt, map[string]*bintree{
+			}},
+			"bower.json": &bintree{bower_componentsJqueryBowerJson2, map[string]*bintree{
+			}},
+			"dist": &bintree{nil, map[string]*bintree{
+				"jquery.js": &bintree{bower_componentsJqueryDistJqueryJs, map[string]*bintree{
+				}},
+				"jquery.min.js": &bintree{bower_componentsJqueryDistJqueryMinJs, map[string]*bintree{
+				}},
+				"jquery.min.map": &bintree{bower_componentsJqueryDistJqueryMinMap, map[string]*bintree{
+				}},
+			}},
+			"src": &bintree{nil, map[string]*bintree{
+				"ajax": &bintree{nil, map[string]*bintree{
+					"jsonp.js": &bintree{bower_componentsJquerySrcAjaxJsonpJs, map[string]*bintree{
+					}},
+					"load.js": &bintree{bower_componentsJquerySrcAjaxLoadJs, map[string]*bintree{
+					}},
+					"parseJSON.js": &bintree{bower_componentsJquerySrcAjaxParsejsonJs, map[string]*bintree{
+					}},
+					"parseXML.js": &bintree{bower_componentsJquerySrcAjaxParsexmlJs, map[string]*bintree{
+					}},
+					"script.js": &bintree{bower_componentsJquerySrcAjaxScriptJs, map[string]*bintree{
+					}},
+					"var": &bintree{nil, map[string]*bintree{
+						"nonce.js": &bintree{bower_componentsJquerySrcAjaxVarNonceJs, map[string]*bintree{
+						}},
+						"rquery.js": &bintree{bower_componentsJquerySrcAjaxVarRqueryJs, map[string]*bintree{
+						}},
+					}},
+					"xhr.js": &bintree{bower_componentsJquerySrcAjaxXhrJs, map[string]*bintree{
+					}},
+				}},
+				"ajax.js": &bintree{bower_componentsJquerySrcAjaxJs, map[string]*bintree{
+				}},
+				"attributes": &bintree{nil, map[string]*bintree{
+					"attr.js": &bintree{bower_componentsJquerySrcAttributesAttrJs, map[string]*bintree{
+					}},
+					"classes.js": &bintree{bower_componentsJquerySrcAttributesClassesJs, map[string]*bintree{
+					}},
+					"prop.js": &bintree{bower_componentsJquerySrcAttributesPropJs, map[string]*bintree{
+					}},
+					"support.js": &bintree{bower_componentsJquerySrcAttributesSupportJs, map[string]*bintree{
+					}},
+					"val.js": &bintree{bower_componentsJquerySrcAttributesValJs, map[string]*bintree{
+					}},
+				}},
+				"attributes.js": &bintree{bower_componentsJquerySrcAttributesJs, map[string]*bintree{
+				}},
+				"callbacks.js": &bintree{bower_componentsJquerySrcCallbacksJs, map[string]*bintree{
+				}},
+				"core": &bintree{nil, map[string]*bintree{
+					"access.js": &bintree{bower_componentsJquerySrcCoreAccessJs, map[string]*bintree{
+					}},
+					"init.js": &bintree{bower_componentsJquerySrcCoreInitJs, map[string]*bintree{
+					}},
+					"parseHTML.js": &bintree{bower_componentsJquerySrcCoreParsehtmlJs, map[string]*bintree{
+					}},
+					"ready.js": &bintree{bower_componentsJquerySrcCoreReadyJs, map[string]*bintree{
+					}},
+					"var": &bintree{nil, map[string]*bintree{
+						"rsingleTag.js": &bintree{bower_componentsJquerySrcCoreVarRsingletagJs, map[string]*bintree{
+						}},
+					}},
+				}},
+				"core.js": &bintree{bower_componentsJquerySrcCoreJs, map[string]*bintree{
+				}},
+				"css": &bintree{nil, map[string]*bintree{
+					"addGetHookIf.js": &bintree{bower_componentsJquerySrcCssAddgethookifJs, map[string]*bintree{
+					}},
+					"curCSS.js": &bintree{bower_componentsJquerySrcCssCurcssJs, map[string]*bintree{
+					}},
+					"defaultDisplay.js": &bintree{bower_componentsJquerySrcCssDefaultdisplayJs, map[string]*bintree{
+					}},
+					"hiddenVisibleSelectors.js": &bintree{bower_componentsJquerySrcCssHiddenvisibleselectorsJs, map[string]*bintree{
+					}},
+					"support.js": &bintree{bower_componentsJquerySrcCssSupportJs, map[string]*bintree{
+					}},
+					"swap.js": &bintree{bower_componentsJquerySrcCssSwapJs, map[string]*bintree{
+					}},
+					"var": &bintree{nil, map[string]*bintree{
+						"cssExpand.js": &bintree{bower_componentsJquerySrcCssVarCssexpandJs, map[string]*bintree{
+						}},
+						"getStyles.js": &bintree{bower_componentsJquerySrcCssVarGetstylesJs, map[string]*bintree{
+						}},
+						"isHidden.js": &bintree{bower_componentsJquerySrcCssVarIshiddenJs, map[string]*bintree{
+						}},
+						"rmargin.js": &bintree{bower_componentsJquerySrcCssVarRmarginJs, map[string]*bintree{
+						}},
+						"rnumnonpx.js": &bintree{bower_componentsJquerySrcCssVarRnumnonpxJs, map[string]*bintree{
+						}},
+					}},
+				}},
+				"css.js": &bintree{bower_componentsJquerySrcCssJs, map[string]*bintree{
+				}},
+				"data": &bintree{nil, map[string]*bintree{
+					"Data.js": &bintree{bower_componentsJquerySrcDataDataJs, map[string]*bintree{
+					}},
+					"accepts.js": &bintree{bower_componentsJquerySrcDataAcceptsJs, map[string]*bintree{
+					}},
+					"var": &bintree{nil, map[string]*bintree{
+						"data_priv.js": &bintree{bower_componentsJquerySrcDataVarData_privJs, map[string]*bintree{
+						}},
+						"data_user.js": &bintree{bower_componentsJquerySrcDataVarData_userJs, map[string]*bintree{
+						}},
+					}},
+				}},
+				"data.js": &bintree{bower_componentsJquerySrcDataJs, map[string]*bintree{
+				}},
+				"deferred.js": &bintree{bower_componentsJquerySrcDeferredJs, map[string]*bintree{
+				}},
+				"deprecated.js": &bintree{bower_componentsJquerySrcDeprecatedJs, map[string]*bintree{
+				}},
+				"dimensions.js": &bintree{bower_componentsJquerySrcDimensionsJs, map[string]*bintree{
+				}},
+				"effects": &bintree{nil, map[string]*bintree{
+					"Tween.js": &bintree{bower_componentsJquerySrcEffectsTweenJs, map[string]*bintree{
+					}},
+					"animatedSelector.js": &bintree{bower_componentsJquerySrcEffectsAnimatedselectorJs, map[string]*bintree{
+					}},
+				}},
+				"effects.js": &bintree{bower_componentsJquerySrcEffectsJs, map[string]*bintree{
+				}},
+				"event": &bintree{nil, map[string]*bintree{
+					"ajax.js": &bintree{bower_componentsJquerySrcEventAjaxJs, map[string]*bintree{
+					}},
+					"alias.js": &bintree{bower_componentsJquerySrcEventAliasJs, map[string]*bintree{
+					}},
+					"support.js": &bintree{bower_componentsJquerySrcEventSupportJs, map[string]*bintree{
+					}},
+				}},
+				"event.js": &bintree{bower_componentsJquerySrcEventJs, map[string]*bintree{
+				}},
+				"exports": &bintree{nil, map[string]*bintree{
+					"amd.js": &bintree{bower_componentsJquerySrcExportsAmdJs, map[string]*bintree{
+					}},
+					"global.js": &bintree{bower_componentsJquerySrcExportsGlobalJs, map[string]*bintree{
+					}},
+				}},
+				"intro.js": &bintree{bower_componentsJquerySrcIntroJs, map[string]*bintree{
+				}},
+				"jquery.js": &bintree{bower_componentsJquerySrcJqueryJs, map[string]*bintree{
+				}},
+				"manipulation": &bintree{nil, map[string]*bintree{
+					"_evalUrl.js": &bintree{bower_componentsJquerySrcManipulation_evalurlJs, map[string]*bintree{
+					}},
+					"support.js": &bintree{bower_componentsJquerySrcManipulationSupportJs, map[string]*bintree{
+					}},
+					"var": &bintree{nil, map[string]*bintree{
+						"rcheckableType.js": &bintree{bower_componentsJquerySrcManipulationVarRcheckabletypeJs, map[string]*bintree{
+						}},
+					}},
+				}},
+				"manipulation.js": &bintree{bower_componentsJquerySrcManipulationJs, map[string]*bintree{
+				}},
+				"offset.js": &bintree{bower_componentsJquerySrcOffsetJs, map[string]*bintree{
+				}},
+				"outro.js": &bintree{bower_componentsJquerySrcOutroJs, map[string]*bintree{
+				}},
+				"queue": &bintree{nil, map[string]*bintree{
+					"delay.js": &bintree{bower_componentsJquerySrcQueueDelayJs, map[string]*bintree{
+					}},
+				}},
+				"queue.js": &bintree{bower_componentsJquerySrcQueueJs, map[string]*bintree{
+				}},
+				"selector-native.js": &bintree{bower_componentsJquerySrcSelectorNativeJs, map[string]*bintree{
+				}},
+				"selector-sizzle.js": &bintree{bower_componentsJquerySrcSelectorSizzleJs, map[string]*bintree{
+				}},
+				"selector.js": &bintree{bower_componentsJquerySrcSelectorJs, map[string]*bintree{
+				}},
+				"serialize.js": &bintree{bower_componentsJquerySrcSerializeJs, map[string]*bintree{
+				}},
+				"sizzle": &bintree{nil, map[string]*bintree{
+					"dist": &bintree{nil, map[string]*bintree{
+						"sizzle.js": &bintree{bower_componentsJquerySrcSizzleDistSizzleJs, map[string]*bintree{
+						}},
+						"sizzle.min.js": &bintree{bower_componentsJquerySrcSizzleDistSizzleMinJs, map[string]*bintree{
+						}},
+						"sizzle.min.map": &bintree{bower_componentsJquerySrcSizzleDistSizzleMinMap, map[string]*bintree{
+						}},
+					}},
+				}},
+				"traversing": &bintree{nil, map[string]*bintree{
+					"findFilter.js": &bintree{bower_componentsJquerySrcTraversingFindfilterJs, map[string]*bintree{
+					}},
+					"var": &bintree{nil, map[string]*bintree{
+						"rneedsContext.js": &bintree{bower_componentsJquerySrcTraversingVarRneedscontextJs, map[string]*bintree{
+						}},
+					}},
+				}},
+				"traversing.js": &bintree{bower_componentsJquerySrcTraversingJs, map[string]*bintree{
+				}},
+				"var": &bintree{nil, map[string]*bintree{
+					"arr.js": &bintree{bower_componentsJquerySrcVarArrJs, map[string]*bintree{
+					}},
+					"class2type.js": &bintree{bower_componentsJquerySrcVarClass2typeJs, map[string]*bintree{
+					}},
+					"concat.js": &bintree{bower_componentsJquerySrcVarConcatJs, map[string]*bintree{
+					}},
+					"hasOwn.js": &bintree{bower_componentsJquerySrcVarHasownJs, map[string]*bintree{
+					}},
+					"indexOf.js": &bintree{bower_componentsJquerySrcVarIndexofJs, map[string]*bintree{
+					}},
+					"pnum.js": &bintree{bower_componentsJquerySrcVarPnumJs, map[string]*bintree{
+					}},
+					"push.js": &bintree{bower_componentsJquerySrcVarPushJs, map[string]*bintree{
+					}},
+					"rnotwhite.js": &bintree{bower_componentsJquerySrcVarRnotwhiteJs, map[string]*bintree{
+					}},
+					"slice.js": &bintree{bower_componentsJquerySrcVarSliceJs, map[string]*bintree{
+					}},
+					"strundefined.js": &bintree{bower_componentsJquerySrcVarStrundefinedJs, map[string]*bintree{
+					}},
+					"support.js": &bintree{bower_componentsJquerySrcVarSupportJs, map[string]*bintree{
+					}},
+					"toString.js": &bintree{bower_componentsJquerySrcVarTostringJs, map[string]*bintree{
+					}},
+				}},
+				"wrap.js": &bintree{bower_componentsJquerySrcWrapJs, map[string]*bintree{
+				}},
+			}},
+		}},
 		"paper-behaviors": &bintree{nil, map[string]*bintree{
 			".bower.json": &bintree{bower_componentsPaperBehaviorsBowerJson, map[string]*bintree{
 			}},
@@ -12980,7 +15185,7 @@ func RestoreAsset(dir, name string) error {
         if err != nil {
                 return err
         }
-        err = os.MkdirAll(_filePath(dir, filepath.Dir(name)), os.FileMode(0755))
+        err = os.MkdirAll(_filePath(dir, path.Dir(name)), os.FileMode(0755))
         if err != nil {
                 return err
         }
@@ -13004,7 +15209,7 @@ func RestoreAssets(dir, name string) error {
         }
         // Dir
         for _, child := range children {
-                err = RestoreAssets(dir, filepath.Join(name, child))
+                err = RestoreAssets(dir, path.Join(name, child))
                 if err != nil {
                         return err
                 }
