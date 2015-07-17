@@ -1,4 +1,5 @@
-function EscalationController($scope, $http, $cookies) {
+function EscalationController($scope, $http, $cookies, $mdDialog) {
+	$scope.escalations = null;
 	this.fetchEscalations = function() {
 		$http.get("api/escalation/config/*").success(function(data, status) {
 			$scope.escalations = data;
@@ -16,6 +17,27 @@ function EscalationController($scope, $http, $cookies) {
 		$cookies.put("nec:tab", name);
 		this.selected = name;
 	}
+
+	this.removeEscalation = function(name)  {
+		$http.delete("api/escalation/config/"+name).success(function(data) {
+			this.fetchEscalations();
+		});
+	}
+
+	this.showRemoveDialog = function(name) {
+		$mdDialog.show(
+			$mdDialog.alert()
+				.title("Remove")
+				.content("Are you sure you want to remove " + name)
+				.ok("Yes")
+				.cancel("No")
+		);
+
+
+	}
+
+	this.fetchEscalations();
+
 }
 angular.module("bangarang").controller("EscalationController", EscalationController);
 

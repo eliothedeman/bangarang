@@ -12,6 +12,7 @@
 	<script type="text/javascript" src="bower_components/angular-route/angular-route.js"></script>
 	<script type="text/javascript" src="bower_components/angular-material/angular-material.js"></script>
 	<link rel="stylesheet" href="bower_components/angular-material/angular-material.css"></script>
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
 </head>
 <body ng-app="bangarang">
@@ -176,8 +177,24 @@
 			<md-tab label="escalation" md-on-select="r.updateSelected(1)">
 				<div ng-controller="EscalationController as ec">
 					<md-tabs md-dynamic-height md-border-bottom md-selected="ec.selected" ng-init="ec.getSelected()">
-						<md-tab index="All" label="All" md-on-select="ec.updateSelected(0)">
-
+						<md-tab label="All" md-on-select="ec.updateSelected(0)">
+							<md-list>
+								<md-card ng-repeat="(k,v) in escalations">
+									<md-card-content>
+										<md-list-item class="md-3-line">
+											<div class="md-list-item-text">
+												<h3>{{k}}</h3>
+												<p ng-repeat="e in v">
+													- {{e.type}}
+												</p>
+											</div>
+											<md-button ng-click="ec.showRemoveDialog(k)">
+											<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon>
+											</md-button>
+										</md-list-item>
+									</md-card-content>
+								</md-card>
+							</md-list>
 						</md-tab>
 						<md-tab label="New" md-on-select="ec.updateSelected(1)">
 
@@ -228,7 +245,6 @@
 				</div>
 			</md-tab>
 		</md-tabs>
-		
 	</div>
 	
 </body>
