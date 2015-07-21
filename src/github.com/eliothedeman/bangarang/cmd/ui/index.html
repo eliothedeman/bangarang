@@ -188,7 +188,9 @@
 													- {{e.type}}
 												</p>
 											</div>
-											<md-button ng-click="ec.showRemoveDialog(k)">
+											<md-button ng-click="removeEscalation(k)" class="md-primary" ng-hide="shouldHideRemoveDialog(k)">Yes</md-button>
+											<md-button ng-click="hideRemoveDialog(k)" class="md-warn" ng-hide="shouldHideRemoveDialog(k)">No</md-button>
+											<md-button ng-click="showRemoveDialog(k)">
 											<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon>
 											</md-button>
 										</md-list-item>
@@ -197,7 +199,6 @@
 							</md-list>
 						</md-tab>
 						<md-tab label="New" md-on-select="ec.updateSelected(1)">
-
 							<md-card>
 								<md-card-content ng-controller="NewEscalationController as ne">
 									<md-input-container>
@@ -230,6 +231,7 @@
 											</md-chip-template>
 										</md-chips>
 									</div>
+									<md-progress-linear md-mode="buffer" class="md-warn" value="{{newEscalationProgress}}"></md-progress-linear>
 								</md-card-content>
 							</md-card>
 						</md-tab>

@@ -1,6 +1,6 @@
 function EscalationController($scope, $http, $cookies, $mdDialog) {
 	$scope.escalations = null;
-	this.fetchEscalations = function() {
+	$scope.fetchEscalations = function() {
 		$http.get("api/escalation/config/*").success(function(data, status) {
 			$scope.escalations = data;
 		});
@@ -18,31 +18,33 @@ function EscalationController($scope, $http, $cookies, $mdDialog) {
 		this.selected = name;
 	}
 
-	this.removeEscalation = function(name)  {
+	$scope.removeSure = {}
+	$scope.showRemoveDialog = function(name) {
+		$scope.removeSure[name] = true;
+	}
+
+	$scope.hideRemoveDialog = function(name) {
+		$scope.removeSure[name] = false;
+	}
+
+	$scope.shouldHideRemoveDialog = function(name) {
+		var show = $scope.removeSure[name];
+		return show != true;
+	}
+
+	$scope.removeEscalation = function(name)  {
 		$http.delete("api/escalation/config/"+name).success(function(data) {
-			this.fetchEscalations();
+			$scope.fetchEscalations();
 		});
 	}
 
-	this.showRemoveDialog = function(name) {
-		$mdDialog.show(
-			$mdDialog.alert()
-				.title("Remove")
-				.content("Are you sure you want to remove " + name)
-				.ok("Yes")
-				.cancel("No")
-		);
-
-
-	}
-
-	this.fetchEscalations();
+	$scope.fetchEscalations();
 
 }
 angular.module("bangarang").controller("EscalationController", EscalationController);
 
 
-function NewEscalationController($scope, $http) {
+function NewEscalationController($scope, $http, $interval) {
 	this.name = "";
 	this.type = null;
 	this.ots = {};
@@ -118,11 +120,20 @@ function NewEscalationController($scope, $http) {
 		if (!this.name) {
 			return;
 		}
-		$http.post("api/escalation/config/" + this.name, this.chips);
+		$scope.newEscalationProgress = 50;
+		a = this;
+		$http.post("api/escalation/config/" + this.name, this.chips).success(function(data) {
+			a.reset();
+		});
+
 	}
 
 	this.reset = function() {
 		this.type = null;
+		this.name = "";
+		this.chips = [];
+		this.opts = {};
+		$scope.newEscalationProgress = 0;
 	}
 }
 

@@ -98,6 +98,7 @@ function NewPolicyController($scope, $http, $timeout) {
 			this.cOpVal = "";
 		}
 	}
+
 	this.addNewWarnOp = function() {
 		if (np.wOpKey && np.wOpVal ) {
 			this.warnOpChips.push({"key": np.wOpKey, "val": np.wOpVal});

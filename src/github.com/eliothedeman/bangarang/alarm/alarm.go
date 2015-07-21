@@ -26,6 +26,9 @@ func (c *Collection) Collection() map[string][]Alarm {
 }
 
 func (c *Collection) AddRaw(name string, raw []json.RawMessage) {
+	if c.raw == nil {
+		c.raw = make(map[string][]json.RawMessage)
+	}
 	c.raw[name] = raw
 }
 
