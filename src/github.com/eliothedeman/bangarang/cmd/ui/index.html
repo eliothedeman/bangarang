@@ -240,6 +240,29 @@
 			</md-tab>
 			<md-tab label="provider" md-on-select="r.updateSelected(2)">
 				<div ng-controller="ProviderController as pc">
+					<md-tabs md-dynamic-height md-border-bottom>
+						<md-tab label="All" ng-init="pc.fetchProviders()">
+							<md-list>
+								<md-card ng-repeat="(k,v) in providers">
+									<md-card-content>
+										<h1>{{k}}</h1>
+										<h4>{{v}}</h4>
+									</md-card-content>
+								</md-card>
+							</md-list>
+						</md-tab>
+						<md-tab label="Add">
+							<md-card>
+								<md-card-content>
+									<md-input-container>
+										<label>Name</label>
+										<input></input>
+									</md-input-container>
+								</md-card-content>
+							</md-card>
+						</md-tab>
+
+					</md-tabs>
 				</div>
 			</md-tab>
 			<md-tab label="events" md-on-select="r.updateSelected(3)">

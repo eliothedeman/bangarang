@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -34,6 +35,17 @@ func (c *ProviderConfig) Get(w http.ResponseWriter, r *http.Request) {
 	id, ok := vars["id"]
 	if !ok {
 		http.Error(w, "must append provider id", http.StatusBadRequest)
+		return
+	}
+
+	// if the provider is "*" fetch all configs
+	if id == "*" {
+		buff, err := json.Marshal(confs)
+		if err != nil {
+			logrus.Error(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		w.Write(buff)
 		return
 	}
 
