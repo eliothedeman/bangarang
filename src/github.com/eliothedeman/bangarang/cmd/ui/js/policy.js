@@ -133,6 +133,27 @@ angular.module('bangarang').controller("NewPolicyController", NewPolicyControlle
 
 function PolicyController($scope, $http) {
 	$scope.policies = null;
+	$scope.removeSure = {}
+	t = this;
+	$scope.showRemoveDialog = function(name) {
+		$scope.removeSure[name] = true;
+	}
+
+	$scope.hideRemoveDialog = function(name) {
+		$scope.removeSure[name] = false;
+	}
+
+	$scope.shouldHideRemoveDialog = function(name) {
+		var show = $scope.removeSure[name];
+		return show != true;
+	}
+
+	$scope.removePolicy = function(name) {
+		$http.delete("api/policy/config/"+name).success(function(data) {
+			t.fetchPolicies();
+		});
+	}
+
 
 	this.fetchPolicies = function() {
 		$http.get("api/policy/config/*").success(function(data, status) {

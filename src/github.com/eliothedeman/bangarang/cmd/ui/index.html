@@ -34,17 +34,27 @@
 			<md-tab label="policy" md-on-select="r.updateSelected(0)">
 				<div ng-controller="PolicyController as pc">
 					<md-tabs md-dynamic-height md-border-bottom>
-						<md-tab label="list">
-							<md-card md-dynamic-height >
-								<md-card-content >
-									<md-grid-list md-cols-sm="1" md-cols-md="2" md-cols-gt-md="6" md-row-height-gt-md="1:1" md-row-height="4:3"
-	        md-gutter="8px" md-gutter-gt-sm="4px">
-										<md-grid-tile ng-repeat="(key, value) in policies">
-											{{key}}: {{value}}
-										</md-grid-tile>
-									</md-grid-list>
-								</md-card-content>
-							</md-card>
+						<md-tab label="All">
+							<md-list>
+								<md-card ng-repeat="(name, pol) in policies">
+									<md-card-content>
+										<md-list-item class="md-3-line">
+											<div class="md-list-item-text">
+												<h3>{{name}}</h3>
+												<p ng-repeat="(k,v) in pol">
+													- {{k}}: {{v}}
+												</p>
+											</div>
+											<p ng-hide="shouldHideRemoveDialog(name)">Sure?</p>
+											<md-button ng-click="removePolicy(name)" class="md-primary" ng-hide="shouldHideRemoveDialog(name)">Yes</md-button>
+											<md-button ng-click="hideRemoveDialog(name)" class="md-warn" ng-hide="shouldHideRemoveDialog(name)">No</md-button>
+											<md-button ng-click="showRemoveDialog(name)">
+											<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon>
+											</md-button>
+										</md-list-item>
+									</md-card-content>
+								</md-card>
+							</md-list>
 						</md-tab>
 						<md-tab label="new">
 							<div ng-controller="NewPolicyController as npc">
