@@ -11,13 +11,19 @@
 	<script type="text/javascript" src="bower_components/angular-aria/angular-aria.js"></script>
 	<script type="text/javascript" src="bower_components/angular-route/angular-route.js"></script>
 	<script type="text/javascript" src="bower_components/angular-material/angular-material.js"></script>
+	<script type="text/javascript" src="bower_components/json-formatter/dist/json-formatter.min.js"></script>
+  	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.18/angular-sanitize.js"></script>
+
 	<link rel="stylesheet" href="bower_components/angular-material/angular-material.css"></script>
+	<link rel="stylesheet" href="bower_components/json-formatter/dist/json-formatter.css"></script>
+	<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.css">
+
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
 </head>
 <body ng-app="bangarang">
 	<script type="text/javascript">
-		angular.module("bangarang", ["ngMaterial", "ngAnimate", "ngCookies"])
+		angular.module("bangarang", ["ngMaterial", "ngAnimate", "ngCookies", "jsonFormatter", "ngSanitize"])
 		.config(function($httpProvider, $mdThemingProvider, $mdIconProvider) {
 			$httpProvider.defaults.headers.common["Access-Control-Allow-Origin"] = "*";
 			$mdThemingProvider.theme("default").primaryPalette("brown");
@@ -41,9 +47,7 @@
 										<md-list-item class="md-3-line">
 											<div class="md-list-item-text">
 												<h3>{{name}}</h3>
-												<p ng-repeat="(k,v) in pol">
-													- {{k}}: {{v}}
-												</p>
+												<json-formatter class="json-formatter" json=pol></json-formatter>
 											</div>
 											<p ng-hide="shouldHideRemoveDialog(name)">Sure?</p>
 											<md-button ng-click="removePolicy(name)" class="md-primary" ng-hide="shouldHideRemoveDialog(name)">Yes</md-button>
@@ -278,9 +282,10 @@
 				<div ng-controller="Config as cc" ng-init="fetchSnapshots()">
 					<md-card ng-repeat="snapshot in snapshots">
 						<md-card-content>
-							{{snapshot.hash}}
-							{{snapshot.time_stamp}}
-							<md-button ng-click="showInspect(snapshot.hash)">Inspect</md-button>
+							<h4>{{snapshot.date}}</h3>
+							<p ng-if="snapshot.hash == 'current'">{{snapshot.hash}}</p>
+							<md-button aria-label="Update Current" ng-if="snapshot.hash != 'current'" ng-click="showRevert(snapshot.hash)">Revert</md-button>
+							<json-formatter json=snapshot.app></json-formatter>
 						</md-card-content>
 					</md-card>
 				</div>

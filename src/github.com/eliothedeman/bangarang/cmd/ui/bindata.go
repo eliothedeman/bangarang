@@ -557,6 +557,26 @@
 // bower_components/jquery/src/var/support.js
 // bower_components/jquery/src/var/toString.js
 // bower_components/jquery/src/wrap.js
+// bower_components/json-formatter/.bower.json
+// bower_components/json-formatter/LICENSE
+// bower_components/json-formatter/README.md
+// bower_components/json-formatter/bower.json
+// bower_components/json-formatter/demo/demo.css
+// bower_components/json-formatter/demo/demo.html
+// bower_components/json-formatter/demo/demo.js
+// bower_components/json-formatter/dist/json-formatter.css
+// bower_components/json-formatter/dist/json-formatter.js
+// bower_components/json-formatter/dist/json-formatter.min.css
+// bower_components/json-formatter/dist/json-formatter.min.js
+// bower_components/json-formatter/gulpfile.js
+// bower_components/json-formatter/index.html
+// bower_components/json-formatter/karma.conf.js
+// bower_components/json-formatter/package.json
+// bower_components/json-formatter/screenshot.png
+// bower_components/json-formatter/src/json-formatter.html
+// bower_components/json-formatter/src/json-formatter.js
+// bower_components/json-formatter/src/json-formatter.less
+// bower_components/json-formatter/src/recursion-helper.js
 // bower_components/paper-behaviors/.bower.json
 // bower_components/paper-behaviors/.gitignore
 // bower_components/paper-behaviors/README.md
@@ -661,6 +681,7 @@
 // bower_components/webcomponentsjs/webcomponents.min.js
 // css/header.css
 // index.html
+// js/config.js
 // js/escalation.js
 // js/events.js
 // js/main.js
@@ -10721,6 +10742,366 @@ func bower_componentsJquerySrcWrapJs() (*asset, error) {
 	return a, err
 }
 
+// bower_componentsJsonFormatterBowerJson reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterBowerJson() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/.bower.json")
+	name := "bower_components/json-formatter/.bower.json"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterLicense reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterLicense() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/LICENSE")
+	name := "bower_components/json-formatter/LICENSE"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterReadmeMd reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterReadmeMd() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/README.md")
+	name := "bower_components/json-formatter/README.md"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterBowerJson2 reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterBowerJson2() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/bower.json")
+	name := "bower_components/json-formatter/bower.json"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterDemoDemoCss reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterDemoDemoCss() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/demo/demo.css")
+	name := "bower_components/json-formatter/demo/demo.css"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterDemoDemoHtml reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterDemoDemoHtml() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/demo/demo.html")
+	name := "bower_components/json-formatter/demo/demo.html"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterDemoDemoJs reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterDemoDemoJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/demo/demo.js")
+	name := "bower_components/json-formatter/demo/demo.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterDistJsonFormatterCss reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterDistJsonFormatterCss() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/dist/json-formatter.css")
+	name := "bower_components/json-formatter/dist/json-formatter.css"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterDistJsonFormatterJs reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterDistJsonFormatterJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/dist/json-formatter.js")
+	name := "bower_components/json-formatter/dist/json-formatter.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterDistJsonFormatterMinCss reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterDistJsonFormatterMinCss() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/dist/json-formatter.min.css")
+	name := "bower_components/json-formatter/dist/json-formatter.min.css"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterDistJsonFormatterMinJs reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterDistJsonFormatterMinJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/dist/json-formatter.min.js")
+	name := "bower_components/json-formatter/dist/json-formatter.min.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterGulpfileJs reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterGulpfileJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/gulpfile.js")
+	name := "bower_components/json-formatter/gulpfile.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterIndexHtml reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterIndexHtml() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/index.html")
+	name := "bower_components/json-formatter/index.html"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterKarmaConfJs reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterKarmaConfJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/karma.conf.js")
+	name := "bower_components/json-formatter/karma.conf.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterPackageJson reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterPackageJson() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/package.json")
+	name := "bower_components/json-formatter/package.json"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterScreenshotPng reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterScreenshotPng() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/screenshot.png")
+	name := "bower_components/json-formatter/screenshot.png"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterSrcJsonFormatterHtml reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterSrcJsonFormatterHtml() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/src/json-formatter.html")
+	name := "bower_components/json-formatter/src/json-formatter.html"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterSrcJsonFormatterJs reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterSrcJsonFormatterJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/src/json-formatter.js")
+	name := "bower_components/json-formatter/src/json-formatter.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterSrcJsonFormatterLess reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterSrcJsonFormatterLess() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/src/json-formatter.less")
+	name := "bower_components/json-formatter/src/json-formatter.less"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsJsonFormatterSrcRecursionHelperJs reads file data from disk. It returns an error on failure.
+func bower_componentsJsonFormatterSrcRecursionHelperJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/json-formatter/src/recursion-helper.js")
+	name := "bower_components/json-formatter/src/recursion-helper.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
 // bower_componentsPaperBehaviorsBowerJson reads file data from disk. It returns an error on failure.
 func bower_componentsPaperBehaviorsBowerJson() (*asset, error) {
 	path := filepath.Join(rootDir, "bower_components/paper-behaviors/.bower.json")
@@ -12593,6 +12974,24 @@ func indexHtml() (*asset, error) {
 	return a, err
 }
 
+// jsConfigJs reads file data from disk. It returns an error on failure.
+func jsConfigJs() (*asset, error) {
+	path := filepath.Join(rootDir, "js/config.js")
+	name := "js/config.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
 // jsEscalationJs reads file data from disk. It returns an error on failure.
 func jsEscalationJs() (*asset, error) {
 	path := filepath.Join(rootDir, "js/escalation.js")
@@ -13328,6 +13727,26 @@ var _bindata = map[string]func() (*asset, error){
 	"bower_components/jquery/src/var/support.js": bower_componentsJquerySrcVarSupportJs,
 	"bower_components/jquery/src/var/toString.js": bower_componentsJquerySrcVarTostringJs,
 	"bower_components/jquery/src/wrap.js": bower_componentsJquerySrcWrapJs,
+	"bower_components/json-formatter/.bower.json": bower_componentsJsonFormatterBowerJson,
+	"bower_components/json-formatter/LICENSE": bower_componentsJsonFormatterLicense,
+	"bower_components/json-formatter/README.md": bower_componentsJsonFormatterReadmeMd,
+	"bower_components/json-formatter/bower.json": bower_componentsJsonFormatterBowerJson2,
+	"bower_components/json-formatter/demo/demo.css": bower_componentsJsonFormatterDemoDemoCss,
+	"bower_components/json-formatter/demo/demo.html": bower_componentsJsonFormatterDemoDemoHtml,
+	"bower_components/json-formatter/demo/demo.js": bower_componentsJsonFormatterDemoDemoJs,
+	"bower_components/json-formatter/dist/json-formatter.css": bower_componentsJsonFormatterDistJsonFormatterCss,
+	"bower_components/json-formatter/dist/json-formatter.js": bower_componentsJsonFormatterDistJsonFormatterJs,
+	"bower_components/json-formatter/dist/json-formatter.min.css": bower_componentsJsonFormatterDistJsonFormatterMinCss,
+	"bower_components/json-formatter/dist/json-formatter.min.js": bower_componentsJsonFormatterDistJsonFormatterMinJs,
+	"bower_components/json-formatter/gulpfile.js": bower_componentsJsonFormatterGulpfileJs,
+	"bower_components/json-formatter/index.html": bower_componentsJsonFormatterIndexHtml,
+	"bower_components/json-formatter/karma.conf.js": bower_componentsJsonFormatterKarmaConfJs,
+	"bower_components/json-formatter/package.json": bower_componentsJsonFormatterPackageJson,
+	"bower_components/json-formatter/screenshot.png": bower_componentsJsonFormatterScreenshotPng,
+	"bower_components/json-formatter/src/json-formatter.html": bower_componentsJsonFormatterSrcJsonFormatterHtml,
+	"bower_components/json-formatter/src/json-formatter.js": bower_componentsJsonFormatterSrcJsonFormatterJs,
+	"bower_components/json-formatter/src/json-formatter.less": bower_componentsJsonFormatterSrcJsonFormatterLess,
+	"bower_components/json-formatter/src/recursion-helper.js": bower_componentsJsonFormatterSrcRecursionHelperJs,
 	"bower_components/paper-behaviors/.bower.json": bower_componentsPaperBehaviorsBowerJson,
 	"bower_components/paper-behaviors/.gitignore": bower_componentsPaperBehaviorsGitignore,
 	"bower_components/paper-behaviors/README.md": bower_componentsPaperBehaviorsReadmeMd,
@@ -13432,6 +13851,7 @@ var _bindata = map[string]func() (*asset, error){
 	"bower_components/webcomponentsjs/webcomponents.min.js": bower_componentsWebcomponentsjsWebcomponentsMinJs,
 	"css/header.css": cssHeaderCss,
 	"index.html": indexHtml,
+	"js/config.js": jsConfigJs,
 	"js/escalation.js": jsEscalationJs,
 	"js/events.js": jsEventsJs,
 	"js/main.js": jsMainJs,
@@ -14900,6 +15320,54 @@ var _bintree = &bintree{nil, map[string]*bintree{
 				}},
 			}},
 		}},
+		"json-formatter": &bintree{nil, map[string]*bintree{
+			".bower.json": &bintree{bower_componentsJsonFormatterBowerJson, map[string]*bintree{
+			}},
+			"LICENSE": &bintree{bower_componentsJsonFormatterLicense, map[string]*bintree{
+			}},
+			"README.md": &bintree{bower_componentsJsonFormatterReadmeMd, map[string]*bintree{
+			}},
+			"bower.json": &bintree{bower_componentsJsonFormatterBowerJson2, map[string]*bintree{
+			}},
+			"demo": &bintree{nil, map[string]*bintree{
+				"demo.css": &bintree{bower_componentsJsonFormatterDemoDemoCss, map[string]*bintree{
+				}},
+				"demo.html": &bintree{bower_componentsJsonFormatterDemoDemoHtml, map[string]*bintree{
+				}},
+				"demo.js": &bintree{bower_componentsJsonFormatterDemoDemoJs, map[string]*bintree{
+				}},
+			}},
+			"dist": &bintree{nil, map[string]*bintree{
+				"json-formatter.css": &bintree{bower_componentsJsonFormatterDistJsonFormatterCss, map[string]*bintree{
+				}},
+				"json-formatter.js": &bintree{bower_componentsJsonFormatterDistJsonFormatterJs, map[string]*bintree{
+				}},
+				"json-formatter.min.css": &bintree{bower_componentsJsonFormatterDistJsonFormatterMinCss, map[string]*bintree{
+				}},
+				"json-formatter.min.js": &bintree{bower_componentsJsonFormatterDistJsonFormatterMinJs, map[string]*bintree{
+				}},
+			}},
+			"gulpfile.js": &bintree{bower_componentsJsonFormatterGulpfileJs, map[string]*bintree{
+			}},
+			"index.html": &bintree{bower_componentsJsonFormatterIndexHtml, map[string]*bintree{
+			}},
+			"karma.conf.js": &bintree{bower_componentsJsonFormatterKarmaConfJs, map[string]*bintree{
+			}},
+			"package.json": &bintree{bower_componentsJsonFormatterPackageJson, map[string]*bintree{
+			}},
+			"screenshot.png": &bintree{bower_componentsJsonFormatterScreenshotPng, map[string]*bintree{
+			}},
+			"src": &bintree{nil, map[string]*bintree{
+				"json-formatter.html": &bintree{bower_componentsJsonFormatterSrcJsonFormatterHtml, map[string]*bintree{
+				}},
+				"json-formatter.js": &bintree{bower_componentsJsonFormatterSrcJsonFormatterJs, map[string]*bintree{
+				}},
+				"json-formatter.less": &bintree{bower_componentsJsonFormatterSrcJsonFormatterLess, map[string]*bintree{
+				}},
+				"recursion-helper.js": &bintree{bower_componentsJsonFormatterSrcRecursionHelperJs, map[string]*bintree{
+				}},
+			}},
+		}},
 		"paper-behaviors": &bintree{nil, map[string]*bintree{
 			".bower.json": &bintree{bower_componentsPaperBehaviorsBowerJson, map[string]*bintree{
 			}},
@@ -15158,6 +15626,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"index.html": &bintree{indexHtml, map[string]*bintree{
 	}},
 	"js": &bintree{nil, map[string]*bintree{
+		"config.js": &bintree{jsConfigJs, map[string]*bintree{
+		}},
 		"escalation.js": &bintree{jsEscalationJs, map[string]*bintree{
 		}},
 		"events.js": &bintree{jsEventsJs, map[string]*bintree{
