@@ -273,7 +273,19 @@
 					</md-tabs>
 				</div>
 			</md-tab>
-			<md-tab label="events" md-on-select="r.updateSelected(3)">
+
+			<md-tab label="config" md-on-select="r.updateSelected(3)">
+				<div ng-controller="Config as cc" ng-init="fetchSnapshots()">
+					<md-card ng-repeat="snapshot in snapshots">
+						<md-card-content>
+							{{snapshot.hash}}
+							{{snapshot.time_stamp}}
+							<md-button ng-click="showInspect(snapshot.hash)">Inspect</md-button>
+						</md-card-content>
+					</md-card>
+				</div>
+			</md-tab>
+			<md-tab label="events" md-on-select="r.updateSelected(4)">
 				<div ng-controller="EventsController as ec">
 				</div>
 			</md-tab>

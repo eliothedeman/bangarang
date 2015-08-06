@@ -11,7 +11,7 @@ function ProviderController($scope, $http) {
 angular.module("bangarang").controller("ProviderController", ProviderController);
 function NewProvider($scope,$http) {
 
-	this.init = function {
+	this.init = function() {
 		$scope.name = "";
 		$scope.type = "";
 	}

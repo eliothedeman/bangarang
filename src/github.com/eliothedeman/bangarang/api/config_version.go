@@ -30,13 +30,26 @@ func (c *ConfigVersion) EndPoint() string {
 func (c *ConfigVersion) Get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("content-type", "application/json")
 	vars := mux.Vars(r)
-	_, ok := vars["version"]
+	ver, ok := vars["version"]
 	if !ok {
 		http.Error(w, "must append config version", http.StatusBadRequest)
 		return
 	}
 
 	p := c.pipeline.GetConfig().Provider()
+
+	// return all config versions
+	if ver == "*" {
+		buff, err := json.Marshal(p.ListSnapshots())
+		if err != nil {
+			logrus.Error(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(buff)
+		return
+	}
+
 	conf, err := p.GetConfig(vars["version"])
 	if err != nil {
 		if err != nil {
