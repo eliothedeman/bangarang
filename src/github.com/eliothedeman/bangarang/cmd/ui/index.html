@@ -196,8 +196,8 @@
 										<md-list-item class="md-3-line">
 											<div class="md-list-item-text">
 												<h3>{{k}}</h3>
-												<p ng-repeat="e in v">
-													- {{e.type}}
+												<p>
+													<json-formatter json=v></json-formatter>
 												</p>
 											</div>
 											<md-button ng-click="removeEscalation(k)" class="md-primary" ng-hide="shouldHideRemoveDialog(k)">Yes</md-button>
@@ -257,8 +257,8 @@
 							<md-list>
 								<md-card ng-repeat="(k,v) in providers">
 									<md-card-content>
-										<h1>{{k}}</h1>
-										<h4>{{v}}</h4>
+										<h4>{{k}}</h4>
+										<json-formatter json=v></json-formatter>
 									</md-card-content>
 								</md-card>
 							</md-list>
@@ -284,7 +284,7 @@
 						<md-card-content>
 							<h4>{{snapshot.date}}</h3>
 							<p ng-if="snapshot.hash == 'current'">{{snapshot.hash}}</p>
-							<md-button aria-label="Update Current" ng-if="snapshot.hash != 'current'" ng-click="showRevert(snapshot.hash)">Revert</md-button>
+							<md-button aria-label="Update Current" class="md-warn" ng-if="snapshot.hash != 'current'" ng-click="showRevert(snapshot.hash)">Revert</md-button>
 							<json-formatter json=snapshot.app></json-formatter>
 						</md-card-content>
 					</md-card>

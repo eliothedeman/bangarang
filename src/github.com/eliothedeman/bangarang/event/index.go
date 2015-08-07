@@ -1,10 +1,11 @@
 package event
 
 import (
-	"sync"
+	"os"
 	"sync/atomic"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/boltdb/bolt"
 )
 
 var (
@@ -16,6 +17,7 @@ var (
 
 const (
 	KEEP_ALIVE_SERVICE_NAME = "KeepAlive"
+	INDEX_FILE_NAME         = "bnagarang-index.db"
 )
 
 type counter struct {
@@ -34,14 +36,18 @@ func (c *counter) get() int64 {
 }
 
 type Index struct {
-	i_lock          sync.RWMutex
-	incidents       map[string]Incident
+	db              *bolt.DB
 	incidentCounter *counter
 }
 
 func NewIndex() *Index {
+	db, err := bolt.Open(INDEX_FILE_NAME, 0600, nil)
+	if err != nil {
+		logrus.Fatalf("Unable to open index db at %s %s", INDEX_FILE_NAME, err)
+	}
+
 	return &Index{
-		incidents:       make(map[string]Incident),
+		db:              db,
 		incidentCounter: &counter{},
 	}
 }
@@ -49,16 +55,20 @@ func NewIndex() *Index {
 // close out the index
 func (i *Index) Close() {
 	logrus.Info("Closing index")
-	i.incidentCounter.set(0)
-	i.i_lock.Lock()
-	i.incidents = make(map[string]Incident)
-	i.i_lock.Unlock()
-
+	err := i.db.Close()
+	if err != nil {
+		logrus.Errorf("Unable to close index db: %s", err)
+	}
 }
 
 // delete any psersistants associated with the index
 func (i *Index) Delete() {
 	logrus.Info("Deleting index")
+	i.Close()
+	err := os.Remove(INDEX_FILE_NAME)
+	if err != nil {
+		logrus.Errorf("Unable to delete the index db: %s", err)
+	}
 }
 
 func (i *Index) GetIncidentCounter() int64 {
@@ -71,9 +81,10 @@ func (i *Index) UpdateIncidentCounter(count int64) {
 
 // write the incident to the db
 func (i *Index) PutIncident(in *Incident) {
-	i.i_lock.Lock()
-	i.incidents[string(in.IndexName())] = *in
-	i.i_lock.Unlock()
+	i.db.Update(func(tx *bolt.Tx) {
+		b := tx.Bucket(INCIDENT_BUCKET_NAME)
+		b.Put(in.IndexName(), value)
+	})
 }
 
 // list all the known events
