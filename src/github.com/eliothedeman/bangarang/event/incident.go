@@ -1,6 +1,9 @@
 package event
 
-import "time"
+import (
+	"log"
+	"time"
+)
 
 //go:generate ffjson $GOFILE
 //go:generate msgp $GOFILE
@@ -18,6 +21,7 @@ type Incident struct {
 }
 
 func (i *Incident) IndexName() []byte {
+	log.Printf("%+v", i)
 	return []byte(i.Policy + i.Event.IndexName())
 }
 

@@ -4,7 +4,8 @@ install:
 	- export PATH=$PATH:$GOPATH/bin
 
 test:
-	- gb test 
+	- export GOPATH=$(dir):$(dir)/vendor; go test -p=1 github.com/eliothedeman/bangarang/...
+
 
 testing: generate
 	- cd src/github.com/eliothedeman/bangarang/cmd/ui && go-bindata -dev ./...
