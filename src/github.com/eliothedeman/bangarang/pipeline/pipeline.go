@@ -39,6 +39,8 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		keepAliveCheckTime: 30 * time.Second,
 		in:                 make(chan *event.Event),
 		unpauseChan:        make(chan struct{}),
+		tracker:            NewTracker(),
+		index:              event.NewIndex(),
 	}
 
 	p.Refresh(conf)
