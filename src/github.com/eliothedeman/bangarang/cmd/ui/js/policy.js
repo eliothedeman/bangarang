@@ -107,13 +107,12 @@ function NewPolicyController($scope, $http, $timeout) {
 		}
 	}
 
-
-
 	this.init = function() {
 		this.cOpVal = "";
 		this.cOpKey = "";
 		this.wOpVal = "";
 		this.wOpKey = "";
+		this.np.name = "";
 		this.wOcc = 1;
 		this.cOcc = 1;
 		this.escalations = [];
@@ -131,10 +130,25 @@ function NewPolicyController($scope, $http, $timeout) {
 }
 angular.module('bangarang').controller("NewPolicyController", NewPolicyController);
 
-function PolicyController($scope, $http) {
+function PolicyController($scope, $http, $cookies) {
 	$scope.policies = null;
-	$scope.removeSure = {}
+	$scope.removeSure = {};
 	t = this;
+
+	this.selected = 0;
+	this.getSelected = function() {
+		var s = $cookies.get("pol:tab");
+		if (s) {
+			this.selected = s;
+		}
+		return this.selected;
+	}
+	
+	this.updateSelected = function(name) {
+		$cookies.put("pol:tab", name);
+		this.selected = name;
+	}
+
 	$scope.showRemoveDialog = function(name) {
 		$scope.removeSure[name] = true;
 	}

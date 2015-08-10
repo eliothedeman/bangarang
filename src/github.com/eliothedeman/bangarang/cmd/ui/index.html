@@ -39,8 +39,8 @@
 		<md-tabs md-dynamic-height md-border-bottom md-selected="r.selected" ng-init="r.getSelected()">
 			<md-tab label="policy" md-on-select="r.updateSelected(0)">
 				<div ng-controller="PolicyController as pc">
-					<md-tabs md-dynamic-height md-border-bottom>
-						<md-tab label="All">
+					<md-tabs md-dynamic-height md-border-bottom md-selected="pc.selected" ng-init="pc.getSelected()">
+						<md-tab label="All" md-on-select="pc.updateSelected(0)">
 							<md-list>
 								<md-card ng-repeat="(name, pol) in policies">
 									<md-card-content>
@@ -60,7 +60,7 @@
 								</md-card>
 							</md-list>
 						</md-tab>
-						<md-tab label="new">
+						<md-tab label="new" md-on-select="pc.updateSelected(1)">
 							<div ng-controller="NewPolicyController as npc">
 								<md-card md-dynamic-height>
 									<md-card-content md-dynamic-height>
