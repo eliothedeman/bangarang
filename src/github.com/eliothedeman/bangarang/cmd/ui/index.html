@@ -39,8 +39,8 @@
 		<md-tabs md-dynamic-height md-border-bottom md-selected="r.selected" ng-init="r.getSelected()">
 			<md-tab label="policy" md-on-select="r.updateSelected(0)">
 				<div ng-controller="PolicyController as pc">
-					<md-tabs md-dynamic-height md-border-bottom md-selected="pc.selected" ng-init="pc.getSelected()">
-						<md-tab label="All" md-on-select="pc.updateSelected(0)">
+					<md-tabs md-dynamic-height md-border-bottom md-selected="selected" ng-init="getSelected()">
+						<md-tab label="All" md-on-select="updateSelected(0)">
 							<md-list>
 								<md-card ng-repeat="(name, pol) in policies">
 									<md-card-content>
@@ -60,27 +60,27 @@
 								</md-card>
 							</md-list>
 						</md-tab>
-						<md-tab label="new" md-on-select="pc.updateSelected(1)">
+						<md-tab label="new" md-on-select="updateSelected(1)">
 							<div ng-controller="NewPolicyController as npc">
 								<md-card md-dynamic-height>
 									<md-card-content md-dynamic-height>
 										<md-input-container>
 											<label>Name</label>
-											<input  ng-model="npc.name">
+											<input  ng-model="np.name">
 										</md-input-container>
 										<label>Match</label>
 										<div layout layout-sm="colunm">
 											<md-input-container>
 												<label>Key</label>
-												<input  ng-model="npc.newMatchKey">
+												<input  ng-model="newMatchKey">
 											</md-input-container>
 											<md-input-container>
 												<label>Value</label>
-												<input  ng-model="npc.newMatchVal">
+												<input  ng-model="newMatchVal">
 											</md-input-container>
-											<md-button ng-click=npc.addNewMatch()>Add</md-button>
+											<md-button ng-click=addNewMatch()>Add</md-button>
 										</div>
-										<md-chips ng-model="npc.matchChips">
+										<md-chips ng-model="matchChips">
 											<md-chip-template>
 												Key: <strong>{{$chip.key}}</strong>
 												Val: <strong>{{$chip.val}}</strong>
@@ -91,15 +91,15 @@
 										<div layout layout-sm="colunm">
 											<md-input-container>
 												<label>Key</label>
-												<input  ng-model="npc.newNotMatchKey">
+												<input  ng-model="newNotMatchKey">
 											</md-input-container>
 											<md-input-container>
 												<label>Value</label>
-												<input  ng-model="npc.newNotMatchVal">
+												<input  ng-model="newNotMatchVal">
 											</md-input-container>
-											<md-button ng-click=npc.addNewNotMatch()>Add</md-button>
+											<md-button ng-click=addNewNotMatch()>Add</md-button>
 										</div>
-										<md-chips ng-model="npc.notMatchChips">
+										<md-chips ng-model="notMatchChips">
 											<md-chip-template>
 												Key: <strong>{{$chip.key}}</strong>
 												Val: <strong>{{$chip.val}}</strong>
@@ -108,36 +108,36 @@
 										<br>
 										<label>Critical</label>
 										<div layout layout-sm="colunm">
-											<md-select ng-model="npc.cOpKey">
+											<md-select ng-model="cOpKey">
 												<md-select-label>
-													{{npc.cOpKey ? npc.cOpKey : "Select One"}}
+													{{cOpKey ? cOpKey : "Select One"}}
 												</md-select-label>
-												<md-option ng-value="opt" ng-repeat="opt in npc.compOps">
+												<md-option ng-value="opt" ng-repeat="opt in compOps">
 													{{opt}}
 												</md-option>
 											</md-select>
 											<md-input-container>
 												<label>Value</label>
-												<input type="number" ng-model="npc.cOpVal">
+												<input type="number" ng-model="cOpVal">
 											</md-input-container>
-											<md-button ng-click="npc.addNewCritOp()">Add</md-button>
+											<md-button ng-click="addNewCritOp()">Add</md-button>
 										</div>
 
 										<div layout layout-sm="colunm">
 											<md-input-container >
 												<label>Occurences</label>
-												<input type="number" min="1" max="99999999" ng-model="npc.cOcc">
+												<input type="number" min="1" max="99999999" ng-model="cOcc">
 											</md-input-container>
-											<md-select md-on-open="loadEscalationNames()" ng-model="npc.cEsc">
+											<md-select md-on-open="loadEscalationNames()" ng-model="cEsc">
 												<md-select-label>
-													{{npc.cEsc ? npc.cEsc : "Escalation"}}
+													{{cEsc ? cEsc : "Escalation"}}
 												</md-select-label>
 												<md-option ng-value="name" ng-repeat="name in escalation_names">
 													{{name}}
 												</md-option>
 											</md-select>
 										</div>
-										<md-chips ng-model="npc.critOpChips">
+										<md-chips ng-model="critOpChips">
 											<md-chip-template>
 												<strong>{{$chip.key}}</strong>: <strong>{{$chip.val}}</strong>
 											</md-chip-template>
@@ -145,40 +145,40 @@
 										<br>
 										<label>Warning</label>
 										<div layout layout-sm="colunm">
-											<md-select ng-model="npc.wOpKey">
+											<md-select ng-model="wOpKey">
 												<md-select-label>
-													{{pc.np.cOpKey ? pc.np.cOpKey : "Select One"}}
+													{{wOpKey ? wOpKey : "Select One"}}
 												</md-select-label>
-												<md-option ng-value="opt" ng-repeat="opt in npc.compOps">
+												<md-option ng-value="opt" ng-repeat="opt in compOps">
 													{{opt}}
 												</md-option>
 											</md-select>
 											<md-input-container>
 												<label>Value</label>
-												<input type="number" ng-model="npc.wOpVal">
+												<input type="number" ng-model="wOpVal">
 											</md-input-container>
-											<md-button ng-click="npc.addNewWarnOp()">Add</md-button>
+											<md-button ng-click="addNewWarnOp()">Add</md-button>
 										</div>
 										<div layout layout-sm="colunm">
 											<md-input-container >
 												<label>Occurences</label>
-												<input type="number" min="1" max="99999999" ng-model="npc.wOcc">
+												<input type="number" min="1" max="99999999" ng-model="wOcc">
 											</md-input-container>
-											<md-select ng-model="npc.wEsc" md-on-open="loadEscalationNames()">
+											<md-select ng-model="wEsc" md-on-open="loadEscalationNames()">
 												<md-select-label>
-													{{npc.wEsc ? npc.wEsc : "Escalation"}}
+													{{wEsc ? wEsc : "Escalation"}}
 												</md-select-label>
 												<md-option ng-value="name" ng-repeat="name in escalation_names">{{name}}</md-option>
 											</md-select>
 										</div>
-										<md-chips ng-model="npc.warnOpChips">
+										<md-chips ng-model="warnOpChips">
 											<md-chip-template>
 												<strong>{{$chip.key}}</strong>: <strong>{{$chip.val}}</strong>
 											</md-chip-template>
 										</md-chips>
 										<br>
-										<md-button class="md-raised" ng-click="npc.addPolicy()">Submit</md-button>
-										<md-button class="md-raised md-warn" ng-click="npc.cancelPolicy()">Cancel</md-button>
+										<md-button class="md-raised" ng-click="addPolicy()">Submit</md-button>
+										<md-button class="md-raised md-warn" ng-click="cancelPolicy()">Cancel</md-button>
 									</md-card-content>
 								</md-card>
 							</div>
@@ -253,7 +253,7 @@
 			<md-tab label="provider" md-on-select="r.updateSelected(2)">
 				<div ng-controller="ProviderController as pc">
 					<md-tabs md-dynamic-height md-border-bottom>
-						<md-tab label="All" ng-init="pc.fetchProviders()">
+						<md-tab label="All" ng-init="fetchProviders()">
 							<md-list>
 								<md-card ng-repeat="(k,v) in providers">
 									<md-card-content>
