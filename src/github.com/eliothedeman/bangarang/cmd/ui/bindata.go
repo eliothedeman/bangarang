@@ -682,8 +682,8 @@
 // css/header.css
 // index.html
 // js/config.js
+// js/dashboard.js
 // js/escalation.js
-// js/events.js
 // js/main.js
 // js/policy.js
 // js/provider.js
@@ -12992,10 +12992,10 @@ func jsConfigJs() (*asset, error) {
 	return a, err
 }
 
-// jsEscalationJs reads file data from disk. It returns an error on failure.
-func jsEscalationJs() (*asset, error) {
-	path := filepath.Join(rootDir, "js/escalation.js")
-	name := "js/escalation.js"
+// jsDashboardJs reads file data from disk. It returns an error on failure.
+func jsDashboardJs() (*asset, error) {
+	path := filepath.Join(rootDir, "js/dashboard.js")
+	name := "js/dashboard.js"
 	bytes, err := bindataRead(path, name)
 	if err != nil {
 		return nil, err
@@ -13010,10 +13010,10 @@ func jsEscalationJs() (*asset, error) {
 	return a, err
 }
 
-// jsEventsJs reads file data from disk. It returns an error on failure.
-func jsEventsJs() (*asset, error) {
-	path := filepath.Join(rootDir, "js/events.js")
-	name := "js/events.js"
+// jsEscalationJs reads file data from disk. It returns an error on failure.
+func jsEscalationJs() (*asset, error) {
+	path := filepath.Join(rootDir, "js/escalation.js")
+	name := "js/escalation.js"
 	bytes, err := bindataRead(path, name)
 	if err != nil {
 		return nil, err
@@ -13852,8 +13852,8 @@ var _bindata = map[string]func() (*asset, error){
 	"css/header.css": cssHeaderCss,
 	"index.html": indexHtml,
 	"js/config.js": jsConfigJs,
+	"js/dashboard.js": jsDashboardJs,
 	"js/escalation.js": jsEscalationJs,
-	"js/events.js": jsEventsJs,
 	"js/main.js": jsMainJs,
 	"js/policy.js": jsPolicyJs,
 	"js/provider.js": jsProviderJs,
@@ -15628,9 +15628,9 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"js": &bintree{nil, map[string]*bintree{
 		"config.js": &bintree{jsConfigJs, map[string]*bintree{
 		}},
-		"escalation.js": &bintree{jsEscalationJs, map[string]*bintree{
+		"dashboard.js": &bintree{jsDashboardJs, map[string]*bintree{
 		}},
-		"events.js": &bintree{jsEventsJs, map[string]*bintree{
+		"escalation.js": &bintree{jsEscalationJs, map[string]*bintree{
 		}},
 		"main.js": &bintree{jsMainJs, map[string]*bintree{
 		}},

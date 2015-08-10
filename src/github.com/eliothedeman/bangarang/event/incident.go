@@ -1,7 +1,7 @@
 package event
 
 import (
-	"log"
+	"crypto/md5"
 	"time"
 )
 
@@ -17,12 +17,17 @@ type Incident struct {
 	Escalation  string `json:"escalation" msg:"escalation"`
 	Description string `json:"description" msg:"description"`
 	Policy      string `json:"policy" msg:"policy"`
+	indexName   []byte
 	Event
 }
 
 func (i *Incident) IndexName() []byte {
-	log.Printf("%+v", i)
-	return []byte(i.Policy + i.Event.IndexName())
+	if len(i.indexName) == 0 {
+		n := md5.New()
+		n.Write([]byte(i.Policy + i.Event.indexName))
+		i.indexName = n.Sum(nil)
+	}
+	return i.indexName
 }
 
 func (i *Incident) GetEvent() *Event {

@@ -33,11 +33,15 @@
 	<script type="text/javascript" src="js/policy.js"></script>
 	<script type="text/javascript" src="js/main.js"></script>
 	<script type="text/javascript" src="js/provider.js"></script>
-	<script type="text/javascript" src="js/events.js"></script>
+	<script type="text/javascript" src="js/dashboard.js"></script>
 	<script type="text/javascript" src="js/escalation.js"></script>
 	<div ng-controller="Router as r">
 		<md-tabs md-dynamic-height md-border-bottom md-selected="r.selected" ng-init="r.getSelected()">
-			<md-tab label="policy" md-on-select="r.updateSelected(0)">
+			<md-tab label="dashboard" md-on-select="r.updateSelected(0)">
+				<div ng-controller="DashboardController as dc">
+				</div>
+			</md-tab>
+			<md-tab label="policy" md-on-select="r.updateSelected(1)">
 				<div ng-controller="PolicyController as pc">
 					<md-tabs md-dynamic-height md-border-bottom md-selected="selected" ng-init="getSelected()">
 						<md-tab label="All" md-on-select="updateSelected(0)">
@@ -186,7 +190,7 @@
 					</md-tabs>
 				</div>
 			</md-tab>
-			<md-tab label="escalation" md-on-select="r.updateSelected(1)">
+			<md-tab label="escalation" md-on-select="r.updateSelected(2)">
 				<div ng-controller="EscalationController as ec">
 					<md-tabs md-dynamic-height md-border-bottom md-selected="ec.selected" ng-init="ec.getSelected()">
 						<md-tab label="All" md-on-select="ec.updateSelected(0)">
@@ -250,7 +254,7 @@
 					</md-tabs>
 				</div>
 			</md-tab>
-			<md-tab label="provider" md-on-select="r.updateSelected(2)">
+			<md-tab label="provider" md-on-select="r.updateSelected(3)">
 				<div ng-controller="ProviderController as pc">
 					<md-tabs md-dynamic-height md-border-bottom>
 						<md-tab label="All" ng-init="fetchProviders()">
@@ -278,7 +282,7 @@
 				</div>
 			</md-tab>
 
-			<md-tab label="config" md-on-select="r.updateSelected(3)">
+			<md-tab label="config" md-on-select="r.updateSelected(4)">
 				<div ng-controller="Config as cc" ng-init="fetchSnapshots()">
 					<md-card ng-repeat="snapshot in snapshots">
 						<md-card-content>
@@ -290,10 +294,7 @@
 					</md-card>
 				</div>
 			</md-tab>
-			<md-tab label="events" md-on-select="r.updateSelected(4)">
-				<div ng-controller="EventsController as ec">
-				</div>
-			</md-tab>
+			
 		</md-tabs>
 	</div>
 	
