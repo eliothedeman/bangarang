@@ -1,33 +1,33 @@
 BUILD LOG
 ---------
-Build Time: 2015-06-17T19:01:18-0700
+Build Time: 2015-08-05T16:50:03-0700
 
 NODEJS INFORMATION
 ==================
-nodejs: v2.3.0
+nodejs: v2.5.0
 gulp: 3.9.0
 gulp-audit: 1.0.0
-gulp-concat: 2.5.2
+gulp-concat: 2.6.0
 gulp-header: 1.2.2
 gulp-uglify: 1.2.0
-run-sequence: 1.1.1
-web-component-tester: 3.2.0
+run-sequence: 1.1.2
+web-component-tester: 3.3.10
 
 REPO REVISIONS
 ==============
-webcomponentsjs: 1ee61faca40f109f2f5b6ddc8fa15de0319a6e61
+webcomponentsjs: 51c337b2327ef63ee50ee1b69f50dc19966f1483
 
 BUILD HASHES
 ============
-CustomElements.js: f3f0c7f3c65aeb5cc56c64300fe89003a4c7fa31
-CustomElements.min.js: 557ccd338ab463c9bcd1e3c0fc4102455432214a
-HTMLImports.js: 8c1f33a777d7ff8ee3a22fce8d35e5b927285724
-HTMLImports.min.js: f4ba44076c40f408c661caa8baf81f9e3740689b
-MutationObserver.js: 81934731acd4175701d678dbef11aaefa7d701f5
-MutationObserver.min.js: 6202537174240ba28bf71e22cddf90ce80cf73f8
-ShadowDOM.js: 5e901cfe7eb384f15a39b1bf4e510a06ae03b43e
-ShadowDOM.min.js: 397715836fdd0cfe15a5e966f5ab187ccc1bec15
-webcomponents-lite.js: 5c38f87a645eea9d282de74340c101e5531cb2c0
-webcomponents-lite.min.js: 2a744443fbfba6b30fde7b17606f68cae6036e52
-webcomponents.js: 637cf33c1ee108fb376891eed0b5b47deed8c238
-webcomponents.min.js: c2841b948265560478872747618cad207a693c4f
+CustomElements.js: f54f03134b1410a6036689d3c1e198baa2f9d338
+CustomElements.min.js: b4ec02f3d7dc19910ed489375890ff7fc564b6ff
+HTMLImports.js: a04dbf19d9b3df6115851d1ee3f6b2443576f33b
+HTMLImports.min.js: ff45d19bc284f5a483b77f72c71c1193806e9251
+MutationObserver.js: fd273a53b51173190178c709ff90f62204ef00ae
+MutationObserver.min.js: 40ab029acc5c35875d554aadd88bed5e3ff28d81
+ShadowDOM.js: d76c6e2119585a548a11af9e5c92a28914cfe17c
+ShadowDOM.min.js: e61510ebc0cf92335a4c9c24ed14305c81ecdf62
+webcomponents-lite.js: 09eba3b2d8461151e3fc7276038409b454ce66cd
+webcomponents-lite.min.js: 0b2fe9465bcb32800f2b28d3cb32263b22ca83e2
+webcomponents.js: 50185bab5ea50c5a652c9e4db606dd5d22c871c6
+webcomponents.min.js: f64077a367d3634c1796043d3f57192ffa758350

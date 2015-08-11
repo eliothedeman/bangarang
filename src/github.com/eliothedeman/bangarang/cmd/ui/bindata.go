@@ -46,6 +46,7 @@
 // bower_components/angular-material/angular-material.js
 // bower_components/angular-material/angular-material.min.css
 // bower_components/angular-material/angular-material.min.js
+// bower_components/angular-material/angular-material.scss
 // bower_components/angular-material/bower.json
 // bower_components/angular-material/demos/bottomSheet/demoBasicUsage/img/icons/copy.svg
 // bower_components/angular-material/demos/bottomSheet/demoBasicUsage/img/icons/copy2.svg
@@ -186,6 +187,8 @@
 // bower_components/angular-material/modules/closure/tooltip/tooltip-default-theme.css
 // bower_components/angular-material/modules/closure/tooltip/tooltip.css
 // bower_components/angular-material/modules/closure/tooltip/tooltip.js
+// bower_components/angular-material/modules/closure/virtualRepeat/virtualRepeat.css
+// bower_components/angular-material/modules/closure/virtualRepeat/virtualRepeat.js
 // bower_components/angular-material/modules/closure/whiteframe/whiteframe.css
 // bower_components/angular-material/modules/closure/whiteframe/whiteframe.js
 // bower_components/angular-material/modules/css/angular-material-layout.css
@@ -413,6 +416,11 @@
 // bower_components/angular-material/modules/js/tooltip/tooltip.js
 // bower_components/angular-material/modules/js/tooltip/tooltip.min.css
 // bower_components/angular-material/modules/js/tooltip/tooltip.min.js
+// bower_components/angular-material/modules/js/virtualRepeat/bower.json
+// bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.css
+// bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.js
+// bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.min.css
+// bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.min.js
 // bower_components/angular-material/modules/js/whiteframe/bower.json
 // bower_components/angular-material/modules/js/whiteframe/whiteframe.css
 // bower_components/angular-material/modules/js/whiteframe/whiteframe.js
@@ -434,6 +442,10 @@
 // bower_components/core-component-page/core-component-page.html
 // bower_components/core-component-page/demo.html
 // bower_components/core-component-page/index.html
+// bower_components/font-roboto/.bower.json
+// bower_components/font-roboto/README.md
+// bower_components/font-roboto/bower.json
+// bower_components/font-roboto/roboto.html
 // bower_components/iron-a11y-keys-behavior/.bower.json
 // bower_components/iron-a11y-keys-behavior/.gitignore
 // bower_components/iron-a11y-keys-behavior/README.md
@@ -608,6 +620,7 @@
 // bower_components/paper-header-panel/demo/index.html
 // bower_components/paper-header-panel/hero.svg
 // bower_components/paper-header-panel/index.html
+// bower_components/paper-header-panel/paper-header-panel.css
 // bower_components/paper-header-panel/paper-header-panel.html
 // bower_components/paper-header-panel/test/basic.html
 // bower_components/paper-header-panel/test/index.html
@@ -1530,6 +1543,24 @@ func bower_componentsAngularMaterialAngularMaterialMinCss() (*asset, error) {
 func bower_componentsAngularMaterialAngularMaterialMinJs() (*asset, error) {
 	path := filepath.Join(rootDir, "bower_components/angular-material/angular-material.min.js")
 	name := "bower_components/angular-material/angular-material.min.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularMaterialAngularMaterialScss reads file data from disk. It returns an error on failure.
+func bower_componentsAngularMaterialAngularMaterialScss() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-material/angular-material.scss")
+	name := "bower_components/angular-material/angular-material.scss"
 	bytes, err := bindataRead(path, name)
 	if err != nil {
 		return nil, err
@@ -4050,6 +4081,42 @@ func bower_componentsAngularMaterialModulesClosureTooltipTooltipCss() (*asset, e
 func bower_componentsAngularMaterialModulesClosureTooltipTooltipJs() (*asset, error) {
 	path := filepath.Join(rootDir, "bower_components/angular-material/modules/closure/tooltip/tooltip.js")
 	name := "bower_components/angular-material/modules/closure/tooltip/tooltip.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularMaterialModulesClosureVirtualrepeatVirtualrepeatCss reads file data from disk. It returns an error on failure.
+func bower_componentsAngularMaterialModulesClosureVirtualrepeatVirtualrepeatCss() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-material/modules/closure/virtualRepeat/virtualRepeat.css")
+	name := "bower_components/angular-material/modules/closure/virtualRepeat/virtualRepeat.css"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularMaterialModulesClosureVirtualrepeatVirtualrepeatJs reads file data from disk. It returns an error on failure.
+func bower_componentsAngularMaterialModulesClosureVirtualrepeatVirtualrepeatJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-material/modules/closure/virtualRepeat/virtualRepeat.js")
+	name := "bower_components/angular-material/modules/closure/virtualRepeat/virtualRepeat.js"
 	bytes, err := bindataRead(path, name)
 	if err != nil {
 		return nil, err
@@ -8150,6 +8217,96 @@ func bower_componentsAngularMaterialModulesJsTooltipTooltipMinJs() (*asset, erro
 	return a, err
 }
 
+// bower_componentsAngularMaterialModulesJsVirtualrepeatBowerJson reads file data from disk. It returns an error on failure.
+func bower_componentsAngularMaterialModulesJsVirtualrepeatBowerJson() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-material/modules/js/virtualRepeat/bower.json")
+	name := "bower_components/angular-material/modules/js/virtualRepeat/bower.json"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatCss reads file data from disk. It returns an error on failure.
+func bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatCss() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.css")
+	name := "bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.css"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatJs reads file data from disk. It returns an error on failure.
+func bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.js")
+	name := "bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatMinCss reads file data from disk. It returns an error on failure.
+func bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatMinCss() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.min.css")
+	name := "bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.min.css"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatMinJs reads file data from disk. It returns an error on failure.
+func bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatMinJs() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.min.js")
+	name := "bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.min.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
 // bower_componentsAngularMaterialModulesJsWhiteframeBowerJson reads file data from disk. It returns an error on failure.
 func bower_componentsAngularMaterialModulesJsWhiteframeBowerJson() (*asset, error) {
 	path := filepath.Join(rootDir, "bower_components/angular-material/modules/js/whiteframe/bower.json")
@@ -8514,6 +8671,78 @@ func bower_componentsCoreComponentPageDemoHtml() (*asset, error) {
 func bower_componentsCoreComponentPageIndexHtml() (*asset, error) {
 	path := filepath.Join(rootDir, "bower_components/core-component-page/index.html")
 	name := "bower_components/core-component-page/index.html"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsFontRobotoBowerJson reads file data from disk. It returns an error on failure.
+func bower_componentsFontRobotoBowerJson() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/font-roboto/.bower.json")
+	name := "bower_components/font-roboto/.bower.json"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsFontRobotoReadmeMd reads file data from disk. It returns an error on failure.
+func bower_componentsFontRobotoReadmeMd() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/font-roboto/README.md")
+	name := "bower_components/font-roboto/README.md"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsFontRobotoBowerJson2 reads file data from disk. It returns an error on failure.
+func bower_componentsFontRobotoBowerJson2() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/font-roboto/bower.json")
+	name := "bower_components/font-roboto/bower.json"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// bower_componentsFontRobotoRobotoHtml reads file data from disk. It returns an error on failure.
+func bower_componentsFontRobotoRobotoHtml() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/font-roboto/roboto.html")
+	name := "bower_components/font-roboto/roboto.html"
 	bytes, err := bindataRead(path, name)
 	if err != nil {
 		return nil, err
@@ -11660,6 +11889,24 @@ func bower_componentsPaperHeaderPanelIndexHtml() (*asset, error) {
 	return a, err
 }
 
+// bower_componentsPaperHeaderPanelPaperHeaderPanelCss reads file data from disk. It returns an error on failure.
+func bower_componentsPaperHeaderPanelPaperHeaderPanelCss() (*asset, error) {
+	path := filepath.Join(rootDir, "bower_components/paper-header-panel/paper-header-panel.css")
+	name := "bower_components/paper-header-panel/paper-header-panel.css"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
 // bower_componentsPaperHeaderPanelPaperHeaderPanelHtml reads file data from disk. It returns an error on failure.
 func bower_componentsPaperHeaderPanelPaperHeaderPanelHtml() (*asset, error) {
 	path := filepath.Join(rootDir, "bower_components/paper-header-panel/paper-header-panel.html")
@@ -13216,6 +13463,7 @@ var _bindata = map[string]func() (*asset, error){
 	"bower_components/angular-material/angular-material.js": bower_componentsAngularMaterialAngularMaterialJs,
 	"bower_components/angular-material/angular-material.min.css": bower_componentsAngularMaterialAngularMaterialMinCss,
 	"bower_components/angular-material/angular-material.min.js": bower_componentsAngularMaterialAngularMaterialMinJs,
+	"bower_components/angular-material/angular-material.scss": bower_componentsAngularMaterialAngularMaterialScss,
 	"bower_components/angular-material/bower.json": bower_componentsAngularMaterialBowerJson2,
 	"bower_components/angular-material/demos/bottomSheet/demoBasicUsage/img/icons/copy.svg": bower_componentsAngularMaterialDemosBottomsheetDemobasicusageImgIconsCopySvg,
 	"bower_components/angular-material/demos/bottomSheet/demoBasicUsage/img/icons/copy2.svg": bower_componentsAngularMaterialDemosBottomsheetDemobasicusageImgIconsCopy2Svg,
@@ -13356,6 +13604,8 @@ var _bindata = map[string]func() (*asset, error){
 	"bower_components/angular-material/modules/closure/tooltip/tooltip-default-theme.css": bower_componentsAngularMaterialModulesClosureTooltipTooltipDefaultThemeCss,
 	"bower_components/angular-material/modules/closure/tooltip/tooltip.css": bower_componentsAngularMaterialModulesClosureTooltipTooltipCss,
 	"bower_components/angular-material/modules/closure/tooltip/tooltip.js": bower_componentsAngularMaterialModulesClosureTooltipTooltipJs,
+	"bower_components/angular-material/modules/closure/virtualRepeat/virtualRepeat.css": bower_componentsAngularMaterialModulesClosureVirtualrepeatVirtualrepeatCss,
+	"bower_components/angular-material/modules/closure/virtualRepeat/virtualRepeat.js": bower_componentsAngularMaterialModulesClosureVirtualrepeatVirtualrepeatJs,
 	"bower_components/angular-material/modules/closure/whiteframe/whiteframe.css": bower_componentsAngularMaterialModulesClosureWhiteframeWhiteframeCss,
 	"bower_components/angular-material/modules/closure/whiteframe/whiteframe.js": bower_componentsAngularMaterialModulesClosureWhiteframeWhiteframeJs,
 	"bower_components/angular-material/modules/css/angular-material-layout.css": bower_componentsAngularMaterialModulesCssAngularMaterialLayoutCss,
@@ -13583,6 +13833,11 @@ var _bindata = map[string]func() (*asset, error){
 	"bower_components/angular-material/modules/js/tooltip/tooltip.js": bower_componentsAngularMaterialModulesJsTooltipTooltipJs,
 	"bower_components/angular-material/modules/js/tooltip/tooltip.min.css": bower_componentsAngularMaterialModulesJsTooltipTooltipMinCss,
 	"bower_components/angular-material/modules/js/tooltip/tooltip.min.js": bower_componentsAngularMaterialModulesJsTooltipTooltipMinJs,
+	"bower_components/angular-material/modules/js/virtualRepeat/bower.json": bower_componentsAngularMaterialModulesJsVirtualrepeatBowerJson,
+	"bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.css": bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatCss,
+	"bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.js": bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatJs,
+	"bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.min.css": bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatMinCss,
+	"bower_components/angular-material/modules/js/virtualRepeat/virtualRepeat.min.js": bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatMinJs,
 	"bower_components/angular-material/modules/js/whiteframe/bower.json": bower_componentsAngularMaterialModulesJsWhiteframeBowerJson,
 	"bower_components/angular-material/modules/js/whiteframe/whiteframe.css": bower_componentsAngularMaterialModulesJsWhiteframeWhiteframeCss,
 	"bower_components/angular-material/modules/js/whiteframe/whiteframe.js": bower_componentsAngularMaterialModulesJsWhiteframeWhiteframeJs,
@@ -13604,6 +13859,10 @@ var _bindata = map[string]func() (*asset, error){
 	"bower_components/core-component-page/core-component-page.html": bower_componentsCoreComponentPageCoreComponentPageHtml,
 	"bower_components/core-component-page/demo.html": bower_componentsCoreComponentPageDemoHtml,
 	"bower_components/core-component-page/index.html": bower_componentsCoreComponentPageIndexHtml,
+	"bower_components/font-roboto/.bower.json": bower_componentsFontRobotoBowerJson,
+	"bower_components/font-roboto/README.md": bower_componentsFontRobotoReadmeMd,
+	"bower_components/font-roboto/bower.json": bower_componentsFontRobotoBowerJson2,
+	"bower_components/font-roboto/roboto.html": bower_componentsFontRobotoRobotoHtml,
 	"bower_components/iron-a11y-keys-behavior/.bower.json": bower_componentsIronA11yKeysBehaviorBowerJson,
 	"bower_components/iron-a11y-keys-behavior/.gitignore": bower_componentsIronA11yKeysBehaviorGitignore,
 	"bower_components/iron-a11y-keys-behavior/README.md": bower_componentsIronA11yKeysBehaviorReadmeMd,
@@ -13778,6 +14037,7 @@ var _bindata = map[string]func() (*asset, error){
 	"bower_components/paper-header-panel/demo/index.html": bower_componentsPaperHeaderPanelDemoIndexHtml,
 	"bower_components/paper-header-panel/hero.svg": bower_componentsPaperHeaderPanelHeroSvg,
 	"bower_components/paper-header-panel/index.html": bower_componentsPaperHeaderPanelIndexHtml,
+	"bower_components/paper-header-panel/paper-header-panel.css": bower_componentsPaperHeaderPanelPaperHeaderPanelCss,
 	"bower_components/paper-header-panel/paper-header-panel.html": bower_componentsPaperHeaderPanelPaperHeaderPanelHtml,
 	"bower_components/paper-header-panel/test/basic.html": bower_componentsPaperHeaderPanelTestBasicHtml,
 	"bower_components/paper-header-panel/test/index.html": bower_componentsPaperHeaderPanelTestIndexHtml,
@@ -14002,6 +14262,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"angular-material.min.css": &bintree{bower_componentsAngularMaterialAngularMaterialMinCss, map[string]*bintree{
 			}},
 			"angular-material.min.js": &bintree{bower_componentsAngularMaterialAngularMaterialMinJs, map[string]*bintree{
+			}},
+			"angular-material.scss": &bintree{bower_componentsAngularMaterialAngularMaterialScss, map[string]*bintree{
 			}},
 			"bower.json": &bintree{bower_componentsAngularMaterialBowerJson2, map[string]*bintree{
 			}},
@@ -14427,6 +14689,12 @@ var _bintree = &bintree{nil, map[string]*bintree{
 						"tooltip.css": &bintree{bower_componentsAngularMaterialModulesClosureTooltipTooltipCss, map[string]*bintree{
 						}},
 						"tooltip.js": &bintree{bower_componentsAngularMaterialModulesClosureTooltipTooltipJs, map[string]*bintree{
+						}},
+					}},
+					"virtualRepeat": &bintree{nil, map[string]*bintree{
+						"virtualRepeat.css": &bintree{bower_componentsAngularMaterialModulesClosureVirtualrepeatVirtualrepeatCss, map[string]*bintree{
+						}},
+						"virtualRepeat.js": &bintree{bower_componentsAngularMaterialModulesClosureVirtualrepeatVirtualrepeatJs, map[string]*bintree{
 						}},
 					}},
 					"whiteframe": &bintree{nil, map[string]*bintree{
@@ -14959,6 +15227,18 @@ var _bintree = &bintree{nil, map[string]*bintree{
 						"tooltip.min.js": &bintree{bower_componentsAngularMaterialModulesJsTooltipTooltipMinJs, map[string]*bintree{
 						}},
 					}},
+					"virtualRepeat": &bintree{nil, map[string]*bintree{
+						"bower.json": &bintree{bower_componentsAngularMaterialModulesJsVirtualrepeatBowerJson, map[string]*bintree{
+						}},
+						"virtualRepeat.css": &bintree{bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatCss, map[string]*bintree{
+						}},
+						"virtualRepeat.js": &bintree{bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatJs, map[string]*bintree{
+						}},
+						"virtualRepeat.min.css": &bintree{bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatMinCss, map[string]*bintree{
+						}},
+						"virtualRepeat.min.js": &bintree{bower_componentsAngularMaterialModulesJsVirtualrepeatVirtualrepeatMinJs, map[string]*bintree{
+						}},
+					}},
 					"whiteframe": &bintree{nil, map[string]*bintree{
 						"bower.json": &bintree{bower_componentsAngularMaterialModulesJsWhiteframeBowerJson, map[string]*bintree{
 						}},
@@ -15008,6 +15288,16 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"demo.html": &bintree{bower_componentsCoreComponentPageDemoHtml, map[string]*bintree{
 			}},
 			"index.html": &bintree{bower_componentsCoreComponentPageIndexHtml, map[string]*bintree{
+			}},
+		}},
+		"font-roboto": &bintree{nil, map[string]*bintree{
+			".bower.json": &bintree{bower_componentsFontRobotoBowerJson, map[string]*bintree{
+			}},
+			"README.md": &bintree{bower_componentsFontRobotoReadmeMd, map[string]*bintree{
+			}},
+			"bower.json": &bintree{bower_componentsFontRobotoBowerJson2, map[string]*bintree{
+			}},
+			"roboto.html": &bintree{bower_componentsFontRobotoRobotoHtml, map[string]*bintree{
 			}},
 		}},
 		"iron-a11y-keys-behavior": &bintree{nil, map[string]*bintree{
@@ -15444,6 +15734,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"hero.svg": &bintree{bower_componentsPaperHeaderPanelHeroSvg, map[string]*bintree{
 			}},
 			"index.html": &bintree{bower_componentsPaperHeaderPanelIndexHtml, map[string]*bintree{
+			}},
+			"paper-header-panel.css": &bintree{bower_componentsPaperHeaderPanelPaperHeaderPanelCss, map[string]*bintree{
 			}},
 			"paper-header-panel.html": &bintree{bower_componentsPaperHeaderPanelPaperHeaderPanelHtml, map[string]*bintree{
 			}},

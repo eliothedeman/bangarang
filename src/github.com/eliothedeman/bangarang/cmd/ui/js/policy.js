@@ -124,6 +124,8 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 		$scope.cOpKey = "";
 		$scope.wOpVal = "";
 		$scope.wOpKey = "";
+		$scope.wEsc = "";
+		$scope.cEsc = "";
 		$scope.np.name = "";
 		$scope.wOcc = 1;
 		$scope.cOcc = 1;
@@ -141,6 +143,77 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 	$scope.reset();
 }
 angular.module('bangarang').controller("NewPolicyController", NewPolicyController);
+
+function GlobalPolicyController($scope, $http, $cookies, $mdDialog) {
+	$scope.addNewMatch = function() {
+		$scope.matchChips.push({key: $scope.newMatchKey, val: $scope.newMatchVal})
+		$scope.newMatchKey = "";
+		$scope.newMatchVal = "";
+	}
+
+	$scope.addNewNotMatch = function() {
+		$scope.notMatchChips.push({key: $scope.newNotMatchKey, val: $scope.newNotMatchVal})
+		$scope.newNotMatchKey = "";
+		$scope.newNotMatchVal = "";
+	}
+
+	$scope.populateChips = function() {
+		for (k in $scope.g.match) {
+			$scope.matchChips.push({key:k, val:$scope.g.match[k]})
+		}
+		for (k in $scope.g.not_match) {
+			$scope.notMatchChips.push({key:k, val:$scope.g.not_match[k]})
+		}
+	}
+
+	collectPolicy = function() {
+		var d = {
+			match: {},
+			not_match: {}
+		};
+		for (var i = $scope.matchChips.length - 1; i >= 0; i--) {
+			d.match[$scope.matchChips[i].key] = $scope.matchChips[i].val
+		};
+		for (var i = $scope.notMatchChips.length - 1; i >= 0; i--) {
+			d.not_match[$scope.notMatchChips[i].key] = $scope.notMatchChips[i].val
+		};
+
+		return d;
+	}
+
+	$scope.submit = function() {
+		var c = $mdDialog.confirm()
+			.title("Submit global policy?")
+			.content("Are you sure you want to modify the global policy?")
+			.ariaLabel("Global Policy submit")
+			.ok("Yes")
+			.cancel("No");
+
+		$mdDialog.show(confirm);
+
+	}
+
+	$scope.fetchPolicy = function() {
+		$http.get("api/policy/config/global").success(function(data){
+			$scope.g = data;
+			$scope.populateChips();
+		})
+	}
+
+	$scope.reset = function() {
+		$scope.g = {};
+		$scope.matchChips = [];
+		$scope.notMatchChips = [];
+		$scope.newMatchKey = "";
+		$scope.newMatchVal = "";
+		$scope.newNotMatchKey = "";
+		$scope.newNotMatchVal = "";
+	}
+
+	$scope.reset();
+}
+
+angular.module('bangarang').controller("GlobalPolicyController", GlobalPolicyController);
 
 function PolicyController($scope, $http, $cookies) {
 	$scope.policies = null;
