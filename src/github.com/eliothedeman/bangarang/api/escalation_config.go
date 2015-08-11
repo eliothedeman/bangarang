@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
@@ -38,7 +39,7 @@ func (p *EscalationConfig) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if id == "*" {
-		buff, err := json.Marshal(conf.Escalations)
+		buff, err := json.Marshal(&conf.Escalations)
 		if err != nil {
 			logrus.Error(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -101,6 +102,8 @@ func (p *EscalationConfig) Post(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	log.Println(conf.Escalations)
 
 	conf.Escalations.AddRaw(id, t)
 	err = conf.Escalations.UnmarshalRaw()

@@ -20,7 +20,7 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 			$mdDialog.alert()
 				.title("Incomplete config")
 				.content(message)
-				.ok("I agree to fix $scope")
+				.ok("I agree to fix this.")
 		)
 
 	}
@@ -112,8 +112,8 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 	}
 
 	$scope.addNewWarnOp = function() {
-		if (np.wOpKey && np.wOpVal ) {
-			$scope.warnOpChips.push({"key": np.wOpKey, "val": np.wOpVal});
+		if ($scope.wOpKey && $scope.wOpVal ) {
+			$scope.warnOpChips.push({"key": $scope.wOpKey, "val": $scope.wOpVal});
 			$scope.wOpVal = "";
 			$scope.wOpKey = "";
 		}

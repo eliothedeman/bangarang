@@ -22,6 +22,9 @@ type Collection struct {
 }
 
 func (c *Collection) Collection() map[string][]Alarm {
+	if c.Coll == nil {
+		c.Coll = map[string][]Alarm{}
+	}
 	return c.Coll
 }
 

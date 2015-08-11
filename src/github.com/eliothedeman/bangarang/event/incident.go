@@ -2,6 +2,7 @@ package event
 
 import (
 	"crypto/md5"
+	"fmt"
 	"time"
 )
 
@@ -24,9 +25,10 @@ type Incident struct {
 func (i *Incident) IndexName() []byte {
 	if len(i.indexName) == 0 {
 		n := md5.New()
-		n.Write([]byte(i.Policy + i.Event.indexName))
-		i.indexName = n.Sum(nil)
+		n.Write([]byte(i.Policy + i.Escalation + i.Event.IndexName()))
+		i.indexName = []byte(fmt.Sprintf("%x", n.Sum(nil)))
 	}
+
 	return i.indexName
 }
 
@@ -35,15 +37,16 @@ func (i *Incident) GetEvent() *Event {
 }
 
 func (i *Incident) FormatDescription() string {
-	return i.Description
+	return i.Event.FormatDescription()
 }
 
-func NewIncident(policy string, e *Event) *Incident {
+func NewIncident(policy string, escalation string, e *Event) *Incident {
 	in := &Incident{
 		EventName:   []byte(e.IndexName()),
 		Time:        time.Now().Unix(),
 		Active:      true,
 		Policy:      policy,
+		Escalation:  escalation,
 		Description: e.FormatDescription(),
 		Event:       *e,
 	}

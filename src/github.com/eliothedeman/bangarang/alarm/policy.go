@@ -99,7 +99,7 @@ func formatFileName(n string) string {
 }
 
 // return the action to take for a given event
-func (p *Policy) Action(e *event.Event) string {
+func (p *Policy) ActionCrit(e *event.Event) string {
 	if p.Crit != nil {
 		if p.Crit.TrackEvent(e) {
 			e.Status = event.CRITICAL
@@ -111,6 +111,12 @@ func (p *Policy) Action(e *event.Event) string {
 			return p.Crit.Escalation
 		}
 	}
+
+	e.Status = event.OK
+	return ""
+}
+
+func (p *Policy) ActionWarn(e *event.Event) string {
 	if p.Warn != nil {
 		if p.Warn.TrackEvent(e) {
 			e.Status = event.WARNING

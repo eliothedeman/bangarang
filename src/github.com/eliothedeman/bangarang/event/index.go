@@ -18,7 +18,7 @@ var (
 
 const (
 	KEEP_ALIVE_SERVICE_NAME = "KeepAlive"
-	INDEX_FILE_NAME         = "bnagarang-index.db"
+	INDEX_FILE_NAME         = "bangarang-index.db"
 )
 
 type counter struct {
@@ -144,7 +144,7 @@ func (i *Index) GetIncident(id []byte) *Incident {
 	})
 
 	if err != nil {
-		logrus.Errorf("Unable to get incident: %s", err)
+		logrus.Debug(err)
 		return nil
 	}
 

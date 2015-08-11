@@ -1,14 +1,14 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
-	"io/ioutil"
-	"log"
 	"net/http"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/event"
 	"github.com/eliothedeman/bangarang/pipeline"
-	"github.com/pquerna/ffjson/ffjson"
+	"github.com/gorilla/mux"
 )
 
 var (
@@ -27,25 +27,82 @@ func NewIncident(p *pipeline.Pipeline) *Incident {
 }
 
 func (i *Incident) EndPoint() string {
-	return "/api/incident/{id:[0-9]+}"
+	return "/api/incident/{id:.+}"
 }
 
-func (i *Incident) Post(w http.ResponseWriter, r *http.Request) {
+// return any incidnet that is greater than this value
+func reduceStatusAbove(level int, in []*event.Incident) []*event.Incident {
+	out := []*event.Incident{}
+	for _, i := range in {
+		if i.Status >= level {
+			out = append(out, i)
+		}
+	}
 
-	buff, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
+	return out
+}
+
+func makeKV(in []*event.Incident) map[string]*event.Incident {
+	out := map[string]*event.Incident{}
+	for _, i := range in {
+		out[string(i.IndexName())] = i
+	}
+	return out
+}
+
+// Delete will resolve a given event
+func (i *Incident) Delete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		http.Error(w, "Must append incident id", http.StatusBadRequest)
 		return
 	}
 
-	in := &event.Incident{}
-	err = ffjson.UnmarshalFast(buff, in)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err)
+	index := i.pipeline.GetIndex()
+	in := index.GetIncident([]byte(id))
+
+	// if an incident with this id exists, set it's status to ok and send it back through the pipeline
+	if in != nil {
+		in.Status = event.OK
+		in.Event.Status = event.OK
+		in.Description = ""
+		i.pipeline.ProcessIncident(in)
+	}
+}
+
+func (i *Incident) Get(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("content-type", "application/json")
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		http.Error(w, "Must append incident id", http.StatusBadRequest)
+		return
+	}
+	index := i.pipeline.GetIndex()
+
+	// if the id is "*", fetch all outstanding incidents
+	if id == "*" {
+		all := index.ListIncidents()
+		all = reduceStatusAbove(event.WARNING, all)
+		buff, err := json.Marshal(makeKV(all))
+		if err != nil {
+			logrus.Error(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(buff)
 		return
 	}
 
-	i.pipeline.PutIncident(in)
+	// write out the found incident. The value will be null if nothing was found
+	in := index.GetIncident([]byte(id))
+	buff, err := json.Marshal(in)
+	if err != nil {
+		logrus.Error(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(buff)
 }

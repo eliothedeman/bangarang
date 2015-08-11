@@ -37,10 +37,23 @@
 	<script type="text/javascript" src="js/escalation.js"></script>
 	<div ng-controller="Router as r">
 		<md-tabs md-dynamic-height md-border-bottom md-selected="r.selected" ng-init="r.getSelected()">
-			<md-tab label="dashboard" md-on-select="r.updateSelected(0)">
-				<div ng-controller="DashboardController as dc">
-				</div>
-			</md-tab>
+			<div ng-controller="DashboardController as dc">
+				<md-tab label="dashboard" md-on-select="r.updateSelected(0);startFetching()" md-on-deselect="stopFetching()">
+					<div layout="column" layout-fill>
+						<md-list>
+							<div style="padding-left: 5%; padding-right: 5%; padding-bottom: 10px;;" ng-repeat="i in incidents">
+								<md-list-item   class="md-2-line md-whiteframe-z3"  layout layout-align="center center" style="border-style: solid; border-color: {{getStatusColor(i.val.status)}}">
+									<div class="md-list-item-text" style="padding: 12px;">
+										<h3 style="" >{{getStatusCode(i.val.status)}}</h3>
+										<p>{{formatDescription(i.val)}}</p>
+									</div>
+									<md-button class="md-warn" ng-click="resolveIncident(i.key)">Resolve</md-button>
+								</md-list-item>
+							</div>
+						</md-list>
+					</div>
+				</md-tab>
+			</div>
 			<md-tab label="policy" md-on-select="r.updateSelected(1)">
 				<div ng-controller="PolicyController as pc">
 					<md-tabs md-dynamic-height md-border-bottom md-selected="selected" ng-init="getSelected()">
