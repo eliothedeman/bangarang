@@ -124,8 +124,6 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 		$scope.cOpKey = "";
 		$scope.wOpVal = "";
 		$scope.wOpKey = "";
-		$scope.wEsc = "";
-		$scope.cEsc = "";
 		$scope.np.name = "";
 		$scope.wOcc = 1;
 		$scope.cOcc = 1;
@@ -187,9 +185,16 @@ function GlobalPolicyController($scope, $http, $cookies, $mdDialog) {
 			.content("Are you sure you want to modify the global policy?")
 			.ariaLabel("Global Policy submit")
 			.ok("Yes")
-			.cancel("No");
+			.cancel("No")
 
-		$mdDialog.show(confirm);
+		$mdDialog.show(c).then(function() {
+			$http.post("api/policy/config/global", collectPolicy()).success(function() {
+				$scope.reset();
+				$scope.fetchPolicy();
+			}); 
+		}, function(){
+
+		})
 
 	}
 
