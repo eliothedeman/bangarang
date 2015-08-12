@@ -23,6 +23,7 @@ deb: build
 	mkdir -p opt/bangarang
 	mkdir -p etc/bangarang
 	cp bin/bangarang opt/bangarang/bangarang
+	cp bin/ui opt/bangarang/ui
 
 	fpm -s dir -t deb --name bangarang -v $(shell bin/bangarang -version) etc opt
 	
