@@ -47,7 +47,20 @@
 										<h3 style="" >{{getStatusCode(i.val.status)}}</h3>
 										<p>{{formatDescription(i.val)}}</p>
 									</div>
-									<md-button class="md-warn" ng-click="resolveIncident(i.key)">Resolve</md-button>
+									<md-menu>
+										<md-button class="md-icon-button" ng-click="dc.showResolveDialog($mdOpenMenu, $event)">
+											<md-icon>menu</md-icon>
+										</md-button>
+
+										<md-menu-content>
+											<md-menu-item>
+												<md-button ng-click="resolveIncident(i.key)">Resolve</md-button>
+											</md-menu-item>
+											<md-menu-item>
+												<md-button  ng-click="forgetHost(i.val.host)">Forget Host</md-button>
+											</md-menu-item>
+										</md-menu-content>
+									</md-menu>
 								</md-list-item>
 							</div>
 						</md-list>

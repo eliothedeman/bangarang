@@ -108,6 +108,13 @@ func (t *Tracker) GetHosts() []string {
 	return hosts
 }
 
+func (t *Tracker) RemoveHost(host string) {
+	t.query(func(t *Tracker) {
+		delete(t.hosts, host)
+		delete(t.hostTimes, host)
+	})
+}
+
 // return a map of hostnames to the last time we have heard from them
 func (t *Tracker) HostTimes() map[string]time.Time {
 	m := make(map[string]time.Time)

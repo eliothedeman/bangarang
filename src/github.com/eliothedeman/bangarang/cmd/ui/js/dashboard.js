@@ -1,7 +1,11 @@
-function DashboardController($scope, $http) {
+function DashboardController($scope, $http, $mdDialog) {
 	$scope.incidents = [];
 	$scope.fetching = false;
 	var stopper = null;
+
+	this.showResolveDialog = function($mdOpen,e) {
+		$mdOpen();
+	}
 
 	$scope.startFetching = function() {
 		$scope.fetchIncidents();
@@ -12,6 +16,12 @@ function DashboardController($scope, $http) {
 				$scope.fetchIncidents()
 			}, 5000)
 		}
+	}
+
+	$scope.forgetHost = function(hostname) {
+		$http.delete("api/host/"+hostname).success(function() {
+			$mdDialog.show($mdDialog.alert().title("Removed host" + hostname).content("").ok("Ok"))
+		});
 	}
 
 	$scope.stopFetching = function() {
