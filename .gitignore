@@ -6,3 +6,4 @@ pkg
 *.db
 bin
 *sublime*
+*bindata.go*

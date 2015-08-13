@@ -230,8 +230,8 @@
 												<input type="number" min="1" max="99999999" ng-model="wOcc">
 											</md-input-container>
 											<md-input-container>
-												<label>{{cEsc ? cEsc : "Escalation"}}</label>
-												<md-select md-on-open="loadEscalationNames()" ng-model="cEsc">
+												<label>{{wEsc ? wEsc : "Escalation"}}</label>
+												<md-select md-on-open="loadEscalationNames()" ng-model="wEsc">
 													<md-option ng-value="name" ng-repeat="name in escalation_names">
 														{{name}}
 													</md-option>
