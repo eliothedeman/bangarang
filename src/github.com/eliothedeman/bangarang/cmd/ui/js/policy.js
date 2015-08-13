@@ -43,9 +43,7 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 			}
 		}
 		if ($scope.notMatchChips.length > 0) {
-			p.not_match = {
-				occurences: $scope.wOcc
-			};
+			p.not_match = {};
 			for (var i = 0; i < $scope.notMatchChips.length; i++) {
 				p.not_match[$scope.notMatchChips[i].key] = $scope.notMatchChips[i].val;
 			}
