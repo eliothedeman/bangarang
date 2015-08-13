@@ -27,7 +27,7 @@ function DashboardController($scope, $http) {
 	}
 
 	$scope.formatDescription = function(incident) {
-		return incident.service + (incident.sub_service ? "." + incident.sub_service : " ") + " on " + incident.host + " is " + incident.metric + " at " + new Date(incident.time * 1000).format("h:M:sTT mmmm-dd-yyyy"); 
+		return incident.service + (incident.sub_service ? "." + incident.sub_service : " ") + " on " + incident.host + " is " + incident.metric.toFixed(2) + " at " + new Date(incident.time * 1000).format("h:M:sTT mmmm-dd-yyyy"); 
 	}
 
 	var codes = {
@@ -58,6 +58,9 @@ function DashboardController($scope, $http) {
 			}
 
 			ins.sort(function(x,y) {
+				if (x.val.status != y.val.status) {
+					return y.val.status - x.val.status
+				}
 				return y.val.time - x.val.time;
 			})
 			$scope.incidents = ins;
