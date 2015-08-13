@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
@@ -38,7 +39,7 @@ func (p *EscalationConfig) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if id == "*" {
-		buff, err := json.Marshal(conf.Escalations)
+		buff, err := json.Marshal(&conf.Escalations)
 		if err != nil {
 			logrus.Error(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -54,6 +55,26 @@ func (p *EscalationConfig) Get(w http.ResponseWriter, r *http.Request) {
 
 // Delete the given event provider
 func (p *EscalationConfig) Delete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		logrus.Error("Must append escalation id", r.URL.String())
+		http.Error(w, "must append escalation id", http.StatusBadRequest)
+		return
+	}
+
+	conf := p.pipeline.GetConfig()
+	logrus.Info("Removing escalation: %s", id)
+	conf.Escalations.RemoveRaw(id)
+	err := conf.Escalations.UnmarshalRaw()
+	if err != nil {
+		logrus.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	conf.Provider().PutConfig(conf)
+	p.pipeline.Refresh(conf)
 }
 
 // Post HTTP get method
@@ -81,6 +102,8 @@ func (p *EscalationConfig) Post(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	log.Println(conf.Escalations)
 
 	conf.Escalations.AddRaw(id, t)
 	err = conf.Escalations.UnmarshalRaw()

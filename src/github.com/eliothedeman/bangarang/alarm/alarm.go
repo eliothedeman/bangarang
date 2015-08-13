@@ -22,11 +22,21 @@ type Collection struct {
 }
 
 func (c *Collection) Collection() map[string][]Alarm {
+	if c.Coll == nil {
+		c.Coll = map[string][]Alarm{}
+	}
 	return c.Coll
 }
 
 func (c *Collection) AddRaw(name string, raw []json.RawMessage) {
+	if c.raw == nil {
+		c.raw = make(map[string][]json.RawMessage)
+	}
 	c.raw[name] = raw
+}
+
+func (c *Collection) RemoveRaw(name string) {
+	delete(c.raw, name)
 }
 
 func (c *Collection) MarshalJSON() ([]byte, error) {

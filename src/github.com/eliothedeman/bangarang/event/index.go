@@ -1,10 +1,12 @@
 package event
 
 import (
-	"sync"
+	"fmt"
+	"os"
 	"sync/atomic"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/boltdb/bolt"
 )
 
 var (
@@ -16,6 +18,7 @@ var (
 
 const (
 	KEEP_ALIVE_SERVICE_NAME = "KeepAlive"
+	INDEX_FILE_NAME         = "bangarang-index.db"
 )
 
 type counter struct {
@@ -34,14 +37,26 @@ func (c *counter) get() int64 {
 }
 
 type Index struct {
-	i_lock          sync.RWMutex
-	incidents       map[string]Incident
+	db              *bolt.DB
 	incidentCounter *counter
 }
 
 func NewIndex() *Index {
+	db, err := bolt.Open(INDEX_FILE_NAME, 0600, nil)
+	if err != nil {
+		logrus.Fatalf("Unable to open index db at %s %s", INDEX_FILE_NAME, err)
+	}
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists(INCIDENT_BUCKET_NAME)
+		return err
+	})
+	if err != nil {
+		logrus.Fatal("Unable to create incident bucket in the index db")
+	}
+
 	return &Index{
-		incidents:       make(map[string]Incident),
+		db:              db,
 		incidentCounter: &counter{},
 	}
 }
@@ -49,16 +64,20 @@ func NewIndex() *Index {
 // close out the index
 func (i *Index) Close() {
 	logrus.Info("Closing index")
-	i.incidentCounter.set(0)
-	i.i_lock.Lock()
-	i.incidents = make(map[string]Incident)
-	i.i_lock.Unlock()
-
+	err := i.db.Close()
+	if err != nil {
+		logrus.Errorf("Unable to close index db: %s", err)
+	}
 }
 
 // delete any psersistants associated with the index
 func (i *Index) Delete() {
 	logrus.Info("Deleting index")
+	i.Close()
+	err := os.Remove(INDEX_FILE_NAME)
+	if err != nil {
+		logrus.Errorf("Unable to delete the index db: %s", err)
+	}
 }
 
 func (i *Index) GetIncidentCounter() int64 {
@@ -71,38 +90,74 @@ func (i *Index) UpdateIncidentCounter(count int64) {
 
 // write the incident to the db
 func (i *Index) PutIncident(in *Incident) {
-	i.i_lock.Lock()
-	i.incidents[string(in.IndexName())] = *in
-	i.i_lock.Unlock()
+	err := i.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(INCIDENT_BUCKET_NAME)
+		buff, err := in.MarshalMsg(nil)
+		if err != nil {
+			return err
+		}
+		return b.Put(in.IndexName(), buff)
+	})
+	if err != nil {
+		logrus.Errorf("Unable to insert incident into index %s", err)
+	}
 }
 
 // list all the known events
 func (i *Index) ListIncidents() []*Incident {
-	i.i_lock.RLock()
-	ins := make([]*Incident, len(i.incidents))
-	x := 0
-	for _, v := range i.incidents {
-		ins[x] = &v
-		x += 1
+	var ins []*Incident
+	err := i.db.View(func(t *bolt.Tx) error {
+		b := t.Bucket(INCIDENT_BUCKET_NAME)
+		ins = make([]*Incident, b.Stats().KeyN)
+		x := 0
+		return b.ForEach(func(k, v []byte) error {
+			y := &Incident{}
+			_, err := y.UnmarshalMsg(v)
+			if err != nil {
+				return err
+			}
+
+			ins[x] = y
+			x++
+			return nil
+		})
+	})
+
+	if err != nil {
+		logrus.Errorf("Unable to list incidents %s", err)
 	}
-	i.i_lock.RUnlock()
 	return ins
 }
 
 // get an event from the index
 func (i *Index) GetIncident(id []byte) *Incident {
-	i.i_lock.RLock()
-	defer i.i_lock.RUnlock()
+	in := &Incident{}
+	err := i.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(INCIDENT_BUCKET_NAME)
+		buff := b.Get(id)
+		if len(buff) == 0 {
+			return fmt.Errorf("Unable to find incident with id %s", string(id))
+		}
 
-	in, ok := i.incidents[string(id)]
-	if !ok {
+		_, err := in.UnmarshalMsg(buff)
+		return err
+	})
+
+	if err != nil {
+		logrus.Debug(err)
 		return nil
 	}
-	return &in
+
+	return in
 }
 
 func (i *Index) DeleteIncidentById(id []byte) {
-	i.i_lock.Lock()
-	delete(i.incidents, string(id))
-	i.i_lock.Unlock()
+	err := i.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(INCIDENT_BUCKET_NAME)
+		return b.Delete(id)
+	})
+
+	if err != nil {
+		logrus.Errorf("Unable to delete incident %s from index", string(id))
+	}
 }

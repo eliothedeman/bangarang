@@ -17,7 +17,7 @@ const (
 type Event struct {
 	Host       string            `json:"host" msg:"host"`
 	Service    string            `json:"service" msg:"service"`
-	SubService string            `json:"sub_type" msg:"sub_service"`
+	SubService string            `json:"sub_service" msg:"sub_service"`
 	Metric     float64           `json:"metric" msg:"metric"`
 	Occurences int               `json:"occurences" msg:"occurences"`
 	Tags       map[string]string `json:"tags" msg:"tags"`

@@ -3,5 +3,5 @@ go:
     - 1.4
 
 script:
-    - make install
-    - gb test
+    - make generate
+    - make test

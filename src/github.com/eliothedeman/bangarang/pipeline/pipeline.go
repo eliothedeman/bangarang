@@ -36,9 +36,12 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 	p := &Pipeline{
 		encodingPool:       event.NewEncodingPool(event.EncoderFactories[conf.Encoding], event.DecoderFactories[conf.Encoding], runtime.NumCPU()),
 		keepAliveAge:       conf.KeepAliveAge,
-		keepAliveCheckTime: 30 * time.Second,
+		keepAliveCheckTime: 10 * time.Second,
 		in:                 make(chan *event.Event),
 		unpauseChan:        make(chan struct{}),
+		tracker:            NewTracker(),
+		escalations:        &alarm.Collection{},
+		index:              event.NewIndex(),
 	}
 
 	p.Refresh(conf)
@@ -55,15 +58,10 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 
 	// if the config has changed at all, refresh the index
 	if p.config == nil || string(conf.Hash) != string(p.config.Hash) {
-		p.index = event.NewIndex()
-		p.tracker = NewTracker()
 		go p.tracker.Start()
 	}
 
-	// update optional config options
-	if conf.Escalations != nil {
-		p.escalations = conf.Escalations
-	}
+	p.escalations = &conf.Escalations
 
 	if conf.EventProviders != nil {
 		p.providers = *conf.EventProviders
@@ -197,7 +195,7 @@ func (p *Pipeline) Start() {
 
 			// if the injest channel is nil, stop
 			if p.in == nil {
-				logrus.Info("Pipeline is paused, stoping pipeline")
+				logrus.Info("Pipeline is paused, stopping pipeline")
 				return
 			}
 
@@ -210,6 +208,31 @@ func (p *Pipeline) Start() {
 			logrus.Debugf("Done processing %+v", e)
 		}
 	}()
+}
+
+func (p *Pipeline) ProcessIncident(in *event.Incident) {
+	// dedup the incident
+	if p.Dedupe(in) {
+
+		// update the incident in the index
+		if in.Status != event.OK {
+			p.index.PutIncident(in)
+		} else {
+			p.index.DeleteIncidentById(in.IndexName())
+		}
+
+		// fetch the escalation to take
+		esc, ok := p.escalations.Collection()[in.Escalation]
+		if ok {
+
+			// send to every alarm in the escalation
+			for _, a := range esc {
+				a.Send(in)
+			}
+		} else {
+			log.Println("unknown escalation", in.Escalation)
+		}
+	}
 }
 
 // Run the given event though the pipeline
@@ -225,41 +248,31 @@ func (p *Pipeline) Process(e *event.Event) int {
 
 	for _, pol := range p.policies {
 		if pol.Matches(e) {
-			act := pol.Action(e)
+			act := pol.ActionCrit(e)
 
 			// if there is an action to be taken
 			if act != "" {
-
 				// create a new incident for this event
-				in := p.NewIncident(pol.Name, e)
+				in := p.NewIncident(pol.Name, act, e)
+				p.ProcessIncident(in)
+			}
 
-				// dedup the incident
-				if p.Dedupe(in) {
-
-					// update the incident in the index
-					if in.Status != event.OK {
-						p.index.PutIncident(in)
-					} else {
-						p.index.DeleteIncidentById(in.IndexName())
-					}
-
-					// fetch the escalation to take
-					esc, ok := p.escalations.Collection()[act]
-					if ok {
-
-						// send to every alarm in the escalation
-						for _, a := range esc {
-							a.Send(in)
-						}
-					} else {
-						log.Println("unknown escalation", act)
-					}
+			if e.Status == event.OK {
+				act = pol.ActionWarn(e)
+				if act != "" {
+					in := p.NewIncident(pol.Name, act, e)
+					p.ProcessIncident(in)
 				}
+
 			}
 		}
 	}
 
 	return e.Status
+}
+
+func (p *Pipeline) GetIndex() *event.Index {
+	return p.index
 }
 
 // returns true if this is a new incident, false if it is a duplicate
@@ -285,6 +298,6 @@ func (p *Pipeline) PutIncident(in *event.Incident) {
 	p.index.PutIncident(in)
 }
 
-func (p *Pipeline) NewIncident(policy string, e *event.Event) *event.Incident {
-	return event.NewIncident(policy, e)
+func (p *Pipeline) NewIncident(policy string, escalation string, e *event.Event) *event.Incident {
+	return event.NewIncident(policy, escalation, e)
 }

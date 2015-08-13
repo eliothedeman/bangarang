@@ -27,7 +27,7 @@ bangarang uses two configurations. One main config, and a series of files that d
 ### Main Config
 ```javascript
 {
-	"escalations": {			// <- a list of policies to be used by the escalations
+	"escalations": {// <- a list of policies to be used by the escalations
 		"demo": [
 			{
 				"type": "console" // <- will log every event that demo is called on

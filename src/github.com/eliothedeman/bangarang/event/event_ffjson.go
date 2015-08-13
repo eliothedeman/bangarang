@@ -29,7 +29,7 @@ func (mj *Event) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	fflib.WriteJsonString(buf, string(mj.Host))
 	buf.WriteString(`,"service":`)
 	fflib.WriteJsonString(buf, string(mj.Service))
-	buf.WriteString(`,"sub_type":`)
+	buf.WriteString(`,"sub_service":`)
 	fflib.WriteJsonString(buf, string(mj.SubService))
 	buf.WriteString(`,"metric":`)
 	fflib.AppendFloat(buf, float64(mj.Metric), 'g', -1, 64)
@@ -88,7 +88,7 @@ var ffj_key_Event_Host = []byte("host")
 
 var ffj_key_Event_Service = []byte("service")
 
-var ffj_key_Event_SubService = []byte("sub_type")
+var ffj_key_Event_SubService = []byte("sub_service")
 
 var ffj_key_Event_Metric = []byte("metric")
 

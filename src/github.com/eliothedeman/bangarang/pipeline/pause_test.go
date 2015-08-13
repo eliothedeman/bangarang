@@ -14,8 +14,8 @@ func TestPausePipeline(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, map[string]string{"service": "KeepAlive"}, nil)
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	defer p.index.Delete()
 	p.Start()
-
 	p.pause()
 	p.unpause()
 
@@ -28,6 +28,7 @@ func TestPausePipelineCache(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, map[string]string{"service": "KeepAlive"}, nil)
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	defer p.index.Delete()
 	p.Start()
 	insert := p.in
 	p.pause()
@@ -57,6 +58,7 @@ func TestRefreshPipeline(t *testing.T) {
 	}
 
 	p := NewPipeline(ac)
+	defer p.index.Delete()
 	ac.Policies = map[string]*alarm.Policy{"test": &alarm.Policy{}}
 
 	p.Refresh(ac)

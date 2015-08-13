@@ -1,14 +1,50 @@
-function EscalationController($scope, $http) {
-	this.fetchEscalations = function() {
+function EscalationController($scope, $http, $cookies, $mdDialog) {
+	$scope.escalations = null;
+	$scope.fetchEscalations = function() {
 		$http.get("api/escalation/config/*").success(function(data, status) {
 			$scope.escalations = data;
 		});
 	}
+	this.selected = 0;
+	this.getSelected = function() {
+		var s = $cookies.get("nec:tab");
+		if (s) {
+			this.selected = s;
+		}
+		return this.selected;
+	}
+	this.updateSelected = function(name) {
+		$cookies.put("nec:tab", name);
+		this.selected = name;
+	}
+
+	$scope.removeSure = {}
+	$scope.showRemoveDialog = function(name) {
+		$scope.removeSure[name] = true;
+	}
+
+	$scope.hideRemoveDialog = function(name) {
+		$scope.removeSure[name] = false;
+	}
+
+	$scope.shouldHideRemoveDialog = function(name) {
+		var show = $scope.removeSure[name];
+		return show != true;
+	}
+
+	$scope.removeEscalation = function(name)  {
+		$http.delete("api/escalation/config/"+name).success(function(data) {
+			$scope.fetchEscalations();
+		});
+	}
+
+	$scope.fetchEscalations();
+
 }
 angular.module("bangarang").controller("EscalationController", EscalationController);
 
 
-function NewEscalationController($scope, $http) {
+function NewEscalationController($scope, $http, $interval) {
 	this.name = "";
 	this.type = null;
 	this.ots = {};
@@ -42,6 +78,7 @@ function NewEscalationController($scope, $http) {
 	];
 	this.emailOpts = [];
 	this.consoleOpts = [];
+	this.chips = [];
 
 	this.getOpts = function(type) {
 		switch (type) {
@@ -59,13 +96,11 @@ function NewEscalationController($scope, $http) {
 		}
 	}
 
+
+
 	this.newEscalation = function() {
 
 		if (!this.type) {
-			return;
-		}
-
-		if (!this.name) {
 			return;
 		}
 
@@ -78,7 +113,27 @@ function NewEscalationController($scope, $http) {
 			e[opts[i].name] = opts[i].value;
 		}
 
-		$http.post("api/escalation/config/" + this.name, [e]);
+		this.chips.push(e);
+	}
+
+	this.submitNew = function() {
+		if (!this.name) {
+			return;
+		}
+		$scope.newEscalationProgress = 50;
+		a = this;
+		$http.post("api/escalation/config/" + this.name, this.chips).success(function(data) {
+			a.reset();
+		});
+
+	}
+
+	this.reset = function() {
+		this.type = null;
+		this.name = "";
+		this.chips = [];
+		this.opts = {};
+		$scope.newEscalationProgress = 0;
 	}
 }
 
