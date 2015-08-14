@@ -99,7 +99,7 @@
 			</div>
 			<md-tab label="policy" md-on-select="r.updateSelected(1)">
 				<div ng-controller="PolicyController as pc">
-					<md-tabs md-dynamic-height md-border-bottom md-selected="selected" ng-init="getSelected()">
+					<md-tabs md-center-tabs md-dynamic-height md-border-bottom md-selected="selected" ng-init="getSelected()">
 						<md-tab label="All" md-on-select="updateSelected(0)">
 							<md-list>
 								<md-card ng-repeat="(name, pol) in policies">
@@ -298,7 +298,7 @@
 			</md-tab>
 			<md-tab label="escalation" md-on-select="r.updateSelected(2)">
 				<div ng-controller="EscalationController as ec">
-					<md-tabs md-dynamic-height md-border-bottom md-selected="ec.selected" ng-init="ec.getSelected()">
+					<md-tabs md-center-tabs md-dynamic-height md-border-bottom md-selected="ec.selected" ng-init="ec.getSelected()">
 						<md-tab label="All" md-on-select="ec.updateSelected(0)">
 							<md-list>
 								<md-card ng-repeat="(k,v) in escalations">
@@ -362,7 +362,7 @@
 			</md-tab>
 			<md-tab label="provider" md-on-select="r.updateSelected(3)">
 				<div ng-controller="ProviderController as pc">
-					<md-tabs md-dynamic-height md-border-bottom>
+					<md-tabs md-dynamic-height md-center-tabs md-border-bottom>
 						<md-tab label="All" ng-init="fetchProviders()">
 							<md-list>
 								<md-card ng-repeat="(k,v) in providers">
