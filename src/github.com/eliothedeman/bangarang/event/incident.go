@@ -4,6 +4,8 @@ import (
 	"crypto/md5"
 	"fmt"
 	"time"
+
+	"github.com/eliothedeman/smoothie"
 )
 
 //go:generate ffjson $GOFILE
@@ -11,13 +13,15 @@ import (
 
 // An incident is created whenever an event changes to a state that is not event.OK
 type Incident struct {
-	EventName   []byte `json:"event" msg:"event_name"`
-	Time        int64  `json:"time" msg:"time"`
-	Id          int64  `json:"id" msg:"id"`
-	Active      bool   `json:"active" msg:"active"`
-	Escalation  string `json:"escalation" msg:"escalation"`
-	Description string `json:"description" msg:"description"`
-	Policy      string `json:"policy" msg:"policy"`
+	EventName   []byte    `json:"event" msg:"event_name"`
+	Time        int64     `json:"time" msg:"time"`
+	Id          int64     `json:"id" msg:"id"`
+	Active      bool      `json:"active" msg:"active"`
+	Escalation  string    `json:"escalation" msg:"escalation"`
+	Description string    `json:"description" msg:"description"`
+	Policy      string    `json:"policy" msg:"policy"`
+	GraphURL    string    `json:"graph_url" msg:"graph_url"`
+	GraphData   []float64 `json:"graph_data" msg:"graph_data"`
 	indexName   []byte
 	Event
 }
@@ -40,7 +44,7 @@ func (i *Incident) FormatDescription() string {
 	return i.Event.FormatDescription()
 }
 
-func NewIncident(policy string, escalation string, e *Event) *Incident {
+func NewIncident(policy, escalation string, e *Event, context *smoothie.DataFrame) *Incident {
 	in := &Incident{
 		EventName:   []byte(e.IndexName()),
 		Time:        time.Now().Unix(),
@@ -49,7 +53,10 @@ func NewIncident(policy string, escalation string, e *Event) *Incident {
 		Escalation:  escalation,
 		Description: e.FormatDescription(),
 		Event:       *e,
+		GraphData:   context.Data(),
 	}
+
+	in.GraphURL = fmt.Sprintf("api/incident/graph/%s", string(in.IndexName()))
 
 	return in
 }
