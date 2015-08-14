@@ -35,35 +35,65 @@
 	<script type="text/javascript" src="js/provider.js"></script>
 	<script type="text/javascript" src="js/dashboard.js"></script>
 	<script type="text/javascript" src="js/escalation.js"></script>
-	<div ng-controller="Router as r">
-		<md-tabs md-dynamic-height md-border-bottom md-selected="r.selected" ng-init="r.getSelected()">
+	<md-content layout-padding>
+		<md-toolbar layout="row" style="background: white;">
+			<div class="md-toolbar-tools">
+				<h1 style="color: black">
+					<span>Bangarang</span>
+				</h1>
+				<span flex></span>
+				<md-button class="md-fab" href="https://github.com/eliothedeman/bangarang">
+					<md-icon ng-style="">help</md-icon>
+				</md-button>
+			</div>
+		</md-toolbar>
+	</md-content>
+	<div ng-controller="Router as r" >
+		<md-tabs md-dynamic-height md-center-tabs md-border-bottom md-selected="r.selected" ng-init="r.getSelected()">
 			<div ng-controller="DashboardController as dc">
 				<md-tab label="dashboard" md-on-select="r.updateSelected(0);startFetching()" md-on-deselect="stopFetching()">
-					<div layout="column" layout-fill>
-						<md-list>
-							<div style="padding-left: 5%; padding-right: 5%; padding-bottom: 10px;;" ng-repeat="i in incidents">
-								<md-list-item   class="md-2-line md-whiteframe-z3"  layout layout-align="center center" style="border-style: solid; border-color: {{getStatusColor(i.val.status)}}">
-									<div class="md-list-item-text" style="padding: 12px;">
-										<h3 style="" >{{getStatusCode(i.val.status)}}</h3>
-										<p>{{formatDescription(i.val)}}</p>
-									</div>
-									<md-menu>
-										<md-button class="md-icon-button" ng-click="dc.showResolveDialog($mdOpenMenu, $event)">
-											<md-icon>menu</md-icon>
-										</md-button>
+					<div layout="row">
+						<div style="padding-left: 2%; padding-right: 2%">
+							<md-card class="md-whiteframe-z2">
+								<md-card-content>
+									<h2 align="center">Stats</h2>
+									<md-card ng-repeat="(key, value) in stats">
+										<md-card-content style="white-space: nowrap"> 
+											<h5 align="center">{{key}}</h5>
+											<p align="center">{{value}}</p>
 
-										<md-menu-content>
-											<md-menu-item>
-												<md-button ng-click="resolveIncident(i.key)">Resolve</md-button>
-											</md-menu-item>
-											<md-menu-item>
-												<md-button  ng-click="forgetHost(i.val.host)">Forget Host</md-button>
-											</md-menu-item>
-										</md-menu-content>
-									</md-menu>
-								</md-list-item>
-							</div>
-						</md-list>
+										</md-card-content>
+									</md-card>
+								</md-card-content>
+							</md-card>
+						</div>
+						<div layout="column" layout-fill>
+							<md-list>
+								<div style="padding-left: 2%; padding-right: 5%; padding-bottom: 10px;" ng-repeat="i in incidents">
+									<md-list-item   class="md-2-line md-whiteframe-z3"  layout layout-align="center center" style="border-style: solid; border-color: {{getStatusColor(i.val.status)}}">
+										<div class="md-list-item-text" style="padding: 12px;">
+											<h3 style="" >{{getStatusCode(i.val.status)}}</h3>
+											<p>{{formatDescription(i.val)}}</p>
+										</div>
+										<md-menu>
+											<md-button class="md-icon-button" ng-click="dc.showResolveDialog($mdOpenMenu, $event)">
+												<md-icon>menu</md-icon>
+											</md-button>
+
+											<md-menu-content>
+												<md-menu-item>
+													<md-button ng-click="resolveIncident(i.key)">Resolve</md-button>
+												</md-menu-item>
+												<md-menu-item>
+													<md-button  ng-click="forgetHost(i.val.host)">Forget Host</md-button>
+												</md-menu-item>
+											</md-menu-content>
+										</md-menu>
+									</md-list-item>
+								</div>
+							</md-list>
+						</div>
+						
 					</div>
 				</md-tab>
 			</div>
@@ -357,7 +387,6 @@
 					</md-tabs>
 				</div>
 			</md-tab>
-
 			<md-tab label="config" md-on-select="r.updateSelected(4)">
 				<div ng-controller="Config as cc" ng-init="fetchSnapshots()">
 					<md-card ng-repeat="snapshot in snapshots">

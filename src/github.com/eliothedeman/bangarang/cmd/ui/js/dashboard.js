@@ -1,6 +1,7 @@
 function DashboardController($scope, $http, $mdDialog) {
 	$scope.incidents = [];
 	$scope.fetching = false;
+	$scope.stats = {};
 	var stopper = null;
 
 	this.showResolveDialog = function($mdOpen,e) {
@@ -9,13 +10,28 @@ function DashboardController($scope, $http, $mdDialog) {
 
 	$scope.startFetching = function() {
 		$scope.fetchIncidents();
+		$scope.fetchStats();
 
 		if (!$scope.fetching) {
 			$scope.fetching = true;
 			stopper = setInterval(function(){
-				$scope.fetchIncidents()
+				$scope.fetchIncidents();
+				$scope.fetchStats();
 			}, 5000)
 		}
+	}
+
+	$scope.lastTotal = 0;
+
+	$scope.fetchStats = function() {
+		$http.get("api/stats/event").success(function(data) {
+			$scope.stats["Total Events"] = data.total_events
+			$scope.stats["Events/s"] = (data.total_events - $scope.lastTotal) / 5
+			$scope.lastTotal = data.total_events
+			$scope.stats["Hosts"] = Object.keys(data.by_host).length
+			$scope.stats["Services"] = Object.keys(data.by_service).length
+			$scope.stats["Sub Services"] = Object.keys(data.by_sub_service).length
+		});
 	}
 
 	$scope.forgetHost = function(hostname) {
