@@ -4,6 +4,19 @@ function DashboardController($scope, $http, $mdDialog) {
 	$scope.stats = {};
 	var stopper = null;
 
+	this.selected = 0;
+	this.getSelected = function() {
+		var s = $cookies.get("dash:tab");
+		if (s) {
+			this.selected = s;
+		}
+		return this.selected;
+	}
+	this.updateSelected = function(name) {
+		$cookies.put("dash:tab", name);
+		this.selected = name;
+	}
+
 	this.showResolveDialog = function($mdOpen,e) {
 		$mdOpen();
 	}
