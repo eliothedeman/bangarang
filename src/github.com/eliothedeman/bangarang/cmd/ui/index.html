@@ -62,8 +62,10 @@
 											<md-card ng-repeat="(key, value) in stats">
 												<md-card-content style="white-space: nowrap"> 
 													<h5 align="center">{{key}}</h5>
-													<p align="center">{{value}}</p>
-
+													<p align="center">
+													{{value}}
+													</p>
+													<json-formatter align="left" class="json-formatter" json="byStats[key]">
 												</md-card-content>
 											</md-card>
 										</md-card-content>

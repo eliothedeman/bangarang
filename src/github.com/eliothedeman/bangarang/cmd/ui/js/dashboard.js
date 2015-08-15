@@ -3,6 +3,7 @@ function DashboardController($scope, $cookies, $http, $mdDialog) {
 	$scope.fetching = false;
 	$scope.stats = {};
 	$scope.raw_stats = {};
+	$scope.byStats = {};
 	var hostMap = {};
 	$scope.hostMap = hostMap;
 	var stopper = null;
@@ -25,18 +26,18 @@ function DashboardController($scope, $cookies, $http, $mdDialog) {
 	}
 
 
-	constructMapForHost = function(host, val) {
+	constructMap = function(host, val, target) {
 		host = host.split(".")
 		next = {}
-		if (hostMap[host[host.length -1]]) {
-			next = hostMap[host[host.length-1]]
+		if (target[host[host.length -1]]) {
+			next = target[host[host.length-1]]
 		} else {
-			hostMap[host[host.length - 1]] = next
+			target[host[host.length - 1]] = next
 		}
-		if (!(next["__count"])) {
-			next["__count"] = 0
+		if (!(next["count"])) {
+			next["count"] = 0
 		}
-		next["__count"] += val
+		next["count"] += val
 		for (var i = host.length - 2; i >= 0; i--) {
 			if (!next[host[i]]) {
 				next[host[i]] = {}
@@ -44,20 +45,38 @@ function DashboardController($scope, $cookies, $http, $mdDialog) {
 			} else {
 				next = next[host[i]]
 			}
-			if (!(next["__count"])) {
-				next["__count"] = 0
+			if (!(next["count"])) {
+				next["count"] = 0
 			}
-			next["__count"]+= val;
+			next["count"]+= val;
 		};
+		console.log(target)
 	}
 
 	buildHostMap = function() {
 		hostMap = {}
 		for (host in $scope.raw_stats.by_host) {
-			constructMapForHost(host, $scope.raw_stats.by_host[host])
+			constructMap(host, $scope.raw_stats.by_host[host], hostMap)
 		}
-		console.log(hostMap);
 		$scope.hostMap = hostMap;
+		$scope.byStats["Hosts"] = hostMap;
+	}
+
+	buildServiceMap = function() {
+		serviceMap = {}
+		for (service in $scope.raw_stats.by_service) {
+			constructMap(service, $scope.raw_stats.by_service[service], serviceMap)
+		}
+		$scope.serviceMap = serviceMap;
+		$scope.byStats["Services"] = serviceMap;
+	}
+	buildSubServiceMap = function() {
+		subServiceMap = {}
+		for (subService in $scope.raw_stats.by_subService) {
+			constructMap(subService, $scope.raw_stats.by_sub_service[subService], subServiceMap)
+		}
+		$scope.subServiceMap = subServiceMap;
+		$scope.byStats["Sub Services"] = subServiceMap;
 	}
 
 
@@ -79,6 +98,8 @@ function DashboardController($scope, $cookies, $http, $mdDialog) {
 		$http.get("api/stats/event").success(function(data) {
 			$scope.raw_stats = data;
 			buildHostMap()
+			buildServiceMap()
+			buildSubServiceMap()
 			$scope.stats["Total Events"] = data.total_events
 			$scope.stats["Events/s"] = (data.total_events - $scope.lastTotal) / 5
 			$scope.lastTotal = data.total_events
