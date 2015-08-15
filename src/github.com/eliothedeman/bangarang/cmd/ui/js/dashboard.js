@@ -50,7 +50,6 @@ function DashboardController($scope, $cookies, $http, $mdDialog) {
 			}
 			next["count"]+= val;
 		};
-		console.log(target)
 	}
 
 	buildHostMap = function() {
@@ -65,15 +64,15 @@ function DashboardController($scope, $cookies, $http, $mdDialog) {
 	buildServiceMap = function() {
 		serviceMap = {}
 		for (service in $scope.raw_stats.by_service) {
-			constructMap(service, $scope.raw_stats.by_service[service], serviceMap)
+			constructMap(service.split(".").reverse().join("."), $scope.raw_stats.by_service[service], serviceMap)
 		}
 		$scope.serviceMap = serviceMap;
 		$scope.byStats["Services"] = serviceMap;
 	}
 	buildSubServiceMap = function() {
 		subServiceMap = {}
-		for (subService in $scope.raw_stats.by_subService) {
-			constructMap(subService, $scope.raw_stats.by_sub_service[subService], subServiceMap)
+		for (subService in $scope.raw_stats.by_sub_service) {
+			constructMap(subService.split(".").reverse().join("."), $scope.raw_stats.by_sub_service[subService], subServiceMap)
 		}
 		$scope.subServiceMap = subServiceMap;
 		$scope.byStats["Sub Services"] = subServiceMap;
