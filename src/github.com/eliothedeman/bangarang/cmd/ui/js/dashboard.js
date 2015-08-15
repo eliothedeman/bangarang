@@ -1,7 +1,10 @@
-function DashboardController($scope, $http, $mdDialog) {
+function DashboardController($scope, $cookies, $http, $mdDialog) {
 	$scope.incidents = [];
 	$scope.fetching = false;
 	$scope.stats = {};
+	$scope.raw_stats = {};
+	var hostMap = {};
+	$scope.hostMap = hostMap;
 	var stopper = null;
 
 	this.selected = 0;
@@ -21,6 +24,43 @@ function DashboardController($scope, $http, $mdDialog) {
 		$mdOpen();
 	}
 
+
+	constructMapForHost = function(host, val) {
+		host = host.split(".")
+		next = {}
+		if (hostMap[host[host.length -1]]) {
+			next = hostMap[host[host.length-1]]
+		} else {
+			hostMap[host[host.length - 1]] = next
+		}
+		if (!(next["__count"])) {
+			next["__count"] = 0
+		}
+		next["__count"] += val
+		for (var i = host.length - 2; i >= 0; i--) {
+			if (!next[host[i]]) {
+				next[host[i]] = {}
+				next = next[host[i]]
+			} else {
+				next = next[host[i]]
+			}
+			if (!(next["__count"])) {
+				next["__count"] = 0
+			}
+			next["__count"]+= val;
+		};
+	}
+
+	buildHostMap = function() {
+		hostMap = {}
+		for (host in $scope.raw_stats.by_host) {
+			constructMapForHost(host, $scope.raw_stats.by_host[host])
+		}
+		console.log(hostMap);
+		$scope.hostMap = hostMap;
+	}
+
+
 	$scope.startFetching = function() {
 		$scope.fetchIncidents();
 		$scope.fetchStats();
@@ -35,9 +75,10 @@ function DashboardController($scope, $http, $mdDialog) {
 	}
 
 	$scope.lastTotal = 0;
-
 	$scope.fetchStats = function() {
 		$http.get("api/stats/event").success(function(data) {
+			$scope.raw_stats = data;
+			buildHostMap()
 			$scope.stats["Total Events"] = data.total_events
 			$scope.stats["Events/s"] = (data.total_events - $scope.lastTotal) / 5
 			$scope.lastTotal = data.total_events
