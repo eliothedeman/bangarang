@@ -3,5 +3,6 @@ go:
     - 1.4
 
 script:
-    - $HOME/gopath/bin/go-generate
+    - make install
+    - make generate
     - make test
