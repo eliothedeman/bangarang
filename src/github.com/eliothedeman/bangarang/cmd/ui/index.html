@@ -52,50 +52,50 @@
 		<md-tabs md-dynamic-height md-center-tabs md-border-bottom md-selected="r.selected" ng-init="r.getSelected()">
 			<div ng-controller="DashboardController as dc">
 				<md-tab label="dashboard" md-on-select="r.updateSelected(0);startFetching()" md-on-deselect="stopFetching()">
-					<div layout="row">
-						<div style="padding-left: 2%; padding-right: 2%">
-							<md-card class="md-whiteframe-z2">
-								<md-card-content>
-									<h2 align="center">Stats</h2>
-									<md-card ng-repeat="(key, value) in stats">
-										<md-card-content style="white-space: nowrap"> 
-											<h5 align="center">{{key}}</h5>
-											<p align="center">{{value}}</p>
-
-										</md-card-content>
-									</md-card>
-								</md-card-content>
-							</md-card>
-						</div>
-						<div layout="column" layout-fill>
-							<md-list>
-								<div style="padding-left: 2%; padding-right: 5%; padding-bottom: 10px;" ng-repeat="i in incidents">
-									<md-list-item   class="md-2-line md-whiteframe-z3"  layout layout-align="center center" style="border-style: solid; border-color: {{getStatusColor(i.val.status)}}">
-										<div class="md-list-item-text" style="padding: 12px;">
-											<h3 style="" >{{getStatusCode(i.val.status)}}</h3>
-											<p>{{formatDescription(i.val)}}</p>
-										</div>
-										<md-menu>
-											<md-button class="md-icon-button" ng-click="dc.showResolveDialog($mdOpenMenu, $event)">
-												<md-icon>menu</md-icon>
-											</md-button>
-
-											<md-menu-content>
-												<md-menu-item>
-													<md-button ng-click="resolveIncident(i.key)">Resolve</md-button>
-												</md-menu-item>
-												<md-menu-item>
-													<md-button  ng-click="forgetHost(i.val.host)">Forget Host</md-button>
-												</md-menu-item>
-											</md-menu-content>
-										</md-menu>
-									</md-list-item>
-								</div>
-							</md-list>
-						</div>
-						
+				<div layout="row">
+					<div style="padding-left: 2%; padding-right: 2%">
+						<md-card class="md-whiteframe-z2">
+							<md-card-content>
+								<h2 align="center">Stats</h2>
+								<md-card ng-repeat="(key, value) in stats">
+									<md-card-content style="white-space: nowrap"> 
+										<h5 align="center">{{key}}</h5>
+										<p align="center">
+										{{value}}
+										</p>
+										<json-formatter ng-if="byStats[key]" align="left" class="json-formatter" json="byStats[key]">
+									</md-card-content>
+								</md-card>
+							</md-card-content>
+						</md-card>
 					</div>
-				</md-tab>
+					<div layout="column" layout-fill>
+						<md-list>
+							<div style="padding-left: 2%; padding-right: 5%; padding-bottom: 10px;" ng-repeat="i in incidents">
+								<md-list-item   class="md-2-line md-whiteframe-z3"  layout layout-align="center center" style="border-style: solid; border-color: {{getStatusColor(i.val.status)}}">
+									<div class="md-list-item-text" style="padding: 12px;">
+										<h3 style="" >{{getStatusCode(i.val.status)}}</h3>
+										<p>{{formatDescription(i.val)}}</p>
+									</div>
+									<md-menu>
+										<md-button class="md-icon-button" ng-click="dc.showResolveDialog($mdOpenMenu, $event)">
+											<md-icon>menu</md-icon>
+										</md-button>
+
+										<md-menu-content>
+											<md-menu-item>
+												<md-button ng-click="resolveIncident(i.key)">Resolve</md-button>
+											</md-menu-item>
+											<md-menu-item>
+												<md-button  ng-click="forgetHost(i.val.host)">Forget Host</md-button>
+											</md-menu-item>
+										</md-menu-content>
+									</md-menu>
+								</md-list-item>
+							</div>
+						</md-list>
+					</div>
+				</div>
 			</div>
 			<md-tab label="policy" md-on-select="r.updateSelected(1)">
 				<div ng-controller="PolicyController as pc">
