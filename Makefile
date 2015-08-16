@@ -1,6 +1,7 @@
 dir = $(shell pwd)
 install:
 	- go get github.com/constabulary/gb/...
+	- go get -u github.com/jteeuwen/go-bindata/...
 	- export PATH=$PATH:$GOPATH/bin
 
 test:
