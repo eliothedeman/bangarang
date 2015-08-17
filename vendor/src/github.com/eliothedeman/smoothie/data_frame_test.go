@@ -10,6 +10,30 @@ func init() {
 	log.SetFlags(log.Lshortfile)
 }
 
+func TestCat(t *testing.T) {
+	one := NewDataFrame(100)
+	for i := 0; i < 100; i++ {
+		one.Push(float64(i))
+	}
+	two := NewDataFrame(100)
+	for i := 0; i < 100; i++ {
+		two.Push(float64(i))
+	}
+
+	three := one.Cat(two)
+
+	if three.Len() != 200 {
+		t.Fatal()
+	}
+
+	for i := 0; i < 200; i++ {
+		if int(three.Index(i)) != i%100 {
+			t.Fatal(three.Index(i), i%100)
+		}
+	}
+
+}
+
 func TestDataFrameInsert(t *testing.T) {
 	df := NewDataFrame(100)
 

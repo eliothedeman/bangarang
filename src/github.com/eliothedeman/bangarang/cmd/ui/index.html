@@ -100,7 +100,7 @@
 			<md-tab label="policy" md-on-select="r.updateSelected(1)">
 				<div ng-controller="PolicyController as pc">
 					<md-tabs md-center-tabs md-dynamic-height md-border-bottom md-selected="selected" ng-init="getSelected()">
-						<md-tab label="All" md-on-select="updateSelected(0)">
+						<md-tab label="All" md-on-select="updateSelected(0);fetchPolicies()">
 							<md-list>
 								<md-card ng-repeat="(name, pol) in policies">
 									<md-card-content>
@@ -237,6 +237,10 @@
 												<input type="number" min="1" max="99999999" ng-model="cOcc">
 											</md-input-container>
 											<md-input-container>
+												<label>Window Size</label>
+												<input type="number" min="1" max="100000" ng-model="cWinSize">
+											</md-input-container>
+											<md-input-container>
 												<label>{{cEsc ? cEsc : "Escalation"}}</label>
 												<md-select md-on-open="loadEscalationNames()" ng-model="cEsc">
 													<md-option ng-value="name" ng-repeat="name in escalation_names">
@@ -244,6 +248,13 @@
 													</md-option>
 												</md-select>
 											</md-input-container>
+											<div>
+												<md-radio-group ng-model="cSpec" layout layout-sm="row">
+													<md-radio-button aria-label="nope" ng-repeat="op in specialOps" ng-value="op.name" ng-disabled="op.disabled"> 
+													<span class="radioValue">{{op.display}}</span>
+													</md-radio-button>
+												</md-radio-group>
+											</div>
 										</div>
 										<md-chips ng-model="critOpChips">
 											<md-chip-template>
@@ -273,6 +284,10 @@
 												<input type="number" min="1" max="99999999" ng-model="wOcc">
 											</md-input-container>
 											<md-input-container>
+												<label>Window Size</label>
+												<input type="number" min="1" max="100000" ng-model="wWinSize">
+											</md-input-container>
+											<md-input-container>
 												<label>{{wEsc ? wEsc : "Escalation"}}</label>
 												<md-select md-on-open="loadEscalationNames()" ng-model="wEsc">
 													<md-option ng-value="name" ng-repeat="name in escalation_names">
@@ -280,6 +295,13 @@
 													</md-option>
 												</md-select>
 											</md-input-container>
+											<div>
+												<md-radio-group ng-model="wSpec" layout layout-sm="row">
+													<md-radio-button aria-label="nope" ng-repeat="op in specialOps" ng-value="op.name" ng-disabled="op.disabled"> 
+													<span class="radioValue">{{op.display}}</span>
+													</md-radio-button>
+												</md-radio-group>
+											</div>
 										</div>
 										<md-chips ng-model="warnOpChips">
 											<md-chip-template>
@@ -399,9 +421,7 @@
 					</md-card>
 				</div>
 			</md-tab>
-			
 		</md-tabs>
 	</div>
-	
 </body>
 </html>

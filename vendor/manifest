@@ -39,12 +39,6 @@
 			"branch": "master"
 		},
 		{
-			"importpath": "github.com/eliothedeman/smoothie",
-			"repository": "https://github.com/eliothedeman/smoothie",
-			"revision": "7f13f7f4dcb523abdfe1f2c65a0739655843a747",
-			"branch": "master"
-		},
-		{
 			"importpath": "github.com/gogo/protobuf",
 			"repository": "https://github.com/gogo/protobuf",
 			"revision": "05b9dd05e2149cf01fd645b3dc550542556ddea7",
@@ -210,6 +204,12 @@
 			"revision": "b7cdfbb5c4037753713f496c30ecc6bbe02ebd2c",
 			"branch": "master",
 			"path": "/tiff"
+		},
+		{
+			"importpath": "github.com/eliothedeman/smoothie",
+			"repository": "https://github.com/eliothedeman/smoothie",
+			"revision": "655f50e31c05ce842375f9cb73fe572b9ca53635",
+			"branch": "master"
 		}
 	]
 }
