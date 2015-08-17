@@ -182,7 +182,7 @@ func (d *DataFrame) Mutli(df *DataFrame) *DataFrame {
 }
 
 // Divide a dataframe by another dataframe
-func (d *DataFrame) Dev(df *DataFrame) *DataFrame {
+func (d *DataFrame) Div(df *DataFrame) *DataFrame {
 	if d.Len() != df.Len() {
 		log.Panicf("Add: len %d and %d don't match", d.Len(), df.Len())
 	}
@@ -194,6 +194,22 @@ func (d *DataFrame) Dev(df *DataFrame) *DataFrame {
 	}
 
 	return newDf
+}
+
+// return a dataframe filled with the derivative values of this dataframe
+func (d *DataFrame) Derivative() *DataFrame {
+	// this will have n-1 length because the first value will always be 0
+	n := NewDataFrame(d.Len() - 1)
+	d.ForEach(func(v float64, i int) {
+		// skip the first value
+		if i == 0 {
+			return
+		}
+
+		n.Insert(i-1, d.Index(i)-d.Index(i-1))
+	})
+
+	return n
 }
 
 // Copy return a copy of the dataframe
@@ -246,7 +262,8 @@ func (d *DataFrame) Grow(amount int) *DataFrame {
 // Shrink a dataframe by a given amount
 func (d *DataFrame) Shrink(amount int) *DataFrame {
 	if amount > d.Len() {
-		panic(fmt.Sprintf("DataFrame: unable to shrink frame. amount: %d length: %d", d.Len(), amount))
+		d.data = []float64{}
+		return d
 	}
 
 	newData := make([]float64, d.Len()-amount)
@@ -302,6 +319,27 @@ func (d *DataFrame) Sum() float64 {
 	}
 
 	return t
+}
+
+func (d *DataFrame) ForEach(f func(data float64, index int)) {
+	for i := 0; i < d.Len(); i++ {
+		f(d.Index(i), i)
+	}
+}
+
+// Concatinate two dataframes
+func (d *DataFrame) Cat(c *DataFrame) *DataFrame {
+	n := NewDataFrame(c.Len() + d.Len())
+
+	// insert d's values
+	for i := 0; i < d.Len(); i++ {
+		n.Push(d.Index(i))
+	}
+
+	for i := 0; i < c.Len(); i++ {
+		n.Push(c.Index(i))
+	}
+	return n
 }
 
 // Return a sorted version of the dataframe

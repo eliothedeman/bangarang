@@ -1,6 +1,27 @@
 function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 	$scope.np = {};
 	$scope.compOps = ["greater", "less", "exactly"];
+	$scope.specialOps = [
+		{	display: "Simple",
+			name: "simple"
+		},
+		{
+			display: "Derivative",
+			name: "derivative"
+		},
+		{
+			display: "Standard Deviation",
+			name: "std_dev"
+		},
+		{
+			display: "Holt Winters",
+			name: "holt_winters",
+			disabled: true
+		}
+	]
+
+	$scope.cSpec = "simple"
+	$scope.wSpec = "simple"
 
 	$scope.loadEscalationNames = function() {
 		$scope.escalation_names = [];
@@ -56,6 +77,9 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 			for (var i = 0; i < $scope.critOpChips.length; i++) {
 				p.crit[$scope.critOpChips[i].key] = $scope.critOpChips[i].val;
 			}
+
+			p.crit[$scope.cSpec] = true;
+			p.crit["window_size"] = $scope.cWinSize;
 		}
 		if ($scope.warnOpChips.length > 0 && $scope.wEsc) {
 			p.warn = {
@@ -65,6 +89,8 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 			for (var i = 0; i < $scope.warnOpChips.length; i++) {
 				p.warn[$scope.warnOpChips[i].key] = $scope.warnOpChips[i].val;
 			}
+			p.warn[$scope.wSpec] = true;
+			p.warn["window_size"] = $scope.wWinSize;
 		}
 		return p;
 	}
@@ -122,6 +148,10 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 		$scope.cOpKey = "";
 		$scope.wOpVal = "";
 		$scope.wOpKey = "";
+		$scope.cSpec = "simple"
+		$scope.wSpec = "simple"
+		$scope.cWinSize = 100;
+		$scope.wWinSize = 100;
 		$scope.np.name = "";
 		$scope.wOcc = 1;
 		$scope.cOcc = 1;

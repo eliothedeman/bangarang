@@ -21,7 +21,10 @@ type Condition struct {
 	Greater       *float64     `json:"greater"`
 	Less          *float64     `json:"less"`
 	Exactly       *float64     `json:"exactly"`
-	StdDev        *StdDev      `json:"std_dev"`
+	StdDev        bool         `json:"std_dev"`
+	Derivative    bool         `json:"derivative"`
+	HoltWinters   bool         `json:"holt_winters"`
+	Simple        bool         `json:"simple"`
 	Escalation    string       `json:"escalation"`
 	Occurences    int          `json:"occurences"`
 	WindowSize    int          `json:"window_size"`
@@ -37,12 +40,6 @@ type Condition struct {
 // Config for checks based on the aggrigation of data over a time window, instead of individual data points
 type Aggregation struct {
 	WindowLength int `json:"window_length"`
-}
-
-// Config for checks based on standard deviation
-type StdDev struct {
-	Sigma      float64 `json:"sigma"`
-	WindowSize *int    `json:"window_size"`
 }
 
 type aggregator struct {
@@ -75,6 +72,7 @@ func (g grouper) genIndexName(e *event.Event) string {
 type eventTracker struct {
 	df         *smoothie.DataFrame
 	states     *smoothie.DataFrame
+	count      int
 	occurences int
 
 	// optional
@@ -85,7 +83,7 @@ type satisfier func(e *event.Event) bool
 
 func (c *Condition) newTracker() *eventTracker {
 	et := &eventTracker{
-		df:     smoothie.NewDataFrame(c.WindowSize),
+		df:     smoothie.NewDataFrameFromSlice(make([]float64, c.WindowSize)),
 		states: smoothie.NewDataFrameFromSlice(make([]float64, STATUS_SIZE)),
 	}
 
@@ -134,6 +132,19 @@ func SimpleTrack(c *Condition, e *event.Event) bool {
 	return c.OccurencesHit(e)
 }
 
+// check to see if this condition should be treated as simple
+func (c *Condition) isSimple() bool {
+	if c.Simple {
+		return true
+	}
+
+	// if nothing is set, default to simple
+	if !(c.StdDev && c.HoltWinters && c.Derivative) {
+		return true
+	}
+	return false
+}
+
 // start tracking an event, and returns if the event has hit it's occurence settings
 func (c *Condition) TrackEvent(e *event.Event) bool {
 	return c.trackFunc(c, e)
@@ -147,7 +158,7 @@ func (c *Condition) StateChanged(e *event.Event) bool {
 	return changed
 }
 
-// check to see if an event has it the occurences level
+// check to see if an event has hit the occurences level
 func (c *Condition) OccurencesHit(e *event.Event) bool {
 	occ := 0
 
@@ -182,37 +193,117 @@ func (c *Condition) Satisfies(e *event.Event) bool {
 func (c *Condition) compileChecks() []satisfier {
 	s := []satisfier{}
 
-	if c.Greater != nil {
-		logrus.Info("Adding greater than check:", *c.Greater)
-		s = append(s, func(e *event.Event) bool {
-			return e.Metric > *c.Greater
-		})
-	}
-	if c.Less != nil {
-		logrus.Info("Adding less than check:", *c.Less)
-		s = append(s, func(e *event.Event) bool {
-			return e.Metric < *c.Less
-		})
-	}
-	if c.Exactly != nil {
-		logrus.Info("Adding exactly check:", *c.Exactly)
-		s = append(s, func(e *event.Event) bool {
-			return e.Metric == *c.Exactly
-		})
-	}
+	// if any of the special checks are included, only one check can be implemented per condition
+	if !c.isSimple() {
+		if c.StdDev {
+			sigma := math.NaN()
+			// get the sigma value
+			if c.Greater != nil {
+				sigma = *c.Greater
+			} else {
+				// default to 5 sigma
+				sigma = 5
+			}
 
-	if c.StdDev != nil {
-		logrus.Infof("Adding a standard deviation check: %+v", *c.StdDev)
-		s = append(s, func(e *event.Event) bool {
-			met := false
-			c.DoOnTracker(e, func(t *eventTracker) {
-				avg := t.df.Avg()
-				if math.Abs(e.Metric-avg) > t.df.StdDev()*c.StdDev.Sigma {
-					met = true
-				}
+			logrus.Infof("Adding standard deviation check of %f sigma", sigma)
+			s = append(s, func(e *event.Event) bool {
+				met := false
+				c.DoOnTracker(e, func(t *eventTracker) {
+					t.count++
+
+					// if the count is greater than 1/4 the window size, start checking
+					if t.count > t.df.Len()/4 {
+						// if the count is greater than the window size, use the whole df
+						if t.count >= t.df.Len() {
+							met = math.Abs(e.Metric-t.df.Avg()) > (sigma * t.df.StdDev())
+						} else {
+
+							// take a sublslice of populated values
+							sub := t.df.Slice(t.df.Len()-t.count, t.df.Len()-1)
+							met = math.Abs(e.Metric-sub.Avg()) > (sigma * t.df.StdDev())
+							return
+						}
+						met = math.Abs(e.Metric-t.df.Avg()) > (sigma * t.df.StdDev())
+					}
+				})
+				return met
 			})
-			return met
-		})
+			return s
+		}
+
+		if c.Derivative {
+			check := math.NaN()
+			var kind uint8
+			// get the check value
+			if c.Greater != nil {
+				kind = 1
+				check = *c.Greater
+			} else if c.Less != nil {
+				kind = 2
+				check = *c.Less
+			} else if c.Exactly != nil {
+				kind = 3
+				check = *c.Exactly
+			} else {
+				logrus.Error("No derivitive type supplied. >, <, == required")
+			}
+
+			if kind != 0 {
+				logrus.Infof("Adding derivative check of %f", check)
+				s = append(s, func(e *event.Event) bool {
+					var met bool
+					c.DoOnTracker(e, func(t *eventTracker) {
+						t.count++
+
+						// we need to have seen at least 2 values
+						if t.count < 2 {
+							met = false
+							return
+						}
+
+						diff := e.Metric - t.df.Index(t.df.Len()-2)
+						switch kind {
+						case 1:
+							met = diff > check
+							return
+						case 2:
+							met = diff < check
+							return
+
+						case 3:
+							met = diff == check
+							return
+						}
+					})
+					return met
+				})
+			}
+
+			return s
+		}
+
+	} else {
+		if c.Greater != nil {
+			logrus.Info("Adding greater than check:", *c.Greater)
+			gt := *c.Greater
+			s = append(s, func(e *event.Event) bool {
+				return e.Metric > gt
+			})
+		}
+		if c.Less != nil {
+			logrus.Info("Adding less than check:", *c.Less)
+			lt := *c.Less
+			s = append(s, func(e *event.Event) bool {
+				return e.Metric < lt
+			})
+		}
+		if c.Exactly != nil {
+			logrus.Info("Adding exactly check:", *c.Exactly)
+			ex := *c.Exactly
+			s = append(s, func(e *event.Event) bool {
+				return e.Metric == ex
+			})
+		}
 	}
 
 	// if we are using aggregation, replace all with the aggregation form

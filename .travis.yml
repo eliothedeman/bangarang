@@ -5,4 +5,4 @@ go:
 script:
     - make install
     - make generate
-    - make test
+    - export GOPATH=$(dir):$(dir)/vendor; go test -p=1 github.com/eliothedeman/bangarang/...

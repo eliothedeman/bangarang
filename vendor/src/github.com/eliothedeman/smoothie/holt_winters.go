@@ -25,6 +25,11 @@ func (d *DataFrame) DoubleExponentialSmooth(sf, tf float64) *DataFrame {
 	return smoothingScratch
 }
 
+// Predict n data points in the future and return them as a dataframe
+func (d *DataFrame) Predict(n int) *DataFrame {
+	return d.Copy()
+}
+
 func (d *DataFrame) doubleSmoothPoint(i int, sf, tf float64, s, b *DataFrame) float64 {
 	if i == 1 {
 		return d.Index(1)
