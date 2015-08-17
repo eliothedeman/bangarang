@@ -2,7 +2,7 @@ dir = $(shell pwd)
 install:
 	- go get github.com/constabulary/gb/...
 	- go get -u github.com/jteeuwen/go-bindata/...
-    - go get -u github.com/pquerna/ffjson
+	- go get -u github.com/pquerna/ffjson
 	- export PATH=$PATH:$HOME/gopath/bin
 
 test:
