@@ -139,7 +139,7 @@ func (c *Condition) isSimple() bool {
 	}
 
 	// if nothing is set, default to simple
-	if !(c.StdDev && c.HoltWinters && c.Derivative) {
+	if !(c.StdDev || c.HoltWinters || c.Derivative) {
 		return true
 	}
 	return false
