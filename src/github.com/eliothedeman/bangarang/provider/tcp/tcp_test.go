@@ -60,6 +60,9 @@ func newTestEvent() *event.Event {
 // }
 
 func TestSendSingle(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping because of short test")
+	}
 	p, port := newTestTCP()
 
 	dst := make(chan *event.Event)
@@ -112,6 +115,9 @@ func TestSendSingle(t *testing.T) {
 }
 
 func TestMany(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping because of short test")
+	}
 	p, port := newTestTCP()
 
 	dst := make(chan *event.Event, 100)

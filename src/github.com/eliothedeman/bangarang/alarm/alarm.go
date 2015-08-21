@@ -21,6 +21,7 @@ type Collection struct {
 	raw  map[string][]json.RawMessage
 }
 
+// Collection holds a map of strings to alarms
 func (c *Collection) Collection() map[string][]Alarm {
 	if c.Coll == nil {
 		c.Coll = map[string][]Alarm{}
@@ -28,6 +29,7 @@ func (c *Collection) Collection() map[string][]Alarm {
 	return c.Coll
 }
 
+// AddRaw map's a raw escalation to it's name
 func (c *Collection) AddRaw(name string, raw []json.RawMessage) {
 	if c.raw == nil {
 		c.raw = make(map[string][]json.RawMessage)
@@ -35,14 +37,17 @@ func (c *Collection) AddRaw(name string, raw []json.RawMessage) {
 	c.raw[name] = raw
 }
 
+// RemoveRaw removes a raw value from teh collection if it exists
 func (c *Collection) RemoveRaw(name string) {
 	delete(c.raw, name)
 }
 
+// MarshalJSON encode the collection as json
 func (c *Collection) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&c.raw)
 }
 
+// UnmarshalRaw Runs unmarshaling logic over the raw values stored in the collection
 func (c *Collection) UnmarshalRaw() error {
 	name := &struct {
 		Type string `json:"type"`
