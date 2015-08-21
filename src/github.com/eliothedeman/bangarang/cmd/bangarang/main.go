@@ -23,6 +23,7 @@ var (
 	dev      = flag.Bool("dev", false, "puts bangarang in a dev testing mode")
 	version  = flag.Bool("version", false, "display the version of this binary")
 	confType = flag.String("conf-type", "db", `type of configuration used ["db", "json"]`)
+	apiPort  = flag.Int("api-port", 8081, "port to serve the http api on")
 )
 
 const (
@@ -82,7 +83,7 @@ func main() {
 
 	logrus.Infof("Serving the http api on port %d", 8081)
 	// create and start a new api server
-	apiServer := api.NewServer(ac.APIPort, p)
+	apiServer := api.NewServer(*apiPort, p)
 	go apiServer.Serve()
 
 	handleSigs()
