@@ -106,6 +106,10 @@ function DashboardController($scope, $cookies, $http, $mdDialog) {
 			$scope.stats["Services"] = Object.keys(data.by_service).length
 			$scope.stats["Sub Services"] = Object.keys(data.by_sub_service).length
 		});
+
+		$http.get("api/stats/system").success(function(data) {
+			$scope.stats["Uptime"] = data["uptime"];
+		})
 	}
 
 	$scope.forgetHost = function(hostname) {

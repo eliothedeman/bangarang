@@ -39,6 +39,18 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/cloudfoundry/gosigar",
+			"repository": "https://github.com/cloudfoundry/gosigar",
+			"revision": "3ed7c74352dae6dc00bdc8c74045375352e3ec05",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/eliothedeman/smoothie",
+			"repository": "https://github.com/eliothedeman/smoothie",
+			"revision": "655f50e31c05ce842375f9cb73fe572b9ca53635",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/gogo/protobuf",
 			"repository": "https://github.com/gogo/protobuf",
 			"revision": "05b9dd05e2149cf01fd645b3dc550542556ddea7",
@@ -204,12 +216,6 @@
 			"revision": "b7cdfbb5c4037753713f496c30ecc6bbe02ebd2c",
 			"branch": "master",
 			"path": "/tiff"
-		},
-		{
-			"importpath": "github.com/eliothedeman/smoothie",
-			"repository": "https://github.com/eliothedeman/smoothie",
-			"revision": "655f50e31c05ce842375f9cb73fe572b9ca53635",
-			"branch": "master"
 		}
 	]
 }

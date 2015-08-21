@@ -87,6 +87,7 @@ func NewServer(port int, pipe *pipeline.Pipeline) *Server {
 	}
 
 	s.construct(NewIncident(pipe))
+	s.construct(NewSystemStats(pipe))
 	s.construct(NewConfigHash(pipe))
 	s.construct(NewEventStats(pipe))
 	s.construct(NewKnownServices(pipe))
