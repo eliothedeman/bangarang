@@ -59,14 +59,25 @@ func newTestEvent() *event.Event {
 
 // }
 
+type testPasser struct {
+	in chan event.Event
+}
+
+func (t *testPasser) Pass(e event.Event) {
+	t.in <- e
+}
+
 func TestSendSingle(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping because of short test")
 	}
 	p, port := newTestTCP()
 
-	dst := make(chan *event.Event)
-	p.Start(dst)
+	tp := &testPasser{
+		in: make(chan event.Event),
+	}
+
+	p.Start(tp)
 
 	conn, err := net.Dial("tcp", fmt.Sprintf("localhost:%d", port))
 	if err != nil {
@@ -96,7 +107,7 @@ func TestSendSingle(t *testing.T) {
 		t.Fail()
 	}
 
-	ne := <-dst
+	ne := <-tp.in
 
 	if ne.Host != e.Host {
 		t.Fatal(ne.Host, e.Host)
@@ -119,9 +130,11 @@ func TestMany(t *testing.T) {
 		t.Skip("Skipping because of short test")
 	}
 	p, port := newTestTCP()
+	tp := &testPasser{
+		in: make(chan event.Event),
+	}
 
-	dst := make(chan *event.Event, 100)
-	p.Start(dst)
+	p.Start(tp)
 
 	conn, err := net.Dial("tcp", fmt.Sprintf("localhost:%d", port))
 	if err != nil {
@@ -154,7 +167,6 @@ func TestMany(t *testing.T) {
 	}
 
 	for i := 0; i < 10000; i++ {
-		<-dst
-
+		<-tp.in
 	}
 }

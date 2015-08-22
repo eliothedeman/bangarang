@@ -122,9 +122,14 @@ func GetEventProvider(name string) EventProvider {
 	return f()
 }
 
+// Passer provides a method for passing an event down a step in the pipeline
+type Passer interface {
+	Pass(e event.Event)
+}
+
 // Provides an interface for injesting events from an outside service
 type EventProvider interface {
-	Start(dst chan *event.Event)
+	Start(Passer)
 	ConfigStruct() interface{}
 	Init(interface{}) error
 }

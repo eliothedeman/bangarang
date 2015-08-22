@@ -29,7 +29,12 @@ type Pipeline struct {
 	tracker            *Tracker
 	pauseCache         map[*event.Event]struct{}
 	unpauseChan        chan struct{}
-	in                 chan *event.Event
+	in                 chan event.Event
+}
+
+// Passer provides a method for passing an event down a step in the pipeline
+type Passer interface {
+	Pass(e event.Event)
 }
 
 func NewPipeline(conf *config.AppConfig) *Pipeline {
@@ -37,7 +42,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		encodingPool:       event.NewEncodingPool(event.EncoderFactories[conf.Encoding], event.DecoderFactories[conf.Encoding], runtime.NumCPU()),
 		keepAliveAge:       conf.KeepAliveAge,
 		keepAliveCheckTime: 10 * time.Second,
-		in:                 make(chan *event.Event),
+		in:                 make(chan event.Event),
 		unpauseChan:        make(chan struct{}),
 		tracker:            NewTracker(),
 		escalations:        &alarm.Collection{},
@@ -50,6 +55,10 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 	go p.checkExpired()
 
 	return p
+}
+
+func (p *Pipeline) Pass(e event.Event) {
+	p.in <- e
 }
 
 // refresh load all config params that don't require a restart

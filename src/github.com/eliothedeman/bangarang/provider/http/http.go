@@ -80,7 +80,7 @@ func (t *HTTPProvider) ConfigStruct() interface{} {
 }
 
 // start accepting connections and consume each of them as they come in
-func (h *HTTPProvider) Start(dst chan *event.Event) {
+func (h *HTTPProvider) Start(p provider.Passer) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Recovered in f", r)
@@ -111,7 +111,7 @@ func (h *HTTPProvider) Start(dst chan *event.Event) {
 			std_http.Error(w, err.Error(), std_http.StatusInternalServerError)
 			return
 		}
-		dst <- e
+		p.Pass(*e)
 		logrus.Debug("Done processing http event")
 	})
 
