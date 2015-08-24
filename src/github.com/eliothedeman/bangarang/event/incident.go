@@ -18,6 +18,7 @@ type Incident struct {
 	Escalation  string `json:"escalation" msg:"escalation"`
 	Description string `json:"description" msg:"description"`
 	Policy      string `json:"policy" msg:"policy"`
+	Status      int    `json:"status" "msg:"status"`
 	indexName   []byte
 	Event
 }
@@ -37,19 +38,20 @@ func (i *Incident) GetEvent() *Event {
 }
 
 func (i *Incident) FormatDescription() string {
-	return i.Event.FormatDescription()
+	return fmt.Sprintf("%s on %s is %s. Triggerd by %s", i.Service, i.Host, status(i.Status), i.Policy)
 }
 
-func NewIncident(policy string, escalation string, e *Event) *Incident {
+func NewIncident(policy string, escalation string, status int, e Event) *Incident {
 	in := &Incident{
-		EventName:   []byte(e.IndexName()),
-		Time:        time.Now().Unix(),
-		Active:      true,
-		Policy:      policy,
-		Escalation:  escalation,
-		Description: e.FormatDescription(),
-		Event:       *e,
+		EventName:  []byte(e.IndexName()),
+		Time:       time.Now().Unix(),
+		Active:     true,
+		Status:     status,
+		Policy:     policy,
+		Escalation: escalation,
+		Event:      e,
 	}
+	in.Description = in.FormatDescription()
 
 	return in
 }

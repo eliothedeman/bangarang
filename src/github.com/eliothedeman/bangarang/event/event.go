@@ -1,8 +1,8 @@
 package event
 
-import "fmt"
 import (
 	"strings"
+	"sync"
 )
 
 const (
@@ -21,9 +21,14 @@ type Event struct {
 	Metric     float64           `json:"metric" msg:"metric"`
 	Occurences int               `json:"occurences" msg:"occurences"`
 	Tags       map[string]string `json:"tags" msg:"tags"`
-	Status     int               `json:"status" msg:"status"`
-	IncidentId *int64            `json:"incident,omitempty" msg:"incident_id"`
 	indexName  string
+	Wait       *sync.WaitGroup
+}
+
+func NewEvent() *Event {
+	return &Event{
+		Wait: &sync.WaitGroup{},
+	}
 }
 
 // Get any value on an event as a string
@@ -63,8 +68,4 @@ func status(code int) string {
 	default:
 		return "ok"
 	}
-}
-
-func (e *Event) FormatDescription() string {
-	return fmt.Sprintf("%s! %s.%s on %s is %.2f", status(e.Status), e.Service, e.SubService, e.Host, e.Metric)
 }

@@ -20,7 +20,7 @@ func TestPausePipeline(t *testing.T) {
 	p.unpause()
 
 	// make sure we can still insert events
-	p.in <- &event.Event{}
+	p.in <- event.Event{}
 }
 
 func TestPausePipelineCache(t *testing.T) {
@@ -33,7 +33,7 @@ func TestPausePipelineCache(t *testing.T) {
 	insert := p.in
 	p.pause()
 	for i := 0; i < 100; i++ {
-		insert <- &event.Event{}
+		insert <- event.Event{}
 	}
 
 	p.unpause()

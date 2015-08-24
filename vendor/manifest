@@ -216,6 +216,13 @@
 			"revision": "b7cdfbb5c4037753713f496c30ecc6bbe02ebd2c",
 			"branch": "master",
 			"path": "/tiff"
+		},
+		{
+			"importpath": "golang.org/x/net/context",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "66f0418ca41253f8d1a024eb9754e9441a8e79b9",
+			"branch": "master",
+			"path": "/context"
 		}
 	]
 }

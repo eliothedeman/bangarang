@@ -30,6 +30,49 @@ type Policy struct {
 	Name        string            `json:"name"`
 	r_match     map[string]*regexp.Regexp
 	r_not_match map[string]*regexp.Regexp
+	stop        chan struct{}
+	in          chan *pack
+}
+
+// start the policy listening for events
+func (p *Policy) start() {
+	var in *pack
+	go func() {
+		for {
+			select {
+			case <-p.stop:
+				return
+			case in = <-p.in:
+
+				// process the request
+				if shouldAlert, status := p.ActionCrit(&in.e); shouldAlert {
+					incident := event.NewIncident(p.Name, p.Crit.Escalation, status, *in.e)
+					in.n(incident)
+				} else if shoudlAlert, status := p.ActionWarn(&in.e); shouldAlert {
+					incident := event.NewIncident(p.Name, p.Warn.Escalation, status, *in.e)
+					in.n(incident)
+				}
+				in.e.Wait.Done()
+			}
+		}
+	}()
+}
+
+type pack struct {
+	e *event.Event
+	n func(*event.Incident)
+}
+
+// Process will send exicute the next function if the event satisfies the policy
+func (p *Policy) Process(e *event.Event, next func(*event.Incident)) {
+	p.in <- &pack{
+		e: e,
+		n: next,
+	}
+}
+
+func (p *Policy) Stop() {
+	p.stop <- struct{}{}
 }
 
 // check to see if an event satisfies the policy
@@ -37,13 +80,12 @@ func (p *Policy) Matches(e *event.Event) bool {
 	return p.CheckMatch(e) && p.CheckNotMatch(e)
 }
 
-func (p *Policy) Pass(e event.Event) {
-
-}
-
 // compile the regex patterns for this policy
 func (p *Policy) Compile() {
 	logrus.Infof("Compiling regex maches for %s", p.Name)
+	p.in = make(chan *pack, 10)
+	p.stop = make(chan struct{})
+	p.start()
 
 	if p.r_match == nil {
 		p.r_match = make(map[string]*regexp.Regexp)
@@ -103,24 +145,28 @@ func formatFileName(n string) string {
 }
 
 // return the action to take for a given event
-func (p *Policy) ActionCrit(e *event.Event) string {
+func (p *Policy) ActionCrit(e *event.Event) (bool, int) {
+	status := event.OK
 	if p.Crit != nil {
 		if p.Crit.TrackEvent(e) {
-			e.Status = event.CRITICAL
+			status = event.CRITICAL
 		} else {
-			e.Status = event.OK
+			status = event.OK
 		}
 
 		if p.Crit.StateChanged(e) {
-			return p.Crit.Escalation
+			return true, status
 		}
+
 	}
 
-	e.Status = event.OK
-	return ""
+	status = event.OK
+
+	return false, status
 }
 
-func (p *Policy) ActionWarn(e *event.Event) string {
+func (p *Policy) ActionWarn(e *event.Event) (bool, int) {
+	status := event.OK
 	if p.Warn != nil {
 		if p.Warn.TrackEvent(e) {
 			e.Status = event.WARNING
@@ -128,12 +174,12 @@ func (p *Policy) ActionWarn(e *event.Event) string {
 			e.Status = event.OK
 		}
 		if p.Warn.StateChanged(e) {
-			return p.Warn.Escalation
+			return true
 		}
 	}
 
 	e.Status = event.OK
-	return ""
+	return false
 }
 
 func (p *Policy) CheckNotMatch(e *event.Event) bool {

@@ -29,7 +29,7 @@ func testPipeline(p map[string]*alarm.Policy) (*Pipeline, *test.TestAlert) {
 			},
 		},
 		tracker: NewTracker(),
-		in:      make(chan *event.Event),
+		in:      make(chan event.Event),
 	}
 
 	go pipe.tracker.Start()
@@ -67,11 +67,10 @@ func TestKeepAlive(t *testing.T) {
 	pipe := testPolicy(c, nil, map[string]string{"service": "KeepAlive"}, nil)
 	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
-	e := &event.Event{
-		Host:    "test",
-		Service: "test",
-		Metric:  0.0,
-	}
+	e := event.NewEvent()
+	e.Host = "test"
+	e.Service = "test"
+	e.Metric = 1.0
 
 	p.Process(e)
 
@@ -92,16 +91,15 @@ func TestMatchPolicy(t *testing.T) {
 	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
 	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
-
-	e := &event.Event{
-		Host:    "test",
-		Service: "test",
-		Metric:  1.0,
-	}
+	e := event.NewEvent()
+	e.Host = "test"
+	e.Service = "test"
+	e.Metric = 1.0
 
 	p.Process(e)
+	e.Wait.Wait()
 	if len(ta.Events) == 0 {
-		t.Fail()
+		t.Fatal()
 	}
 	for k, _ := range ta.Events {
 		if k.IndexName() != e.IndexName() {
@@ -143,17 +141,17 @@ func BenchmarkProcessOk(b *testing.B) {
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 
-	e := &event.Event{
-		Host:    "test",
-		Service: "test",
-		Metric:  -1.0,
-	}
+	e := event.NewEvent()
+	e.Host = "test"
+	e.Service = "test"
+	e.Metric = -1.0
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		p.Process(e)
 	}
+	e.Wait.Wait()
 }
 
 func BenchmarkIndex(b *testing.B) {
@@ -162,11 +160,11 @@ func BenchmarkIndex(b *testing.B) {
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 
-	e := &event.Event{
-		Host:    "test",
-		Service: "test",
-		Metric:  -1.0,
-	}
+	e := event.NewEvent()
+
+	e.Host = "test"
+	e.Service = "test"
+	e.Metric = -1.0
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -175,6 +173,7 @@ func BenchmarkIndex(b *testing.B) {
 		p.Process(e)
 	}
 
+	e.Wait.Wait()
 }
 
 func TestProcess(t *testing.T) {

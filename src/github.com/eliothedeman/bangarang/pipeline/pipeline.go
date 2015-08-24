@@ -29,7 +29,7 @@ type Pipeline struct {
 	tracker            *Tracker
 	pauseCache         map[*event.Event]struct{}
 	unpauseChan        chan struct{}
-	in                 chan event.Event
+	in                 chan *event.Event
 }
 
 // Passer provides a method for passing an event down a step in the pipeline
@@ -42,7 +42,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		encodingPool:       event.NewEncodingPool(event.EncoderFactories[conf.Encoding], event.DecoderFactories[conf.Encoding], runtime.NumCPU()),
 		keepAliveAge:       conf.KeepAliveAge,
 		keepAliveCheckTime: 10 * time.Second,
-		in:                 make(chan event.Event),
+		in:                 make(chan *event.Event),
 		unpauseChan:        make(chan struct{}),
 		tracker:            NewTracker(),
 		escalations:        &alarm.Collection{},
@@ -58,7 +58,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 }
 
 func (p *Pipeline) Pass(e event.Event) {
-	p.in <- e
+	p.in <- &e
 }
 
 // refresh load all config params that don't require a restart
@@ -87,11 +87,12 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 	// update to the new config
 	p.config = conf
 	p.unpause()
+
 	// start up all of the providers
 	logrus.Infof("Starting %d providers", len(p.providers.Collection))
 	for name, ep := range p.providers.Collection {
 		logrus.Infof("Starting event provider %s", name)
-		go ep.Start(p.in)
+		go ep.Start(p)
 	}
 }
 
@@ -126,8 +127,8 @@ func (p *Pipeline) pause() {
 
 			// start caching the events as they come in
 			case e = <-old:
-				logrus.Debugf("Caching event during pause %+v", *e)
-				cache[e] = struct{}{}
+				logrus.Debugf("Caching event during pause %+v", e)
+				cache[&e] = struct{}{}
 
 			// when the pause is complete, revert to the old injestion channel
 			case <-done:
@@ -139,7 +140,7 @@ func (p *Pipeline) pause() {
 				p.Start()
 
 				// empty the cache
-				for e, _ = range cache {
+				for e, _ := range cache {
 					logrus.Debugf("Proccessing cached event after unpause %+v", *e)
 					old <- e
 				}
@@ -199,7 +200,7 @@ func (p *Pipeline) Start() {
 
 	// fan in all of the providers and process them
 	go func() {
-		var e *event.Event
+		var e *event
 		for {
 
 			// if the injest channel is nil, stop
@@ -255,26 +256,12 @@ func (p *Pipeline) Process(e *event.Event) int {
 	// track stas for this event
 	p.tracker.TrackEvent(e)
 
+	// process this event on every policy
 	for _, pol := range p.policies {
-		if pol.Matches(e) {
-			act := pol.ActionCrit(e)
-
-			// if there is an action to be taken
-			if act != "" {
-				// create a new incident for this event
-				in := p.NewIncident(pol.Name, act, e)
-				p.ProcessIncident(in)
-			}
-
-			if e.Status == event.OK {
-				act = pol.ActionWarn(e)
-				if act != "" {
-					in := p.NewIncident(pol.Name, act, e)
-					p.ProcessIncident(in)
-				}
-
-			}
-		}
+		pol.Process(*e, func(in *event.Incident) {
+			e.Wait.Add(1)
+			p.ProcessIncident(in)
+		})
 	}
 
 	return e.Status
