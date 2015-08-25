@@ -215,7 +215,6 @@ func TestProcess(t *testing.T) {
 
 	p.Process(e)
 	e.Wait()
-
 	if ta.Events[e] != event.OK {
 		t.Fatal(ta.Events)
 	}
