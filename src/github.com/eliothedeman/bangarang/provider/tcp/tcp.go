@@ -129,7 +129,6 @@ func (t *TCPProvider) consume(conn *net.TCPConn, p event.Passer) {
 			}
 
 			nextEventSize, _ = binary.Uvarint(size_buff)
-			logrus.Debugf("Next event from tcp provider is %d bytes", nextEventSize)
 
 			// read the next event
 			err = readFull(conn, buff[:nextEventSize])
@@ -138,8 +137,6 @@ func (t *TCPProvider) consume(conn *net.TCPConn, p event.Passer) {
 				conn.Close()
 				return
 			}
-
-			logrus.Debugf("New event from tcp provider: %s", string(buff[:nextEventSize]))
 
 			t.pool.Decode(func(d event.Decoder) {
 				e, err = d.Decode(buff[:nextEventSize])

@@ -203,10 +203,7 @@ func (p *Pipeline) Start() {
 			select {
 			// recieve the event
 			case e = <-p.in:
-				// process the event
-				logrus.Debugf("Beginning processing %+v", e)
 				p.Process(e)
-				logrus.Debugf("Done processing %+v", e)
 
 			// handle pause
 			case <-p.pauseChan:
@@ -255,7 +252,8 @@ func (p *Pipeline) Process(e *event.Event) {
 	p.tracker.TrackEvent(e)
 
 	// process this event on every policy
-	for _, pol := range p.policies {
+	var pol *alarm.Policy
+	for _, pol = range p.policies {
 		e.WaitInc()
 		pol.Process(e, func(in *event.Incident) {
 			p.ProcessIncident(in)

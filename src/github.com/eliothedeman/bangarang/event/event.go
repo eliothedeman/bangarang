@@ -19,9 +19,7 @@ type Event struct {
 	Service    string            `json:"service" msg:"service"`
 	SubService string            `json:"sub_service" msg:"sub_service"`
 	Metric     float64           `json:"metric" msg:"metric"`
-	Occurences int               `json:"occurences" msg:"occurences"`
 	Tags       map[string]string `json:"tags" msg:"tags"`
-	Id         uint64
 	indexName  string
 	wait       sync.WaitGroup
 }

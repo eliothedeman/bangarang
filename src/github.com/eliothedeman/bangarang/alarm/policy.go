@@ -160,8 +160,6 @@ func (p *Policy) ActionCrit(e *event.Event) (bool, int) {
 
 	}
 
-	status = event.OK
-
 	return false, status
 }
 

@@ -33,8 +33,6 @@ func (mj *Event) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	fflib.WriteJsonString(buf, string(mj.SubService))
 	buf.WriteString(`,"metric":`)
 	fflib.AppendFloat(buf, float64(mj.Metric), 'g', -1, 64)
-	buf.WriteString(`,"occurences":`)
-	fflib.FormatBits2(buf, uint64(mj.Occurences), 10, mj.Occurences < 0)
 	if mj.Tags == nil {
 		buf.WriteString(`,"tags":null`)
 	} else {
@@ -64,8 +62,6 @@ const (
 
 	ffj_t_Event_Metric
 
-	ffj_t_Event_Occurences
-
 	ffj_t_Event_Tags
 )
 
@@ -76,8 +72,6 @@ var ffj_key_Event_Service = []byte("service")
 var ffj_key_Event_SubService = []byte("sub_service")
 
 var ffj_key_Event_Metric = []byte("metric")
-
-var ffj_key_Event_Occurences = []byte("occurences")
 
 var ffj_key_Event_Tags = []byte("tags")
 
@@ -156,14 +150,6 @@ mainparse:
 						goto mainparse
 					}
 
-				case 'o':
-
-					if bytes.Equal(ffj_key_Event_Occurences, kn) {
-						currentKey = ffj_t_Event_Occurences
-						state = fflib.FFParse_want_colon
-						goto mainparse
-					}
-
 				case 's':
 
 					if bytes.Equal(ffj_key_Event_Service, kn) {
@@ -189,12 +175,6 @@ mainparse:
 
 				if fflib.EqualFoldRight(ffj_key_Event_Tags, kn) {
 					currentKey = ffj_t_Event_Tags
-					state = fflib.FFParse_want_colon
-					goto mainparse
-				}
-
-				if fflib.EqualFoldRight(ffj_key_Event_Occurences, kn) {
-					currentKey = ffj_t_Event_Occurences
 					state = fflib.FFParse_want_colon
 					goto mainparse
 				}
@@ -251,9 +231,6 @@ mainparse:
 
 				case ffj_t_Event_Metric:
 					goto handle_Metric
-
-				case ffj_t_Event_Occurences:
-					goto handle_Occurences
 
 				case ffj_t_Event_Tags:
 					goto handle_Tags
@@ -367,36 +344,6 @@ handle_Metric:
 			}
 
 			uj.Metric = float64(tval)
-
-		}
-	}
-
-	state = fflib.FFParse_after_value
-	goto mainparse
-
-handle_Occurences:
-
-	/* handler: uj.Occurences type=int kind=int */
-
-	{
-		if tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
-			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for int", tok))
-		}
-	}
-
-	{
-
-		if tok == fflib.FFTok_null {
-
-		} else {
-
-			tval, err := fflib.ParseInt(fs.Output.Bytes(), 10, 64)
-
-			if err != nil {
-				return fs.WrapErr(err)
-			}
-
-			uj.Occurences = int(tval)
 
 		}
 	}

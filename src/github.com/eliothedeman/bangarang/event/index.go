@@ -144,7 +144,6 @@ func (i *Index) GetIncident(id []byte) *Incident {
 	})
 
 	if err != nil {
-		logrus.Debug(err)
 		return nil
 	}
 

@@ -142,23 +142,31 @@ func TestOccurences(t *testing.T) {
 	}
 }
 
+func genEventSlice(size int) []*event.Event {
+	e := make([]*event.Event, size)
+	for i := range e {
+		e[i] = event.NewEvent()
+	}
+	return e
+
+}
+
 func BenchmarkProcessOk(b *testing.B) {
-	c := testCondition(test_f(0), nil, nil, 0)
+	c := testCondition(test_f(10), nil, nil, 0)
 	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
-
-	e := event.NewEvent()
-	e.Host = "test"
-	e.Service = "test"
-	e.Metric = -1.0
+	e := genEventSlice(b.N)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		p.Process(e)
+		p.Pass(e[i])
 	}
-	e.Wait()
+	for i := 0; i < b.N; i++ {
+		e[i].Wait()
+	}
+
 }
 
 func BenchmarkIndex(b *testing.B) {
