@@ -123,7 +123,7 @@ func TestOccurences(t *testing.T) {
 	e.Service = "test"
 	e.Metric = 1.0
 
-	p.Process(e)
+	p.Pass(e)
 	e.Wait()
 
 	if len(ta.Events) != 0 {
@@ -134,10 +134,11 @@ func TestOccurences(t *testing.T) {
 	e.Service = "test"
 	e.Metric = 1.0
 
+	p.Pass(e)
 	e.Wait()
 
 	if len(ta.Events) != 1 {
-		t.Error("occrences not hit")
+		t.Error("occrences not hit", ta.Events)
 	}
 }
 
@@ -196,7 +197,7 @@ func TestProcess(t *testing.T) {
 	e.Wait()
 
 	if len(ta.Events) != 1 {
-		t.Fail()
+		t.Fatal(ta.Events)
 	}
 
 	e = event.NewEvent()
@@ -207,8 +208,8 @@ func TestProcess(t *testing.T) {
 	p.Process(e)
 	e.Wait()
 
-	if len(ta.Events) != 0 {
-		t.Fail()
+	if ta.Events[e] != event.OK {
+		t.Fatal(ta.Events)
 	}
 
 }
@@ -233,6 +234,7 @@ func TestProcessDedupe(t *testing.T) {
 
 	for i := 1; i < len(events); i++ {
 		p.Process(events[i])
+		events[i].Wait()
 	}
 
 	if len(ta.Events) != 1 {

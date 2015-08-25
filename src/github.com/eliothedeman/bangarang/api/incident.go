@@ -65,7 +65,6 @@ func (i *Incident) Delete(w http.ResponseWriter, r *http.Request) {
 	// if an incident with this id exists, set it's status to ok and send it back through the pipeline
 	if in != nil {
 		in.Status = event.OK
-		in.Event.Status = event.OK
 		in.Description = ""
 		i.pipeline.ProcessIncident(in)
 	}

@@ -13,10 +13,15 @@ import (
 	"github.com/eliothedeman/bangarang/provider"
 )
 
+func setup() {
+	event.INDEX_FILE_NAME = fmt.Sprintf("/tmp/bangarang-index-%d.db", num)
+}
+
 var num = 1000
 
 func newTestTCP() (provider.EventProvider, int) {
 	num += 1
+	setup()
 	p := NewTCPProvider()
 	conf := p.ConfigStruct().(*TCPConfig)
 	listen := fmt.Sprintf("0.0.0.0:%d", 9099+num)
@@ -60,10 +65,10 @@ func newTestEvent() *event.Event {
 // }
 
 type testPasser struct {
-	in chan event.Event
+	in chan *event.Event
 }
 
-func (t *testPasser) Pass(e event.Event) {
+func (t *testPasser) Pass(e *event.Event) {
 	t.in <- e
 }
 
@@ -74,7 +79,7 @@ func TestSendSingle(t *testing.T) {
 	p, port := newTestTCP()
 
 	tp := &testPasser{
-		in: make(chan event.Event),
+		in: make(chan *event.Event),
 	}
 
 	p.Start(tp)
@@ -131,7 +136,7 @@ func TestMany(t *testing.T) {
 	}
 	p, port := newTestTCP()
 	tp := &testPasser{
-		in: make(chan event.Event),
+		in: make(chan *event.Event),
 	}
 
 	p.Start(tp)
@@ -141,30 +146,33 @@ func TestMany(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// send 10000 events
-	for i := 0; i < 10000; i++ {
-		e := newTestEvent()
-		buff, err := json.Marshal(e)
-		if err != nil {
-			t.Fatal(err)
+	go func() {
+		// send 10000 events
+		for i := 0; i < 10000; i++ {
+			e := newTestEvent()
+			buff, err := json.Marshal(e)
+			if err != nil {
+				t.Fatal(err)
+			}
+			sizeBuff := make([]byte, 8)
+			binary.PutUvarint(sizeBuff, uint64(len(buff)))
+			n, err := conn.Write(sizeBuff)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if n != 8 {
+				t.Fail()
+			}
+			n, err = conn.Write(buff)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if n != len(buff) {
+				t.Fail()
+			}
 		}
-		sizeBuff := make([]byte, 8)
-		binary.PutUvarint(sizeBuff, uint64(len(buff)))
-		n, err := conn.Write(sizeBuff)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if n != 8 {
-			t.Fail()
-		}
-		n, err = conn.Write(buff)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if n != len(buff) {
-			t.Fail()
-		}
-	}
+
+	}()
 
 	for i := 0; i < 10000; i++ {
 		<-tp.in
