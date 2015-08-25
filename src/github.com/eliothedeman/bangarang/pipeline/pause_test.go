@@ -15,28 +15,26 @@ func TestPausePipeline(t *testing.T) {
 	pipe := testPolicy(c, nil, map[string]string{"service": "KeepAlive"}, nil)
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
-	p.Start()
-	p.pause()
-	p.unpause()
+	p.Pause()
+	p.Unpause()
 
 	// make sure we can still insert events
-	p.in <- event.Event{}
+	p.Pass(&event.Event{})
 }
 
 func TestPausePipelineCache(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	c := testCondition(test_f(0), nil, nil, 1)
-	pipe := testPolicy(c, nil, map[string]string{"service": "KeepAlive"}, nil)
+	pipe := testPolicy(c, nil, map[string]string{"service": "wwoo"}, nil)
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 	p.Start()
-	insert := p.in
-	p.pause()
+	p.Pause()
 	for i := 0; i < 100; i++ {
-		insert <- event.Event{}
+		p.Pass(event.NewEvent())
 	}
 
-	p.unpause()
+	p.Unpause()
 }
 
 func TestRefreshPipeline(t *testing.T) {

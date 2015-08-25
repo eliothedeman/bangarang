@@ -18,7 +18,7 @@ var (
 
 const (
 	KEEP_ALIVE_SERVICE_NAME = "KeepAlive"
-	INDEX_FILE_NAME         = "bangarang-index.db"
+	INDEX_FILE_NAME         = ".bangarang-index.db"
 )
 
 type counter struct {

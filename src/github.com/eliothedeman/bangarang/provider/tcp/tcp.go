@@ -61,7 +61,7 @@ func (t *TCPProvider) ConfigStruct() interface{} {
 }
 
 // start accepting connections and consume each of them as they come in
-func (t *TCPProvider) Start(p provider.Passer) {
+func (t *TCPProvider) Start(p event.Passer) {
 
 	logrus.Infof("TCP Provider listening on %s", t.laddr.String())
 	// start listening on that addr
@@ -99,7 +99,7 @@ func readFull(conn *net.TCPConn, buff []byte) error {
 	return nil
 }
 
-func (t *TCPProvider) consume(conn *net.TCPConn, p provider.Passer) {
+func (t *TCPProvider) consume(conn *net.TCPConn, p event.Passer) {
 	buff := make([]byte, 1024*200)
 	var size_buff = make([]byte, 8)
 	var e *event.Event
@@ -148,7 +148,7 @@ func (t *TCPProvider) consume(conn *net.TCPConn, p provider.Passer) {
 			if err != nil {
 				logrus.Error(err, string(buff[:nextEventSize]))
 			} else {
-				p.Pass(*e)
+				p.Pass(e)
 			}
 		}
 	}

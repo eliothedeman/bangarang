@@ -28,13 +28,9 @@ type Pipeline struct {
 	config             *config.AppConfig
 	tracker            *Tracker
 	pauseCache         map[*event.Event]struct{}
+	pauseChan          chan struct{}
 	unpauseChan        chan struct{}
 	in                 chan *event.Event
-}
-
-// Passer provides a method for passing an event down a step in the pipeline
-type Passer interface {
-	Pass(e event.Event)
 }
 
 func NewPipeline(conf *config.AppConfig) *Pipeline {
@@ -44,6 +40,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		keepAliveCheckTime: 10 * time.Second,
 		in:                 make(chan *event.Event),
 		unpauseChan:        make(chan struct{}),
+		pauseChan:          make(chan struct{}),
 		tracker:            NewTracker(),
 		escalations:        &alarm.Collection{},
 		index:              event.NewIndex(),
@@ -57,8 +54,8 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 	return p
 }
 
-func (p *Pipeline) Pass(e event.Event) {
-	p.in <- &e
+func (p *Pipeline) Pass(e *event.Event) {
+	p.in <- e
 }
 
 // refresh load all config params that don't require a restart
@@ -103,54 +100,52 @@ func (p *Pipeline) unpause() {
 	<-p.unpauseChan
 }
 
+func (p *Pipeline) Pause() {
+	log.Println(p.pauseChan)
+	p.pauseChan <- struct{}{}
+}
+
+func (p *Pipeline) Unpause() {
+	p.unpause()
+}
+
 // pause stop processing events
 func (p *Pipeline) pause() {
 	logrus.Info("Pausing pipeline")
 
-	// cache the old injest channel
-	old := p.in
+	// make a map to cache the incomming events
+	cache := make(map[*event.Event]struct{})
+	var e *event.Event
+	for {
+		select {
 
-	// make a temporary channel to catch incomming events
-	p.in = nil
+		// start caching the events as they come in
+		case e = <-p.in:
+			logrus.Debugf("Caching event during pause %+v", e)
+			cache[e] = struct{}{}
 
-	// make a channel to signal the end of the pause
-	done := make(chan struct{})
-	p.unpauseChan = done
+		// when the pause is complete, return control to the caller, and begin sending back
+		// the cached events
+		case <-p.unpauseChan:
 
-	// start a new goroutine to catch the incomming events
-	go func() {
-		// make a map to cache the incomming events
-		cache := make(map[*event.Event]struct{})
-		var e *event.Event
-		for {
-			select {
+			go func() {
 
-			// start caching the events as they come in
-			case e = <-old:
-				logrus.Debugf("Caching event during pause %+v", e)
-				cache[&e] = struct{}{}
-
-			// when the pause is complete, revert to the old injestion channel
-			case <-done:
-
-				// set the cached event channel
-				p.in = old
-
-				// restart the pipeline
-				p.Start()
-
+				logrus.Infof("Emptying pause cache of size %d", len(cache))
 				// empty the cache
 				for e, _ := range cache {
 					logrus.Debugf("Proccessing cached event after unpause %+v", *e)
-					old <- e
+					p.in <- e
 				}
+
+				logrus.Info("Pause cache empty complete")
 
 				// signal the unpause function that we are done with the unpause
 				p.unpauseChan <- struct{}{}
-				return
-			}
+
+			}()
+			return
 		}
-	}()
+	}
 }
 
 func (p *Pipeline) GetTracker() *Tracker {
@@ -173,7 +168,9 @@ func (p *Pipeline) checkExpired() {
 
 		// process every event as if it was an incomming event
 		for _, e := range events {
-			p.Process(e)
+			p.Pass(e)
+			// wait for the event to be done processing before sending the next
+			e.Wait()
 		}
 	}
 }
@@ -184,11 +181,12 @@ func createKeepAliveEvents(times map[string]time.Time) []*event.Event {
 	events := make([]*event.Event, len(times))
 	x := 0
 	for host, t := range times {
-		events[x] = &event.Event{
-			Host:    host,
-			Metric:  n.Sub(t).Seconds(),
-			Service: KEEP_ALIVE_SERVICE_NAME,
-		}
+		e := event.NewEvent()
+		e.Host = host
+		e.Metric = n.Sub(t).Seconds()
+		e.Service = KEEP_ALIVE_SERVICE_NAME
+
+		events[x] = e
 		x += 1
 	}
 
@@ -200,22 +198,22 @@ func (p *Pipeline) Start() {
 
 	// fan in all of the providers and process them
 	go func() {
-		var e *event
+		var e *event.Event
 		for {
-
-			// if the injest channel is nil, stop
-			if p.in == nil {
-				logrus.Info("Pipeline is paused, stopping pipeline")
-				return
-			}
-
+			select {
 			// recieve the event
-			e = <-p.in
+			case e = <-p.in:
+				// process the event
+				logrus.Debugf("Beginning processing %+v", e)
+				p.Process(e)
+				logrus.Debugf("Done processing %+v", e)
 
-			logrus.Debugf("Beginning processing %+v", e)
-			// process the event
-			p.Process(e)
-			logrus.Debugf("Done processing %+v", e)
+			// handle pause
+			case <-p.pauseChan:
+
+				// start the pause, and wait until it has been completed
+				p.pause()
+			}
 		}
 	}()
 }
@@ -246,10 +244,10 @@ func (p *Pipeline) ProcessIncident(in *event.Incident) {
 }
 
 // Run the given event though the pipeline
-func (p *Pipeline) Process(e *event.Event) int {
+func (p *Pipeline) Process(e *event.Event) {
 	if p.globalPolicy != nil {
 		if !p.globalPolicy.CheckMatch(e) || !p.globalPolicy.CheckNotMatch(e) {
-			return event.OK
+			return
 		}
 	}
 
@@ -258,13 +256,12 @@ func (p *Pipeline) Process(e *event.Event) int {
 
 	// process this event on every policy
 	for _, pol := range p.policies {
-		pol.Process(*e, func(in *event.Incident) {
-			e.Wait.Add(1)
+		e.WaitInc()
+		pol.Process(e, func(in *event.Incident) {
 			p.ProcessIncident(in)
 		})
 	}
 
-	return e.Status
 }
 
 func (p *Pipeline) GetIndex() *event.Index {
@@ -292,8 +289,4 @@ func (p *Pipeline) PutIncident(in *event.Incident) {
 		p.index.UpdateIncidentCounter(in.Id + 1)
 	}
 	p.index.PutIncident(in)
-}
-
-func (p *Pipeline) NewIncident(policy string, escalation string, e *event.Event) *event.Incident {
-	return event.NewIncident(policy, escalation, e)
 }

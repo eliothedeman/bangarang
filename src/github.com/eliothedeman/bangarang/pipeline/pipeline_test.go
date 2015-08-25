@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/alarm/test"
 	"github.com/eliothedeman/bangarang/event"
@@ -22,6 +23,8 @@ func testPipeline(p map[string]*alarm.Policy) (*Pipeline, *test.TestAlert) {
 	pipe := &Pipeline{
 		policies:     p,
 		index:        event.NewIndex(),
+		pauseChan:    make(chan struct{}),
+		unpauseChan:  make(chan struct{}),
 		encodingPool: event.NewEncodingPool(event.EncoderFactories["json"], event.DecoderFactories["json"], runtime.NumCPU()),
 		escalations: &alarm.Collection{
 			Coll: map[string][]alarm.Alarm{
@@ -29,10 +32,11 @@ func testPipeline(p map[string]*alarm.Policy) (*Pipeline, *test.TestAlert) {
 			},
 		},
 		tracker: NewTracker(),
-		in:      make(chan event.Event),
+		in:      make(chan *event.Event),
 	}
 
 	go pipe.tracker.Start()
+	pipe.Start()
 	return pipe, ta
 }
 
@@ -63,25 +67,26 @@ func test_f(f float64) *float64 {
 }
 
 func TestKeepAlive(t *testing.T) {
+	logrus.SetLevel(logrus.DebugLevel)
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, map[string]string{"service": "KeepAlive"}, nil)
 	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := event.NewEvent()
-	e.Host = "test"
-	e.Service = "test"
-	e.Metric = 1.0
+	e.Host = "one one"
+	e.Service = "exit"
+	e.Metric = -1
 
-	p.Process(e)
+	p.Pass(e)
+	e.Wait()
 
 	p.keepAliveAge = time.Millisecond * 15
-	p.keepAliveCheckTime = time.Millisecond * 10
+	p.keepAliveCheckTime = time.Millisecond * 50
 	go p.checkExpired()
-
-	time.Sleep(25 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	if len(ta.Events) != 1 {
-		t.Fail()
+		t.Fatal(ta.Events)
 	}
 
 }
@@ -97,7 +102,7 @@ func TestMatchPolicy(t *testing.T) {
 	e.Metric = 1.0
 
 	p.Process(e)
-	e.Wait.Wait()
+	e.Wait()
 	if len(ta.Events) == 0 {
 		t.Fatal()
 	}
@@ -111,26 +116,27 @@ func TestMatchPolicy(t *testing.T) {
 func TestOccurences(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 2)
 	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
-	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
+	e := event.NewEvent()
+	e.Host = "test"
+	e.Service = "test"
+	e.Metric = 1.0
 
-	e := &event.Event{
-		Host:    "test",
-		Service: "test",
-		Metric:  1.0,
-	}
+	p.Process(e)
+	e.Wait()
 
-	if p.Process(e) != event.OK {
+	if len(ta.Events) != 0 {
 		t.Error("occrences hit too early")
 	}
+	e = event.NewEvent()
+	e.Host = "test"
+	e.Service = "test"
+	e.Metric = 1.0
 
-	e = &event.Event{
-		Host:    "test",
-		Service: "test",
-		Metric:  1.0,
-	}
+	e.Wait()
 
-	if p.Process(e) != event.CRITICAL {
+	if len(ta.Events) != 1 {
 		t.Error("occrences not hit")
 	}
 }
@@ -151,7 +157,7 @@ func BenchmarkProcessOk(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		p.Process(e)
 	}
-	e.Wait.Wait()
+	e.Wait()
 }
 
 func BenchmarkIndex(b *testing.B) {
@@ -173,32 +179,35 @@ func BenchmarkIndex(b *testing.B) {
 		p.Process(e)
 	}
 
-	e.Wait.Wait()
+	e.Wait()
 }
 
 func TestProcess(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 0)
 	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
-	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
+	e := event.NewEvent()
+	e.Host = "test"
+	e.Service = "test"
+	e.Metric = 1.0
 
-	e := &event.Event{
-		Host:    "test",
-		Service: "test",
-		Metric:  1.0,
-	}
+	p.Process(e)
+	e.Wait()
 
-	if p.Process(e) != event.CRITICAL {
+	if len(ta.Events) != 1 {
 		t.Fail()
 	}
 
-	e = &event.Event{
-		Host:    "testok",
-		Service: "testok",
-		Metric:  -1.0,
-	}
+	e = event.NewEvent()
+	e.Host = "test"
+	e.Service = "test"
+	e.Metric = -1.0
 
-	if p.Process(e) != event.OK {
+	p.Process(e)
+	e.Wait()
+
+	if len(ta.Events) != 0 {
 		t.Fail()
 	}
 
@@ -213,10 +222,11 @@ func TestProcessDedupe(t *testing.T) {
 	events := make([]*event.Event, 100)
 
 	for i := 0; i < len(events); i++ {
-		events[i] = &event.Event{
-			Host:   "test",
-			Metric: 1.0,
-		}
+		e := event.NewEvent()
+		e.Host = "test"
+		e.Service = "test"
+		e.Metric = 1.0
+		events[i] = e
 	}
 
 	p.Process(events[0])

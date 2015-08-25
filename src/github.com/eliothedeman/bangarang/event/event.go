@@ -21,14 +21,33 @@ type Event struct {
 	Metric     float64           `json:"metric" msg:"metric"`
 	Occurences int               `json:"occurences" msg:"occurences"`
 	Tags       map[string]string `json:"tags" msg:"tags"`
+	Id         uint64
 	indexName  string
-	Wait       *sync.WaitGroup
+	wait       sync.WaitGroup
+}
+
+func (e *Event) Wait() {
+	e.wait.Wait()
+}
+
+// WaitDec decrements the event's waitgroup counter
+func (e *Event) WaitDec() {
+	e.wait.Done()
+}
+
+// WaitAdd increments ot the event's waitgroup counter
+func (e *Event) WaitInc() {
+	e.wait.Add(1)
+}
+
+// Passer provides a method for passing an event down a step in the pipeline
+type Passer interface {
+	Pass(e *Event)
 }
 
 func NewEvent() *Event {
-	return &Event{
-		Wait: &sync.WaitGroup{},
-	}
+	e := &Event{}
+	return e
 }
 
 // Get any value on an event as a string

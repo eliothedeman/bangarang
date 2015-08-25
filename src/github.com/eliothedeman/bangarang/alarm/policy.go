@@ -36,8 +36,8 @@ type Policy struct {
 
 // start the policy listening for events
 func (p *Policy) start() {
-	var in *pack
 	go func() {
+		var in *pack
 		for {
 			select {
 			case <-p.stop:
@@ -45,14 +45,14 @@ func (p *Policy) start() {
 			case in = <-p.in:
 
 				// process the request
-				if shouldAlert, status := p.ActionCrit(&in.e); shouldAlert {
-					incident := event.NewIncident(p.Name, p.Crit.Escalation, status, *in.e)
+				if shouldAlert, status := p.ActionCrit(in.e); shouldAlert {
+					incident := event.NewIncident(p.Name, p.Crit.Escalation, status, in.e)
 					in.n(incident)
-				} else if shoudlAlert, status := p.ActionWarn(&in.e); shouldAlert {
-					incident := event.NewIncident(p.Name, p.Warn.Escalation, status, *in.e)
+				} else if shouldAlert, status := p.ActionWarn(in.e); shouldAlert {
+					incident := event.NewIncident(p.Name, p.Warn.Escalation, status, in.e)
 					in.n(incident)
 				}
-				in.e.Wait.Done()
+				in.e.WaitDec()
 			}
 		}
 	}()
@@ -169,17 +169,16 @@ func (p *Policy) ActionWarn(e *event.Event) (bool, int) {
 	status := event.OK
 	if p.Warn != nil {
 		if p.Warn.TrackEvent(e) {
-			e.Status = event.WARNING
+			status = event.WARNING
 		} else {
-			e.Status = event.OK
+			status = event.OK
 		}
 		if p.Warn.StateChanged(e) {
-			return true
+			return true, status
 		}
 	}
 
-	e.Status = event.OK
-	return false
+	return false, status
 }
 
 func (p *Policy) CheckNotMatch(e *event.Event) bool {

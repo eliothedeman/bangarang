@@ -165,6 +165,7 @@ func (t *Tracker) query(f QueryFunc) {
 }
 
 func (t *Tracker) trackEvent(e *event.Event) {
+	// e.Id = t.total.get()
 
 	// don't track keep alives
 	if e.Service == KEEP_ALIVE_SERVICE_NAME {

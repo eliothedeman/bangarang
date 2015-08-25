@@ -41,7 +41,7 @@ func (i *Incident) FormatDescription() string {
 	return fmt.Sprintf("%s on %s is %s. Triggerd by %s", i.Service, i.Host, status(i.Status), i.Policy)
 }
 
-func NewIncident(policy string, escalation string, status int, e Event) *Incident {
+func NewIncident(policy string, escalation string, status int, e *Event) *Incident {
 	in := &Incident{
 		EventName:  []byte(e.IndexName()),
 		Time:       time.Now().Unix(),
@@ -49,7 +49,7 @@ func NewIncident(policy string, escalation string, status int, e Event) *Inciden
 		Status:     status,
 		Policy:     policy,
 		Escalation: escalation,
-		Event:      e,
+		Event:      *e,
 	}
 	in.Description = in.FormatDescription()
 
