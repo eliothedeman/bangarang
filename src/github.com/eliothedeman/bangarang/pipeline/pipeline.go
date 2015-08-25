@@ -45,6 +45,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		escalations:        &alarm.Collection{},
 		index:              event.NewIndex(),
 	}
+	p.Start()
 
 	p.Refresh(conf)
 
@@ -60,7 +61,7 @@ func (p *Pipeline) Pass(e *event.Event) {
 
 // refresh load all config params that don't require a restart
 func (p *Pipeline) Refresh(conf *config.AppConfig) {
-	p.pause()
+	p.Pause()
 
 	// if the config has changed at all, refresh the index
 	if p.config == nil || string(conf.Hash) != string(p.config.Hash) {
@@ -83,7 +84,7 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 
 	// update to the new config
 	p.config = conf
-	p.unpause()
+	p.Unpause()
 
 	// start up all of the providers
 	logrus.Infof("Starting %d providers", len(p.providers.Collection))
@@ -101,7 +102,6 @@ func (p *Pipeline) unpause() {
 }
 
 func (p *Pipeline) Pause() {
-	log.Println(p.pauseChan)
 	p.pauseChan <- struct{}{}
 }
 
