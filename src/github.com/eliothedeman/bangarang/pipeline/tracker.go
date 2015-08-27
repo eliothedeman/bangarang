@@ -15,12 +15,21 @@ var (
 // Provides stat tracking for events
 type Tracker struct {
 	inChan      chan *event.Event
+	started     atomic.Value
 	queryChan   chan QueryFunc
 	total       *counter
 	hosts       map[string]*counter
 	hostTimes   map[string]time.Time
 	services    map[string]*counter
 	subServices map[string]*counter
+}
+
+func (t *Tracker) Started() bool {
+	if t.started.Load() == nil {
+		return false
+	} else {
+		return t.started.Load().(bool)
+	}
 }
 
 // create and return a new *Tracker
@@ -132,6 +141,7 @@ type QueryFunc func(t *Tracker)
 
 // Start the tracker. This should be done in it's own goroutine
 func (t *Tracker) Start() {
+	t.started.Store(true)
 	logrus.Info("Starting event tracker")
 	var e *event.Event
 	var f QueryFunc

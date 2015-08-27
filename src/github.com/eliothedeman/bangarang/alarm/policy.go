@@ -44,15 +44,20 @@ func (p *Policy) start() {
 				return
 			case in = <-p.in:
 
-				// process the request
-				if shouldAlert, status := p.ActionCrit(in.e); shouldAlert {
-					incident := event.NewIncident(p.Name, p.Crit.Escalation, status, in.e)
-					in.n(incident)
-				} else if shouldAlert, status := p.ActionWarn(in.e); shouldAlert {
-					incident := event.NewIncident(p.Name, p.Warn.Escalation, status, in.e)
-					in.n(incident)
+				// process the event if it matches the policy
+				if p.Matches(in.e) {
+					// process the request
+					if shouldAlert, status := p.ActionCrit(in.e); shouldAlert {
+						incident := event.NewIncident(p.Name, p.Crit.Escalation, status, in.e)
+						logrus.Info(incident.FormatDescription())
+
+						in.n(incident)
+					} else if shouldAlert, status := p.ActionWarn(in.e); shouldAlert {
+						incident := event.NewIncident(p.Name, p.Warn.Escalation, status, in.e)
+						in.n(incident)
+					}
+					in.e.WaitDec()
 				}
-				in.e.WaitDec()
 			}
 		}
 	}()

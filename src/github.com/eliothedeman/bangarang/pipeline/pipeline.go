@@ -65,7 +65,9 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 
 	// if the config has changed at all, refresh the index
 	if p.config == nil || string(conf.Hash) != string(p.config.Hash) {
-		go p.tracker.Start()
+		if !p.tracker.Started() {
+			go p.tracker.Start()
+		}
 	}
 
 	p.escalations = &conf.Escalations

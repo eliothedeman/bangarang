@@ -1,6 +1,7 @@
 package alarm
 
 import (
+	"log"
 	"math"
 	"regexp"
 	"sync"
@@ -152,10 +153,11 @@ func (c *Condition) TrackEvent(e *event.Event) bool {
 
 func (c *Condition) StateChanged(e *event.Event) bool {
 	t := c.getTracker(e)
-	if t.count == 0 && t.states.Index(0) == 0 {
+	log.Println(t.states.Data())
+	if t.count == 0 && t.states.Index(t.states.Len()-1) != 0 {
 		return true
 	}
-	return t.states.Index(0) != t.states.Index(1)
+	return t.states.Index(t.states.Len()-1) != t.states.Index(t.states.Len()-2)
 }
 
 // check to see if an event has hit the occurences level
@@ -165,9 +167,13 @@ func (c *Condition) OccurencesHit(e *event.Event) bool {
 
 	if c.Satisfies(e) {
 		t.occurences += 1
-		t.states.Push(1)
 	} else {
 		t.occurences = 0
+	}
+
+	if t.occurences >= c.Occurences {
+		t.states.Push(1)
+	} else {
 		t.states.Push(0)
 	}
 

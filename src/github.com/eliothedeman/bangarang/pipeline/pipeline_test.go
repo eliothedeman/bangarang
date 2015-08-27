@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 
@@ -166,7 +167,66 @@ func BenchmarkProcessOk(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		e[i].Wait()
 	}
+}
 
+func BenchmarkProcess2CPU(b *testing.B) {
+	c := testCondition(test_f(10), nil, nil, 0)
+	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	defer p.index.Delete()
+	e := genEventSlice(b.N)
+
+	w := &sync.WaitGroup{}
+	w.Add(2)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	f := func(s []*event.Event) {
+		for i := 0; i < len(s); i++ {
+			p.Pass(s[i])
+		}
+		w.Done()
+	}
+
+	go f(e[:len(e)/2])
+	go f(e[len(e)/2:])
+	w.Wait()
+	for i := 0; i < b.N; i++ {
+		e[i].Wait()
+	}
+}
+
+func BenchmarkProcess4CPU(b *testing.B) {
+	c := testCondition(test_f(10), nil, nil, 0)
+	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	defer p.index.Delete()
+	e := genEventSlice(b.N)
+
+	w := &sync.WaitGroup{}
+	w.Add(4)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	f := func(s []*event.Event) {
+		for i := 0; i < len(s); i++ {
+			p.Pass(s[i])
+		}
+		w.Done()
+	}
+
+	one := len(e) / 4
+	two := one * 2
+	three := one + two
+
+	go f(e[:one])
+	go f(e[one:two])
+	go f(e[two:three])
+	go f(e[three:])
+	w.Wait()
+	for i := 0; i < b.N; i++ {
+		e[i].Wait()
+	}
 }
 
 func BenchmarkIndex(b *testing.B) {
