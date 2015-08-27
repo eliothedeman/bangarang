@@ -1,7 +1,6 @@
 package alarm
 
 import (
-	"log"
 	"math"
 	"regexp"
 	"sync"
@@ -128,6 +127,7 @@ func AggregationTrack(c *Condition, e *event.Event) bool {
 func SimpleTrack(c *Condition, e *event.Event) bool {
 	t := c.getTracker(e)
 	t.df.Push(e.Metric)
+	t.count += 1
 
 	return c.OccurencesHit(e)
 }
@@ -152,7 +152,9 @@ func (c *Condition) TrackEvent(e *event.Event) bool {
 
 func (c *Condition) StateChanged(e *event.Event) bool {
 	t := c.getTracker(e)
-	log.Println(t.states.Index(0), t.states.Index(1))
+	if t.count == 0 && t.states.Index(0) == 0 {
+		return true
+	}
 	return t.states.Index(0) != t.states.Index(1)
 }
 

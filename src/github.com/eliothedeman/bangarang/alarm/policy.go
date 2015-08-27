@@ -154,10 +154,7 @@ func (p *Policy) ActionCrit(e *event.Event) (bool, int) {
 			status = event.OK
 		}
 
-		if p.Crit.StateChanged(e) {
-			return true, status
-		}
-
+		return p.Crit.StateChanged(e), status
 	}
 
 	return false, status
@@ -171,9 +168,7 @@ func (p *Policy) ActionWarn(e *event.Event) (bool, int) {
 		} else {
 			status = event.OK
 		}
-		if p.Warn.StateChanged(e) {
-			return true, status
-		}
+		return p.Warn.StateChanged(e), status
 	}
 
 	return false, status
