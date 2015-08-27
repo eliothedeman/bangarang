@@ -1,7 +1,6 @@
 package alarm
 
 import (
-	"log"
 	"math"
 	"regexp"
 	"sync"
@@ -129,7 +128,6 @@ func SimpleTrack(c *Condition, e *event.Event) bool {
 	t := c.getTracker(e)
 	t.df.Push(e.Metric)
 	t.count += 1
-	log.Println(t.count)
 
 	return c.OccurencesHit(e)
 }
@@ -214,7 +212,6 @@ func (c *Condition) compileChecks() []satisfier {
 				// if the count is greater than 1/4 the window size, start checking
 				if t.count > t.df.Len()/4 {
 
-					log.Println("here")
 					// if the count is greater than the window size, use the whole df
 					if t.count >= t.df.Len() {
 						return math.Abs(e.Metric-t.df.Avg()) > (sigma * t.df.StdDev())

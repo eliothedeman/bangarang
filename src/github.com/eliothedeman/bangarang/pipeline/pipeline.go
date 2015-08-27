@@ -1,7 +1,6 @@
 package pipeline
 
 import (
-	"log"
 	"runtime"
 	"time"
 
@@ -237,7 +236,7 @@ func (p *Pipeline) ProcessIncident(in *event.Incident) {
 				a.Send(in)
 			}
 		} else {
-			log.Println("unknown escalation", in.Escalation)
+			logrus.Error("unknown escalation", in.Escalation)
 		}
 	}
 }

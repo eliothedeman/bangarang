@@ -47,17 +47,22 @@ func (p *Policy) start() {
 				// process the event if it matches the policy
 				if p.Matches(in.e) {
 					// process the request
+
+					// check critical
 					if shouldAlert, status := p.ActionCrit(in.e); shouldAlert {
 						incident := event.NewIncident(p.Name, p.Crit.Escalation, status, in.e)
-						logrus.Info(incident.FormatDescription())
 
 						in.n(incident)
+						logrus.Info(incident.FormatDescription())
+
+						// check warning
 					} else if shouldAlert, status := p.ActionWarn(in.e); shouldAlert {
 						incident := event.NewIncident(p.Name, p.Warn.Escalation, status, in.e)
 						in.n(incident)
+						logrus.Info(incident.FormatDescription())
 					}
-					in.e.WaitDec()
 				}
+				in.e.WaitDec()
 			}
 		}
 	}()
