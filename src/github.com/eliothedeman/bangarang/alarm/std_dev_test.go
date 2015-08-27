@@ -36,9 +36,7 @@ func TestStdDevQuarter(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		e := newTestEvent("machine.test.com", "test_service", rand.Float64()*10)
 		if c.TrackEvent(e) {
-			c.DoOnTracker(e, func(et *eventTracker) {
-				t.Fatal(et.df.Data())
-			})
+			t.Fatal(c.getTracker(e).df.Data())
 		}
 	}
 

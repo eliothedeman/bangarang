@@ -129,6 +129,7 @@ func SimpleTrack(c *Condition, e *event.Event) bool {
 	t := c.getTracker(e)
 	t.df.Push(e.Metric)
 	t.count += 1
+	log.Println(t.count)
 
 	return c.OccurencesHit(e)
 }
@@ -153,7 +154,6 @@ func (c *Condition) TrackEvent(e *event.Event) bool {
 
 func (c *Condition) StateChanged(e *event.Event) bool {
 	t := c.getTracker(e)
-	log.Println(t.states.Data())
 	if t.count == 0 && t.states.Index(t.states.Len()-1) != 0 {
 		return true
 	}
@@ -210,10 +210,11 @@ func (c *Condition) compileChecks() []satisfier {
 			logrus.Infof("Adding standard deviation check of %f sigma", sigma)
 			s = append(s, func(e *event.Event) bool {
 				t := c.getTracker(e)
-				t.count++
 
 				// if the count is greater than 1/4 the window size, start checking
 				if t.count > t.df.Len()/4 {
+
+					log.Println("here")
 					// if the count is greater than the window size, use the whole df
 					if t.count >= t.df.Len() {
 						return math.Abs(e.Metric-t.df.Avg()) > (sigma * t.df.StdDev())
