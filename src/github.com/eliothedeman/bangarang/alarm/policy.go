@@ -32,6 +32,7 @@ type Policy struct {
 	r_not_match map[string]*regexp.Regexp
 	stop        chan struct{}
 	in          chan *pack
+	resolve     chan *event.Incident
 }
 
 // start the policy listening for events
@@ -40,6 +41,24 @@ func (p *Policy) start() {
 		var in *pack
 		for {
 			select {
+			case toResolve := <-p.resolve:
+				var c *Condition
+
+				// fetch the condition that created this incident
+				if toResolve.Status == event.CRITICAL {
+					c = p.Crit
+				} else if toResolve.Status == event.WARNING {
+					c = p.Warn
+				}
+
+				if c != nil {
+					e := &event.Event{}
+					e.Host = toResolve.Host
+					e.Service = toResolve.Service
+					e.SubService = toResolve.SubService
+					t := c.getTracker(e)
+					t.refresh()
+				}
 			case <-p.stop:
 				return
 			case in = <-p.in:
@@ -51,6 +70,7 @@ func (p *Policy) start() {
 					// check critical
 					if shouldAlert, status := p.ActionCrit(in.e); shouldAlert {
 						incident := event.NewIncident(p.Name, p.Crit.Escalation, status, in.e)
+						incident.SetResolve(p.resolve)
 
 						in.n(incident)
 						logrus.Info(incident.FormatDescription())
@@ -58,6 +78,7 @@ func (p *Policy) start() {
 						// check warning
 					} else if shouldAlert, status := p.ActionWarn(in.e); shouldAlert {
 						incident := event.NewIncident(p.Name, p.Warn.Escalation, status, in.e)
+						incident.SetResolve(p.resolve)
 						in.n(incident)
 						logrus.Info(incident.FormatDescription())
 					}
@@ -95,6 +116,7 @@ func (p *Policy) Compile() {
 	logrus.Infof("Compiling regex maches for %s", p.Name)
 	p.in = make(chan *pack, 10)
 	p.stop = make(chan struct{})
+	p.resolve = make(chan *event.Incident)
 	p.start()
 
 	if p.r_match == nil {

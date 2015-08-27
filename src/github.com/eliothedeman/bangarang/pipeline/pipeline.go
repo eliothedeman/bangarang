@@ -217,6 +217,11 @@ func (p *Pipeline) Start() {
 }
 
 func (p *Pipeline) ProcessIncident(in *event.Incident) {
+
+	// start tracking this incident in memory so we can call back to it
+	p.tracker.TrackIncident(in)
+	println(string(in.IndexName()))
+
 	// dedup the incident
 	if p.Dedupe(in) {
 

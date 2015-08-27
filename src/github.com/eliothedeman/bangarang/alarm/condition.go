@@ -69,6 +69,11 @@ type eventTracker struct {
 	agg *aggregator
 }
 
+func (e *eventTracker) refresh() {
+	e.states = smoothie.NewDataFrameFromSlice(make([]float64, STATUS_SIZE))
+	e.occurences = 0
+}
+
 type satisfier func(e *event.Event) bool
 
 func (c *Condition) newTracker() *eventTracker {

@@ -9,7 +9,7 @@ test:
 	- export GOPATH=$(dir):$(dir)/vendor; go test -p=1 github.com/eliothedeman/bangarang/...
 
 
-testing: generate
+testing:
 	- cd src/github.com/eliothedeman/bangarang/cmd/ui && go-bindata -dev ./...
 	- gb build
 	- cp bin/ui src/github.com/eliothedeman/bangarang/cmd/ui/ui

@@ -14,14 +14,16 @@ var (
 
 // Provides stat tracking for events
 type Tracker struct {
-	inChan      chan *event.Event
-	started     atomic.Value
-	queryChan   chan QueryFunc
-	total       *counter
-	hosts       map[string]*counter
-	hostTimes   map[string]time.Time
-	services    map[string]*counter
-	subServices map[string]*counter
+	inChan            chan *event.Event
+	started           atomic.Value
+	queryChan         chan QueryFunc
+	total             *counter
+	totalIncidents    counter
+	incidentResolvers map[string]chan *event.Incident
+	hosts             map[string]*counter
+	hostTimes         map[string]time.Time
+	services          map[string]*counter
+	subServices       map[string]*counter
 }
 
 func (t *Tracker) Started() bool {
@@ -35,13 +37,14 @@ func (t *Tracker) Started() bool {
 // create and return a new *Tracker
 func NewTracker() *Tracker {
 	t := &Tracker{
-		inChan:      make(chan *event.Event),
-		queryChan:   make(chan QueryFunc),
-		total:       &counter{},
-		hosts:       make(map[string]*counter),
-		hostTimes:   make(map[string]time.Time),
-		services:    make(map[string]*counter),
-		subServices: make(map[string]*counter),
+		inChan:            make(chan *event.Event),
+		queryChan:         make(chan QueryFunc),
+		total:             &counter{},
+		incidentResolvers: make(map[string]chan *event.Incident),
+		hosts:             make(map[string]*counter),
+		hostTimes:         make(map[string]time.Time),
+		services:          make(map[string]*counter),
+		subServices:       make(map[string]*counter),
 	}
 
 	return t
@@ -63,6 +66,23 @@ func NewReport() *TrackerReport {
 		BySubService:   make(map[string]uint64),
 		LastSeenByHost: make(map[string]int64),
 	}
+}
+
+func (t *Tracker) TrackIncident(i *event.Incident) {
+	if i.GetResolve() != nil {
+		t.Query(func(r *Tracker) {
+			r.incidentResolvers[string(i.IndexName())] = i.GetResolve()
+			r.totalIncidents.inc()
+		})
+	}
+}
+
+func (t *Tracker) GetIncidentResolver(i *event.Incident) chan *event.Incident {
+	var res chan *event.Incident
+	t.Query(func(r *Tracker) {
+		res, _ = r.incidentResolvers[string(i.IndexName())]
+	})
+	return res
 }
 
 // return a report of the current state of the tracker

@@ -20,13 +20,22 @@ type Incident struct {
 	Policy      string `json:"policy" msg:"policy"`
 	Status      int    `json:"status" "msg:"status"`
 	indexName   []byte
+	resChan     chan *Incident // this is used to call back to the policy that created this event
 	Event
+}
+
+func (i *Incident) SetResolve(r chan *Incident) {
+	i.resChan = r
+}
+
+func (i *Incident) GetResolve() chan *Incident {
+	return i.resChan
 }
 
 func (i *Incident) IndexName() []byte {
 	if len(i.indexName) == 0 {
 		n := md5.New()
-		n.Write([]byte(i.Policy + i.Escalation + i.Event.IndexName()))
+		n.Write([]byte(i.Policy + i.Escalation + i.Host + i.Service + i.SubService))
 		i.indexName = []byte(fmt.Sprintf("%x", n.Sum(nil)))
 	}
 
