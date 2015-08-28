@@ -128,7 +128,7 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 	}
 
 	$scope.addNewCritOp = function() {
-		if ($scope.cOpKey && $scope.cOpVal ) {
+		if ($scope.cOpKey && ($scope.cOpVal || $scope.cOpVal === 0) ) {
 			$scope.critOpChips.push({"key": $scope.cOpKey, "val": $scope.cOpVal});
 			$scope.cOpKey = "";
 			$scope.cOpVal = "";
@@ -136,7 +136,7 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 	}
 
 	$scope.addNewWarnOp = function() {
-		if ($scope.wOpKey && $scope.wOpVal ) {
+		if ($scope.wOpKey && ($scope.wOpVal || $scope.wOpVal === 0 ) ) {
 			$scope.warnOpChips.push({"key": $scope.wOpKey, "val": $scope.wOpVal});
 			$scope.wOpVal = "";
 			$scope.wOpKey = "";

@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"runtime"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -30,6 +31,21 @@ func NewSystemStats(pipe *pipeline.Pipeline) *SystemStats {
 
 func (e *SystemStats) EndPoint() string {
 	return "/api/stats/system"
+}
+
+func getApp() map[string]interface{} {
+	a := map[string]interface{}{}
+	mem := &runtime.MemStats{}
+	runtime.ReadMemStats(mem)
+
+	a["alloc"] = mem.Alloc
+	a["total_alloc"] = mem.TotalAlloc
+	a["mallocs"] = mem.Mallocs
+	a["frees"] = mem.Frees
+	a["gc_cpu_percent"] = mem.GCCPUFraction
+	a["num_goroutines"] = runtime.NumGoroutine()
+	a["num_cpu"] = runtime.NumCPU()
+	return a
 }
 
 func getMem() map[string]uint64 {
@@ -73,6 +89,7 @@ func (e *SystemStats) Get(w http.ResponseWriter, r *http.Request) {
 	m["memory"] = getMem()
 	m["load"] = getLoad()
 	m["uptime"] = getUptime().Seconds()
+	m["app"] = getApp()
 
 	buff, err := json.Marshal(m)
 	if err != nil {
