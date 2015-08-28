@@ -28,6 +28,7 @@ type Pipeline struct {
 	config             *config.AppConfig
 	tracker            *Tracker
 	pauseCache         map[*event.Event]struct{}
+	pauseChan          chan struct{}
 	unpauseChan        chan struct{}
 	in                 chan *event.Event
 }
@@ -39,10 +40,12 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		keepAliveCheckTime: 10 * time.Second,
 		in:                 make(chan *event.Event),
 		unpauseChan:        make(chan struct{}),
+		pauseChan:          make(chan struct{}),
 		tracker:            NewTracker(),
 		escalations:        &alarm.Collection{},
 		index:              event.NewIndex(),
 	}
+	p.Start()
 
 	p.Refresh(conf)
 
@@ -52,13 +55,49 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 	return p
 }
 
+func (p *Pipeline) Pass(e *event.Event) {
+	p.in <- e
+}
+
+// only adds polcies that are not already known of
+func (p *Pipeline) refreshPolicies(m map[string]*alarm.Policy) {
+	if p.policies == nil {
+		p.policies = make(map[string]*alarm.Policy)
+	}
+	for k, v := range m {
+
+		// if the name of the new polcy is not known of, insert it
+		if _, inMap := p.policies[k]; !inMap {
+			p.policies[k] = v
+		} else {
+
+			// stop the policy if not. Stops the memory leak
+			v.Stop()
+		}
+	}
+}
+
+// RemovePolicy will stop and remove the policy if it exists
+func (p *Pipeline) RemovePolicy(name string) {
+	p.Pause()
+	pol, ok := p.policies[name]
+	if ok {
+		log.Println("stopping", name)
+		pol.Stop()
+		delete(p.policies, name)
+	}
+	p.Unpause()
+}
+
 // refresh load all config params that don't require a restart
 func (p *Pipeline) Refresh(conf *config.AppConfig) {
-	p.pause()
+	p.Pause()
 
 	// if the config has changed at all, refresh the index
 	if p.config == nil || string(conf.Hash) != string(p.config.Hash) {
-		go p.tracker.Start()
+		if !p.tracker.Started() {
+			go p.tracker.Start()
+		}
 	}
 
 	p.escalations = &conf.Escalations
@@ -67,7 +106,7 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 		p.providers = *conf.EventProviders
 	}
 
-	p.policies = conf.Policies
+	p.refreshPolicies(conf.Policies)
 	p.keepAliveAge = conf.KeepAliveAge
 	p.globalPolicy = conf.GlobalPolicy
 
@@ -77,12 +116,13 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 
 	// update to the new config
 	p.config = conf
-	p.unpause()
+	p.Unpause()
+
 	// start up all of the providers
 	logrus.Infof("Starting %d providers", len(p.providers.Collection))
 	for name, ep := range p.providers.Collection {
 		logrus.Infof("Starting event provider %s", name)
-		go ep.Start(p.in)
+		go ep.Start(p)
 	}
 }
 
@@ -93,54 +133,51 @@ func (p *Pipeline) unpause() {
 	<-p.unpauseChan
 }
 
+func (p *Pipeline) Pause() {
+	p.pauseChan <- struct{}{}
+}
+
+func (p *Pipeline) Unpause() {
+	p.unpause()
+}
+
 // pause stop processing events
 func (p *Pipeline) pause() {
 	logrus.Info("Pausing pipeline")
 
-	// cache the old injest channel
-	old := p.in
+	// make a map to cache the incomming events
+	cache := make(map[*event.Event]struct{})
+	var e *event.Event
+	for {
+		select {
 
-	// make a temporary channel to catch incomming events
-	p.in = nil
+		// start caching the events as they come in
+		case e = <-p.in:
+			logrus.Debugf("Caching event during pause %+v", e)
+			cache[e] = struct{}{}
 
-	// make a channel to signal the end of the pause
-	done := make(chan struct{})
-	p.unpauseChan = done
+		// when the pause is complete, return control to the caller, and begin sending back
+		// the cached events
+		case <-p.unpauseChan:
 
-	// start a new goroutine to catch the incomming events
-	go func() {
-		// make a map to cache the incomming events
-		cache := make(map[*event.Event]struct{})
-		var e *event.Event
-		for {
-			select {
+			go func() {
 
-			// start caching the events as they come in
-			case e = <-old:
-				logrus.Debugf("Caching event during pause %+v", *e)
-				cache[e] = struct{}{}
-
-			// when the pause is complete, revert to the old injestion channel
-			case <-done:
-
-				// set the cached event channel
-				p.in = old
-
-				// restart the pipeline
-				p.Start()
-
+				logrus.Infof("Emptying pause cache of size %d", len(cache))
 				// empty the cache
-				for e, _ = range cache {
+				for e, _ := range cache {
 					logrus.Debugf("Proccessing cached event after unpause %+v", *e)
-					old <- e
+					p.in <- e
 				}
+
+				logrus.Info("Pause cache empty complete")
 
 				// signal the unpause function that we are done with the unpause
 				p.unpauseChan <- struct{}{}
-				return
-			}
+
+			}()
+			return
 		}
-	}()
+	}
 }
 
 func (p *Pipeline) GetTracker() *Tracker {
@@ -163,7 +200,9 @@ func (p *Pipeline) checkExpired() {
 
 		// process every event as if it was an incomming event
 		for _, e := range events {
-			p.Process(e)
+			p.Pass(e)
+			// wait for the event to be done processing before sending the next
+			e.Wait()
 		}
 	}
 }
@@ -174,11 +213,12 @@ func createKeepAliveEvents(times map[string]time.Time) []*event.Event {
 	events := make([]*event.Event, len(times))
 	x := 0
 	for host, t := range times {
-		events[x] = &event.Event{
-			Host:    host,
-			Metric:  n.Sub(t).Seconds(),
-			Service: KEEP_ALIVE_SERVICE_NAME,
-		}
+		e := event.NewEvent()
+		e.Host = host
+		e.Metric = n.Sub(t).Seconds()
+		e.Service = KEEP_ALIVE_SERVICE_NAME
+
+		events[x] = e
 		x += 1
 	}
 
@@ -192,25 +232,27 @@ func (p *Pipeline) Start() {
 	go func() {
 		var e *event.Event
 		for {
-
-			// if the injest channel is nil, stop
-			if p.in == nil {
-				logrus.Info("Pipeline is paused, stopping pipeline")
-				return
-			}
-
+			select {
 			// recieve the event
-			e = <-p.in
+			case e = <-p.in:
+				p.Process(e)
 
-			logrus.Debugf("Beginning processing %+v", e)
-			// process the event
-			p.Process(e)
-			logrus.Debugf("Done processing %+v", e)
+			// handle pause
+			case <-p.pauseChan:
+
+				// start the pause, and wait until it has been completed
+				p.pause()
+			}
 		}
 	}()
 }
 
 func (p *Pipeline) ProcessIncident(in *event.Incident) {
+
+	// start tracking this incident in memory so we can call back to it
+	p.tracker.TrackIncident(in)
+	println(string(in.IndexName()))
+
 	// dedup the incident
 	if p.Dedupe(in) {
 
@@ -230,45 +272,31 @@ func (p *Pipeline) ProcessIncident(in *event.Incident) {
 				a.Send(in)
 			}
 		} else {
-			log.Println("unknown escalation", in.Escalation)
+			logrus.Error("unknown escalation", in.Escalation)
 		}
 	}
 }
 
 // Run the given event though the pipeline
-func (p *Pipeline) Process(e *event.Event) int {
+func (p *Pipeline) Process(e *event.Event) {
 	if p.globalPolicy != nil {
 		if !p.globalPolicy.CheckMatch(e) || !p.globalPolicy.CheckNotMatch(e) {
-			return event.OK
+			return
 		}
 	}
 
 	// track stas for this event
 	p.tracker.TrackEvent(e)
 
-	for _, pol := range p.policies {
-		if pol.Matches(e) {
-			act := pol.ActionCrit(e)
-
-			// if there is an action to be taken
-			if act != "" {
-				// create a new incident for this event
-				in := p.NewIncident(pol.Name, act, e)
-				p.ProcessIncident(in)
-			}
-
-			if e.Status == event.OK {
-				act = pol.ActionWarn(e)
-				if act != "" {
-					in := p.NewIncident(pol.Name, act, e)
-					p.ProcessIncident(in)
-				}
-
-			}
-		}
+	// process this event on every policy
+	var pol *alarm.Policy
+	for _, pol = range p.policies {
+		e.WaitInc()
+		pol.Process(e, func(in *event.Incident) {
+			p.ProcessIncident(in)
+		})
 	}
 
-	return e.Status
 }
 
 func (p *Pipeline) GetIndex() *event.Index {
@@ -296,8 +324,4 @@ func (p *Pipeline) PutIncident(in *event.Incident) {
 		p.index.UpdateIncidentCounter(in.Id + 1)
 	}
 	p.index.PutIncident(in)
-}
-
-func (p *Pipeline) NewIncident(policy string, escalation string, e *event.Event) *event.Incident {
-	return event.NewIncident(policy, escalation, e)
 }

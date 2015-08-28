@@ -14,25 +14,37 @@ var (
 
 // Provides stat tracking for events
 type Tracker struct {
-	inChan      chan *event.Event
-	queryChan   chan QueryFunc
-	total       *counter
-	hosts       map[string]*counter
-	hostTimes   map[string]time.Time
-	services    map[string]*counter
-	subServices map[string]*counter
+	inChan            chan *event.Event
+	started           atomic.Value
+	queryChan         chan QueryFunc
+	total             *counter
+	totalIncidents    counter
+	incidentResolvers map[string]chan *event.Incident
+	hosts             map[string]*counter
+	hostTimes         map[string]time.Time
+	services          map[string]*counter
+	subServices       map[string]*counter
+}
+
+func (t *Tracker) Started() bool {
+	if t.started.Load() == nil {
+		return false
+	} else {
+		return t.started.Load().(bool)
+	}
 }
 
 // create and return a new *Tracker
 func NewTracker() *Tracker {
 	t := &Tracker{
-		inChan:      make(chan *event.Event),
-		queryChan:   make(chan QueryFunc),
-		total:       &counter{},
-		hosts:       make(map[string]*counter),
-		hostTimes:   make(map[string]time.Time),
-		services:    make(map[string]*counter),
-		subServices: make(map[string]*counter),
+		inChan:            make(chan *event.Event),
+		queryChan:         make(chan QueryFunc),
+		total:             &counter{},
+		incidentResolvers: make(map[string]chan *event.Incident),
+		hosts:             make(map[string]*counter),
+		hostTimes:         make(map[string]time.Time),
+		services:          make(map[string]*counter),
+		subServices:       make(map[string]*counter),
 	}
 
 	return t
@@ -54,6 +66,24 @@ func NewReport() *TrackerReport {
 		BySubService:   make(map[string]uint64),
 		LastSeenByHost: make(map[string]int64),
 	}
+}
+
+// TrackIncident will allow the tracker to keep state about an incident
+func (t *Tracker) TrackIncident(i *event.Incident) {
+	if i.GetResolve() != nil {
+		t.Query(func(r *Tracker) {
+			r.incidentResolvers[string(i.IndexName())] = i.GetResolve()
+			r.totalIncidents.inc()
+		})
+	}
+}
+
+func (t *Tracker) GetIncidentResolver(i *event.Incident) chan *event.Incident {
+	var res chan *event.Incident
+	t.Query(func(r *Tracker) {
+		res, _ = r.incidentResolvers[string(i.IndexName())]
+	})
+	return res
 }
 
 // return a report of the current state of the tracker
@@ -132,6 +162,7 @@ type QueryFunc func(t *Tracker)
 
 // Start the tracker. This should be done in it's own goroutine
 func (t *Tracker) Start() {
+	t.started.Store(true)
 	logrus.Info("Starting event tracker")
 	var e *event.Event
 	var f QueryFunc
@@ -165,6 +196,7 @@ func (t *Tracker) query(f QueryFunc) {
 }
 
 func (t *Tracker) trackEvent(e *event.Event) {
+	// e.Id = t.total.get()
 
 	// don't track keep alives
 	if e.Service == KEEP_ALIVE_SERVICE_NAME {

@@ -62,10 +62,24 @@ func (i *Incident) Delete(w http.ResponseWriter, r *http.Request) {
 	index := i.pipeline.GetIndex()
 	in := index.GetIncident([]byte(id))
 
+	// fetch the callback channel to resolve this incident
+	res := i.pipeline.GetTracker().GetIncidentResolver(in)
+
+	// if we have a non-nil channel, this incident was created during this run
+	// which means we can clear it's state
+	if res != nil {
+
+		// make a copy
+		x := *in
+
+		// send the incident on so it can be used to clear state in the policy
+		// which created it
+		res <- &x
+	}
+
 	// if an incident with this id exists, set it's status to ok and send it back through the pipeline
 	if in != nil {
 		in.Status = event.OK
-		in.Event.Status = event.OK
 		in.Description = ""
 		i.pipeline.ProcessIncident(in)
 	}

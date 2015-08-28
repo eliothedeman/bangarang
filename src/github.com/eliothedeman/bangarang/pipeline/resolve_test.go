@@ -18,17 +18,19 @@ func TestResolve(t *testing.T) {
 	e.Host = "test"
 
 	p.Process(e)
+	e.Wait()
 	if len(ta.Events) != 1 {
-		t.Fail()
+		t.Fatal(ta.Events)
 	}
 
 	ta.Events = make(map[*event.Event]int)
 
 	e.Metric = 0
 	p.Process(e)
+	e.Wait()
 
 	if len(ta.Events) != 1 {
-		t.Fail()
+		t.Fatal(ta.Events)
 	}
 
 }

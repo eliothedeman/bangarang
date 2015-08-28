@@ -59,6 +59,11 @@ func (z *Incident) DecodeMsg(dc *msgp.Reader) (err error) {
 			if err != nil {
 				return
 			}
+		case "Status":
+			z.Status, err = dc.ReadInt()
+			if err != nil {
+				return
+			}
 		case "Event":
 			err = z.Event.DecodeMsg(dc)
 			if err != nil {
@@ -76,7 +81,7 @@ func (z *Incident) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Incident) EncodeMsg(en *msgp.Writer) (err error) {
-	err = en.WriteMapHeader(8)
+	err = en.WriteMapHeader(9)
 	if err != nil {
 		return
 	}
@@ -136,6 +141,14 @@ func (z *Incident) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
+	err = en.WriteString("Status")
+	if err != nil {
+		return
+	}
+	err = en.WriteInt(z.Status)
+	if err != nil {
+		return
+	}
 	err = en.WriteString("Event")
 	if err != nil {
 		return
@@ -150,7 +163,7 @@ func (z *Incident) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Incident) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	o = msgp.AppendMapHeader(o, 8)
+	o = msgp.AppendMapHeader(o, 9)
 	o = msgp.AppendString(o, "event_name")
 	o = msgp.AppendBytes(o, z.EventName)
 	o = msgp.AppendString(o, "time")
@@ -165,6 +178,8 @@ func (z *Incident) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.AppendString(o, z.Description)
 	o = msgp.AppendString(o, "policy")
 	o = msgp.AppendString(o, z.Policy)
+	o = msgp.AppendString(o, "Status")
+	o = msgp.AppendInt(o, z.Status)
 	o = msgp.AppendString(o, "Event")
 	o, err = z.Event.MarshalMsg(o)
 	if err != nil {
@@ -224,6 +239,11 @@ func (z *Incident) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
+		case "Status":
+			z.Status, bts, err = msgp.ReadIntBytes(bts)
+			if err != nil {
+				return
+			}
 		case "Event":
 			bts, err = z.Event.UnmarshalMsg(bts)
 			if err != nil {
@@ -241,6 +261,6 @@ func (z *Incident) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 func (z *Incident) Msgsize() (s int) {
-	s = msgp.MapHeaderSize + msgp.StringPrefixSize + 10 + msgp.BytesPrefixSize + len(z.EventName) + msgp.StringPrefixSize + 4 + msgp.Int64Size + msgp.StringPrefixSize + 2 + msgp.Int64Size + msgp.StringPrefixSize + 6 + msgp.BoolSize + msgp.StringPrefixSize + 10 + msgp.StringPrefixSize + len(z.Escalation) + msgp.StringPrefixSize + 11 + msgp.StringPrefixSize + len(z.Description) + msgp.StringPrefixSize + 6 + msgp.StringPrefixSize + len(z.Policy) + msgp.StringPrefixSize + 5 + z.Event.Msgsize()
+	s = msgp.MapHeaderSize + msgp.StringPrefixSize + 10 + msgp.BytesPrefixSize + len(z.EventName) + msgp.StringPrefixSize + 4 + msgp.Int64Size + msgp.StringPrefixSize + 2 + msgp.Int64Size + msgp.StringPrefixSize + 6 + msgp.BoolSize + msgp.StringPrefixSize + 10 + msgp.StringPrefixSize + len(z.Escalation) + msgp.StringPrefixSize + 11 + msgp.StringPrefixSize + len(z.Description) + msgp.StringPrefixSize + 6 + msgp.StringPrefixSize + len(z.Policy) + msgp.StringPrefixSize + 6 + msgp.IntSize + msgp.StringPrefixSize + 5 + z.Event.Msgsize()
 	return
 }

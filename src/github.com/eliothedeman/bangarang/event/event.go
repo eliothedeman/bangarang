@@ -1,8 +1,8 @@
 package event
 
-import "fmt"
 import (
 	"strings"
+	"sync"
 )
 
 const (
@@ -19,11 +19,33 @@ type Event struct {
 	Service    string            `json:"service" msg:"service"`
 	SubService string            `json:"sub_service" msg:"sub_service"`
 	Metric     float64           `json:"metric" msg:"metric"`
-	Occurences int               `json:"occurences" msg:"occurences"`
 	Tags       map[string]string `json:"tags" msg:"tags"`
-	Status     int               `json:"status" msg:"status"`
-	IncidentId *int64            `json:"incident,omitempty" msg:"incident_id"`
 	indexName  string
+	wait       sync.WaitGroup
+}
+
+func (e *Event) Wait() {
+	e.wait.Wait()
+}
+
+// WaitDec decrements the event's waitgroup counter
+func (e *Event) WaitDec() {
+	e.wait.Done()
+}
+
+// WaitAdd increments ot the event's waitgroup counter
+func (e *Event) WaitInc() {
+	e.wait.Add(1)
+}
+
+// Passer provides a method for passing an event down a step in the pipeline
+type Passer interface {
+	Pass(e *Event)
+}
+
+func NewEvent() *Event {
+	e := &Event{}
+	return e
 }
 
 // Get any value on an event as a string
@@ -63,8 +85,4 @@ func status(code int) string {
 	default:
 		return "ok"
 	}
-}
-
-func (e *Event) FormatDescription() string {
-	return fmt.Sprintf("%s! %s.%s on %s is %.2f", status(e.Status), e.Service, e.SubService, e.Host, e.Metric)
 }

@@ -18,14 +18,24 @@ type Incident struct {
 	Escalation  string `json:"escalation" msg:"escalation"`
 	Description string `json:"description" msg:"description"`
 	Policy      string `json:"policy" msg:"policy"`
+	Status      int    `json:"status" "msg:"status"`
 	indexName   []byte
+	resChan     chan *Incident // this is used to call back to the policy that created this event
 	Event
+}
+
+func (i *Incident) SetResolve(r chan *Incident) {
+	i.resChan = r
+}
+
+func (i *Incident) GetResolve() chan *Incident {
+	return i.resChan
 }
 
 func (i *Incident) IndexName() []byte {
 	if len(i.indexName) == 0 {
 		n := md5.New()
-		n.Write([]byte(i.Policy + i.Escalation + i.Event.IndexName()))
+		n.Write([]byte(i.Policy + i.Escalation + i.Host + i.Service + i.SubService))
 		i.indexName = []byte(fmt.Sprintf("%x", n.Sum(nil)))
 	}
 
@@ -37,19 +47,20 @@ func (i *Incident) GetEvent() *Event {
 }
 
 func (i *Incident) FormatDescription() string {
-	return i.Event.FormatDescription()
+	return fmt.Sprintf("%s on %s is %s. Triggerd by %s", i.Service, i.Host, status(i.Status), i.Policy)
 }
 
-func NewIncident(policy string, escalation string, e *Event) *Incident {
+func NewIncident(policy string, escalation string, status int, e *Event) *Incident {
 	in := &Incident{
-		EventName:   []byte(e.IndexName()),
-		Time:        time.Now().Unix(),
-		Active:      true,
-		Policy:      policy,
-		Escalation:  escalation,
-		Description: e.FormatDescription(),
-		Event:       *e,
+		EventName:  []byte(e.IndexName()),
+		Time:       time.Now().Unix(),
+		Active:     true,
+		Status:     status,
+		Policy:     policy,
+		Escalation: escalation,
+		Event:      *e,
 	}
+	in.Description = in.FormatDescription()
 
 	return in
 }

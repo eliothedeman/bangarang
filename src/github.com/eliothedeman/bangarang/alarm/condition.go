@@ -55,18 +55,8 @@ type grouper []*matcher
 
 // generate an index name by using group-by statements
 func (g grouper) genIndexName(e *event.Event) string {
-	name := ""
-	for _, m := range g {
-		res := m.match.FindStringSubmatch(e.Get(m.name))
+	return e.IndexName()
 
-		switch len(res) {
-		case 1:
-			name = name + ":" + res[0]
-		case 2:
-			name = name + ":" + res[1]
-		}
-	}
-	return name
 }
 
 type eventTracker struct {
@@ -77,6 +67,11 @@ type eventTracker struct {
 
 	// optional
 	agg *aggregator
+}
+
+func (e *eventTracker) refresh() {
+	e.states = smoothie.NewDataFrameFromSlice(make([]float64, STATUS_SIZE))
+	e.occurences = 0
 }
 
 type satisfier func(e *event.Event) bool
@@ -95,14 +90,24 @@ func (c *Condition) newTracker() *eventTracker {
 }
 
 func (c *Condition) DoOnTracker(e *event.Event, dot func(*eventTracker)) {
-	c.Lock()
+	// c.Lock()
 	et, ok := c.eventTrackers[c.groupBy.genIndexName(e)]
 	if !ok {
 		et = c.newTracker()
 		c.eventTrackers[c.groupBy.genIndexName(e)] = et
 	}
 	dot(et)
-	c.Unlock()
+	// c.Unlock()
+}
+
+func (c *Condition) getTracker(e *event.Event) *eventTracker {
+	et, ok := c.eventTrackers[c.groupBy.genIndexName(e)]
+	if !ok {
+		et = c.newTracker()
+		c.eventTrackers[c.groupBy.genIndexName(e)] = et
+	}
+
+	return et
 }
 
 type TrackFunc func(c *Condition, e *event.Event) bool
@@ -125,9 +130,9 @@ func AggregationTrack(c *Condition, e *event.Event) bool {
 }
 
 func SimpleTrack(c *Condition, e *event.Event) bool {
-	c.DoOnTracker(e, func(t *eventTracker) {
-		t.df.Push(e.Metric)
-	})
+	t := c.getTracker(e)
+	t.df.Push(e.Metric)
+	t.count += 1
 
 	return c.OccurencesHit(e)
 }
@@ -151,31 +156,31 @@ func (c *Condition) TrackEvent(e *event.Event) bool {
 }
 
 func (c *Condition) StateChanged(e *event.Event) bool {
-	changed := false
-	c.DoOnTracker(e, func(t *eventTracker) {
-		changed = t.states.Index(0) == t.states.Index(1)
-	})
-	return changed
+	t := c.getTracker(e)
+	if t.count == 0 && t.states.Index(t.states.Len()-1) != 0 {
+		return true
+	}
+	return t.states.Index(t.states.Len()-1) != t.states.Index(t.states.Len()-2)
 }
 
 // check to see if an event has hit the occurences level
 func (c *Condition) OccurencesHit(e *event.Event) bool {
-	occ := 0
+
+	t := c.getTracker(e)
 
 	if c.Satisfies(e) {
-		c.DoOnTracker(e, func(t *eventTracker) {
-			t.occurences += 1
-			occ = t.occurences
-			t.states.Push(1)
-		})
+		t.occurences += 1
 	} else {
-		c.DoOnTracker(e, func(t *eventTracker) {
-			t.occurences = 0
-			t.states.Push(0)
-		})
+		t.occurences = 0
 	}
 
-	return occ >= c.Occurences
+	if t.occurences >= c.Occurences {
+		t.states.Push(1)
+	} else {
+		t.states.Push(0)
+	}
+
+	return t.occurences >= c.Occurences
 }
 
 // check if an event satisfies a condition
@@ -207,26 +212,21 @@ func (c *Condition) compileChecks() []satisfier {
 
 			logrus.Infof("Adding standard deviation check of %f sigma", sigma)
 			s = append(s, func(e *event.Event) bool {
-				met := false
-				c.DoOnTracker(e, func(t *eventTracker) {
-					t.count++
+				t := c.getTracker(e)
 
-					// if the count is greater than 1/4 the window size, start checking
-					if t.count > t.df.Len()/4 {
-						// if the count is greater than the window size, use the whole df
-						if t.count >= t.df.Len() {
-							met = math.Abs(e.Metric-t.df.Avg()) > (sigma * t.df.StdDev())
-						} else {
+				// if the count is greater than 1/4 the window size, start checking
+				if t.count > t.df.Len()/4 {
 
-							// take a sublslice of populated values
-							sub := t.df.Slice(t.df.Len()-t.count, t.df.Len()-1)
-							met = math.Abs(e.Metric-sub.Avg()) > (sigma * t.df.StdDev())
-							return
-						}
-						met = math.Abs(e.Metric-t.df.Avg()) > (sigma * t.df.StdDev())
+					// if the count is greater than the window size, use the whole df
+					if t.count >= t.df.Len() {
+						return math.Abs(e.Metric-t.df.Avg()) > (sigma * t.df.StdDev())
 					}
-				})
-				return met
+
+					// take a sublslice of populated values
+					sub := t.df.Slice(t.df.Len()-t.count, t.df.Len()-1)
+					return math.Abs(e.Metric-sub.Avg()) > (sigma * t.df.StdDev())
+				}
+				return false
 			})
 			return s
 		}
@@ -251,31 +251,26 @@ func (c *Condition) compileChecks() []satisfier {
 			if kind != 0 {
 				logrus.Infof("Adding derivative check of %f", check)
 				s = append(s, func(e *event.Event) bool {
-					var met bool
-					c.DoOnTracker(e, func(t *eventTracker) {
-						t.count++
+					t := c.getTracker(e)
+					t.count++
 
-						// we need to have seen at least 2 values
-						if t.count < 2 {
-							met = false
-							return
-						}
+					// we need to have seen at least 2 values
+					if t.count < 2 {
+						return false
+					}
 
-						diff := e.Metric - t.df.Index(t.df.Len()-2)
-						switch kind {
-						case 1:
-							met = diff > check
-							return
-						case 2:
-							met = diff < check
-							return
+					diff := e.Metric - t.df.Index(t.df.Len()-2)
+					switch kind {
+					case 1:
+						return diff > check
 
-						case 3:
-							met = diff == check
-							return
-						}
-					})
-					return met
+					case 2:
+						return diff < check
+
+					case 3:
+						return diff == check
+					}
+					return false
 				})
 			}
 

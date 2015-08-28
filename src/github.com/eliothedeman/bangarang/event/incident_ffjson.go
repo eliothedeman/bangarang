@@ -28,7 +28,7 @@ func (mj *Incident) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	var obj []byte
 	_ = obj
 	_ = err
-	buf.WriteString(`{ "event":`)
+	buf.WriteString(`{"event":`)
 	if mj.EventName != nil {
 		buf.WriteString(`"`)
 		{
@@ -55,6 +55,8 @@ func (mj *Incident) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	fflib.WriteJsonString(buf, string(mj.Description))
 	buf.WriteString(`,"policy":`)
 	fflib.WriteJsonString(buf, string(mj.Policy))
+	buf.WriteString(`,"status":`)
+	fflib.FormatBits2(buf, uint64(mj.Status), 10, mj.Status < 0)
 	buf.WriteString(`,"host":`)
 	fflib.WriteJsonString(buf, string(mj.Host))
 	buf.WriteString(`,"service":`)
@@ -63,8 +65,6 @@ func (mj *Incident) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	fflib.WriteJsonString(buf, string(mj.SubService))
 	buf.WriteString(`,"metric":`)
 	fflib.AppendFloat(buf, float64(mj.Metric), 'g', -1, 64)
-	buf.WriteString(`,"occurences":`)
-	fflib.FormatBits2(buf, uint64(mj.Occurences), 10, mj.Occurences < 0)
 	if mj.Tags == nil {
 		buf.WriteString(`,"tags":null`)
 	} else {
@@ -78,17 +78,6 @@ func (mj *Incident) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 		buf.Rewind(1)
 		buf.WriteByte('}')
 	}
-	buf.WriteString(`,"status":`)
-	fflib.FormatBits2(buf, uint64(mj.Status), 10, mj.Status < 0)
-	buf.WriteByte(',')
-	if mj.IncidentId != nil {
-		if true {
-			buf.WriteString(`"incident":`)
-			fflib.FormatBits2(buf, uint64(*mj.IncidentId), 10, *mj.IncidentId < 0)
-			buf.WriteByte(',')
-		}
-	}
-	buf.Rewind(1)
 	buf.WriteByte('}')
 	return nil
 }
@@ -111,6 +100,8 @@ const (
 
 	ffj_t_Incident_Policy
 
+	ffj_t_Incident_Status
+
 	ffj_t_Incident_Host
 
 	ffj_t_Incident_Service
@@ -119,13 +110,7 @@ const (
 
 	ffj_t_Incident_Metric
 
-	ffj_t_Incident_Occurences
-
 	ffj_t_Incident_Tags
-
-	ffj_t_Incident_Status
-
-	ffj_t_Incident_IncidentId
 )
 
 var ffj_key_Incident_EventName = []byte("event")
@@ -142,6 +127,8 @@ var ffj_key_Incident_Description = []byte("description")
 
 var ffj_key_Incident_Policy = []byte("policy")
 
+var ffj_key_Incident_Status = []byte("status")
+
 var ffj_key_Incident_Host = []byte("host")
 
 var ffj_key_Incident_Service = []byte("service")
@@ -150,13 +137,7 @@ var ffj_key_Incident_SubService = []byte("sub_service")
 
 var ffj_key_Incident_Metric = []byte("metric")
 
-var ffj_key_Incident_Occurences = []byte("occurences")
-
 var ffj_key_Incident_Tags = []byte("tags")
-
-var ffj_key_Incident_Status = []byte("status")
-
-var ffj_key_Incident_IncidentId = []byte("incident")
 
 func (uj *Incident) UnmarshalJSON(input []byte) error {
 	fs := fflib.NewFFLexer(input)
@@ -260,25 +241,12 @@ mainparse:
 						currentKey = ffj_t_Incident_Id
 						state = fflib.FFParse_want_colon
 						goto mainparse
-
-					} else if bytes.Equal(ffj_key_Incident_IncidentId, kn) {
-						currentKey = ffj_t_Incident_IncidentId
-						state = fflib.FFParse_want_colon
-						goto mainparse
 					}
 
 				case 'm':
 
 					if bytes.Equal(ffj_key_Incident_Metric, kn) {
 						currentKey = ffj_t_Incident_Metric
-						state = fflib.FFParse_want_colon
-						goto mainparse
-					}
-
-				case 'o':
-
-					if bytes.Equal(ffj_key_Incident_Occurences, kn) {
-						currentKey = ffj_t_Incident_Occurences
 						state = fflib.FFParse_want_colon
 						goto mainparse
 					}
@@ -293,18 +261,18 @@ mainparse:
 
 				case 's':
 
-					if bytes.Equal(ffj_key_Incident_Service, kn) {
+					if bytes.Equal(ffj_key_Incident_Status, kn) {
+						currentKey = ffj_t_Incident_Status
+						state = fflib.FFParse_want_colon
+						goto mainparse
+
+					} else if bytes.Equal(ffj_key_Incident_Service, kn) {
 						currentKey = ffj_t_Incident_Service
 						state = fflib.FFParse_want_colon
 						goto mainparse
 
 					} else if bytes.Equal(ffj_key_Incident_SubService, kn) {
 						currentKey = ffj_t_Incident_SubService
-						state = fflib.FFParse_want_colon
-						goto mainparse
-
-					} else if bytes.Equal(ffj_key_Incident_Status, kn) {
-						currentKey = ffj_t_Incident_Status
 						state = fflib.FFParse_want_colon
 						goto mainparse
 					}
@@ -324,26 +292,8 @@ mainparse:
 
 				}
 
-				if fflib.SimpleLetterEqualFold(ffj_key_Incident_IncidentId, kn) {
-					currentKey = ffj_t_Incident_IncidentId
-					state = fflib.FFParse_want_colon
-					goto mainparse
-				}
-
-				if fflib.EqualFoldRight(ffj_key_Incident_Status, kn) {
-					currentKey = ffj_t_Incident_Status
-					state = fflib.FFParse_want_colon
-					goto mainparse
-				}
-
 				if fflib.EqualFoldRight(ffj_key_Incident_Tags, kn) {
 					currentKey = ffj_t_Incident_Tags
-					state = fflib.FFParse_want_colon
-					goto mainparse
-				}
-
-				if fflib.EqualFoldRight(ffj_key_Incident_Occurences, kn) {
-					currentKey = ffj_t_Incident_Occurences
 					state = fflib.FFParse_want_colon
 					goto mainparse
 				}
@@ -368,6 +318,12 @@ mainparse:
 
 				if fflib.EqualFoldRight(ffj_key_Incident_Host, kn) {
 					currentKey = ffj_t_Incident_Host
+					state = fflib.FFParse_want_colon
+					goto mainparse
+				}
+
+				if fflib.EqualFoldRight(ffj_key_Incident_Status, kn) {
+					currentKey = ffj_t_Incident_Status
 					state = fflib.FFParse_want_colon
 					goto mainparse
 				}
@@ -452,6 +408,9 @@ mainparse:
 				case ffj_t_Incident_Policy:
 					goto handle_Policy
 
+				case ffj_t_Incident_Status:
+					goto handle_Status
+
 				case ffj_t_Incident_Host:
 					goto handle_Host
 
@@ -464,17 +423,8 @@ mainparse:
 				case ffj_t_Incident_Metric:
 					goto handle_Metric
 
-				case ffj_t_Incident_Occurences:
-					goto handle_Occurences
-
 				case ffj_t_Incident_Tags:
 					goto handle_Tags
-
-				case ffj_t_Incident_Status:
-					goto handle_Status
-
-				case ffj_t_Incident_IncidentId:
-					goto handle_IncidentId
 
 				case ffj_t_Incidentno_such_key:
 					err = fs.SkipField(tok)
@@ -688,6 +638,36 @@ handle_Policy:
 	state = fflib.FFParse_after_value
 	goto mainparse
 
+handle_Status:
+
+	/* handler: uj.Status type=int kind=int */
+
+	{
+		if tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
+			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for int", tok))
+		}
+	}
+
+	{
+
+		if tok == fflib.FFTok_null {
+
+		} else {
+
+			tval, err := fflib.ParseInt(fs.Output.Bytes(), 10, 64)
+
+			if err != nil {
+				return fs.WrapErr(err)
+			}
+
+			uj.Status = int(tval)
+
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
 handle_Host:
 
 	/* handler: uj.Host type=string kind=string */
@@ -790,36 +770,6 @@ handle_Metric:
 	state = fflib.FFParse_after_value
 	goto mainparse
 
-handle_Occurences:
-
-	/* handler: uj.Occurences type=int kind=int */
-
-	{
-		if tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
-			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for int", tok))
-		}
-	}
-
-	{
-
-		if tok == fflib.FFTok_null {
-
-		} else {
-
-			tval, err := fflib.ParseInt(fs.Output.Bytes(), 10, 64)
-
-			if err != nil {
-				return fs.WrapErr(err)
-			}
-
-			uj.Occurences = int(tval)
-
-		}
-	}
-
-	state = fflib.FFParse_after_value
-	goto mainparse
-
 handle_Tags:
 
 	/* handler: uj.Tags type=map[string]string kind=map */
@@ -834,69 +784,6 @@ handle_Tags:
 		err = json.Unmarshal(tbuf, &uj.Tags)
 		if err != nil {
 			return fs.WrapErr(err)
-		}
-	}
-
-	state = fflib.FFParse_after_value
-	goto mainparse
-
-handle_Status:
-
-	/* handler: uj.Status type=int kind=int */
-
-	{
-		if tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
-			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for int", tok))
-		}
-	}
-
-	{
-
-		if tok == fflib.FFTok_null {
-
-		} else {
-
-			tval, err := fflib.ParseInt(fs.Output.Bytes(), 10, 64)
-
-			if err != nil {
-				return fs.WrapErr(err)
-			}
-
-			uj.Status = int(tval)
-
-		}
-	}
-
-	state = fflib.FFParse_after_value
-	goto mainparse
-
-handle_IncidentId:
-
-	/* handler: uj.IncidentId type=int64 kind=int64 */
-
-	{
-		if tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
-			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for int64", tok))
-		}
-	}
-
-	{
-
-		if tok == fflib.FFTok_null {
-
-			uj.IncidentId = nil
-
-		} else {
-
-			tval, err := fflib.ParseInt(fs.Output.Bytes(), 10, 64)
-
-			if err != nil {
-				return fs.WrapErr(err)
-			}
-
-			ttypval := int64(tval)
-			uj.IncidentId = &ttypval
-
 		}
 	}
 

@@ -124,7 +124,7 @@ func GetEventProvider(name string) EventProvider {
 
 // Provides an interface for injesting events from an outside service
 type EventProvider interface {
-	Start(dst chan *event.Event)
+	Start(event.Passer)
 	ConfigStruct() interface{}
 	Init(interface{}) error
 }

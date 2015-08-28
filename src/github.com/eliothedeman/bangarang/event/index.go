@@ -14,11 +14,11 @@ var (
 	INCIDENT_BUCKET_NAME   = []byte("incidents")
 	MANAGEMENT_BUCKET_NAME = []byte("management")
 	INCIDENT_COUNT_NAME    = []byte("incident_count")
+	INDEX_FILE_NAME        = "bangarang-index.db"
 )
 
 const (
 	KEEP_ALIVE_SERVICE_NAME = "KeepAlive"
-	INDEX_FILE_NAME         = "bangarang-index.db"
 )
 
 type counter struct {
@@ -144,7 +144,6 @@ func (i *Index) GetIncident(id []byte) *Incident {
 	})
 
 	if err != nil {
-		logrus.Debug(err)
 		return nil
 	}
 

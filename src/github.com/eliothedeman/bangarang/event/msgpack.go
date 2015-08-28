@@ -8,7 +8,7 @@ func NewMsgPackEncoder() Encoder {
 }
 
 func (m *MsgPackEncoder) Encode(e *Event) (buff []byte, err error) {
-	buff, err = e.MarshalMsg(nil)
+	// buff, err = e.MarshalMsg(nil)
 	return
 }
 
@@ -21,6 +21,6 @@ type MsgPackDecoder struct {
 
 func (m *MsgPackDecoder) Decode(raw []byte) (e *Event, err error) {
 	e = &Event{}
-	_, err = e.UnmarshalMsg(raw)
+	// _, err = e.UnmarshalMsg(raw)
 	return e, err
 }

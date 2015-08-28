@@ -44,11 +44,6 @@ func (z *Event) DecodeMsg(dc *msgp.Reader) (err error) {
 			if err != nil {
 				return
 			}
-		case "occurences":
-			z.Occurences, err = dc.ReadInt()
-			if err != nil {
-				return
-			}
 		case "tags":
 			var msz uint32
 			msz, err = dc.ReadMapHeader()
@@ -76,27 +71,6 @@ func (z *Event) DecodeMsg(dc *msgp.Reader) (err error) {
 				}
 				z.Tags[xvk] = bzg
 			}
-		case "status":
-			z.Status, err = dc.ReadInt()
-			if err != nil {
-				return
-			}
-		case "incident_id":
-			if dc.IsNil() {
-				err = dc.ReadNil()
-				if err != nil {
-					return
-				}
-				z.IncidentId = nil
-			} else {
-				if z.IncidentId == nil {
-					z.IncidentId = new(int64)
-				}
-				*z.IncidentId, err = dc.ReadInt64()
-				if err != nil {
-					return
-				}
-			}
 		default:
 			err = dc.Skip()
 			if err != nil {
@@ -109,7 +83,7 @@ func (z *Event) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Event) EncodeMsg(en *msgp.Writer) (err error) {
-	err = en.WriteMapHeader(8)
+	err = en.WriteMapHeader(5)
 	if err != nil {
 		return
 	}
@@ -145,14 +119,6 @@ func (z *Event) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	err = en.WriteString("occurences")
-	if err != nil {
-		return
-	}
-	err = en.WriteInt(z.Occurences)
-	if err != nil {
-		return
-	}
 	err = en.WriteString("tags")
 	if err != nil {
 		return
@@ -171,36 +137,13 @@ func (z *Event) EncodeMsg(en *msgp.Writer) (err error) {
 			return
 		}
 	}
-	err = en.WriteString("status")
-	if err != nil {
-		return
-	}
-	err = en.WriteInt(z.Status)
-	if err != nil {
-		return
-	}
-	err = en.WriteString("incident_id")
-	if err != nil {
-		return
-	}
-	if z.IncidentId == nil {
-		err = en.WriteNil()
-		if err != nil {
-			return
-		}
-	} else {
-		err = en.WriteInt64(*z.IncidentId)
-		if err != nil {
-			return
-		}
-	}
 	return
 }
 
 // MarshalMsg implements msgp.Marshaler
 func (z *Event) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	o = msgp.AppendMapHeader(o, 8)
+	o = msgp.AppendMapHeader(o, 5)
 	o = msgp.AppendString(o, "host")
 	o = msgp.AppendString(o, z.Host)
 	o = msgp.AppendString(o, "service")
@@ -209,21 +152,11 @@ func (z *Event) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.AppendString(o, z.SubService)
 	o = msgp.AppendString(o, "metric")
 	o = msgp.AppendFloat64(o, z.Metric)
-	o = msgp.AppendString(o, "occurences")
-	o = msgp.AppendInt(o, z.Occurences)
 	o = msgp.AppendString(o, "tags")
 	o = msgp.AppendMapHeader(o, uint32(len(z.Tags)))
 	for xvk, bzg := range z.Tags {
 		o = msgp.AppendString(o, xvk)
 		o = msgp.AppendString(o, bzg)
-	}
-	o = msgp.AppendString(o, "status")
-	o = msgp.AppendInt(o, z.Status)
-	o = msgp.AppendString(o, "incident_id")
-	if z.IncidentId == nil {
-		o = msgp.AppendNil(o)
-	} else {
-		o = msgp.AppendInt64(o, *z.IncidentId)
 	}
 	return
 }
@@ -264,11 +197,6 @@ func (z *Event) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
-		case "occurences":
-			z.Occurences, bts, err = msgp.ReadIntBytes(bts)
-			if err != nil {
-				return
-			}
 		case "tags":
 			var msz uint32
 			msz, bts, err = msgp.ReadMapHeaderBytes(bts)
@@ -296,27 +224,6 @@ func (z *Event) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				}
 				z.Tags[xvk] = bzg
 			}
-		case "status":
-			z.Status, bts, err = msgp.ReadIntBytes(bts)
-			if err != nil {
-				return
-			}
-		case "incident_id":
-			if msgp.IsNil(bts) {
-				bts, err = msgp.ReadNilBytes(bts)
-				if err != nil {
-					return
-				}
-				z.IncidentId = nil
-			} else {
-				if z.IncidentId == nil {
-					z.IncidentId = new(int64)
-				}
-				*z.IncidentId, bts, err = msgp.ReadInt64Bytes(bts)
-				if err != nil {
-					return
-				}
-			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -329,18 +236,12 @@ func (z *Event) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 func (z *Event) Msgsize() (s int) {
-	s = msgp.MapHeaderSize + msgp.StringPrefixSize + 4 + msgp.StringPrefixSize + len(z.Host) + msgp.StringPrefixSize + 7 + msgp.StringPrefixSize + len(z.Service) + msgp.StringPrefixSize + 11 + msgp.StringPrefixSize + len(z.SubService) + msgp.StringPrefixSize + 6 + msgp.Float64Size + msgp.StringPrefixSize + 10 + msgp.IntSize + msgp.StringPrefixSize + 4 + msgp.MapHeaderSize
+	s = msgp.MapHeaderSize + msgp.StringPrefixSize + 4 + msgp.StringPrefixSize + len(z.Host) + msgp.StringPrefixSize + 7 + msgp.StringPrefixSize + len(z.Service) + msgp.StringPrefixSize + 11 + msgp.StringPrefixSize + len(z.SubService) + msgp.StringPrefixSize + 6 + msgp.Float64Size + msgp.StringPrefixSize + 4 + msgp.MapHeaderSize
 	if z.Tags != nil {
 		for xvk, bzg := range z.Tags {
 			_ = bzg
 			s += msgp.StringPrefixSize + len(xvk) + msgp.StringPrefixSize + len(bzg)
 		}
-	}
-	s += msgp.StringPrefixSize + 6 + msgp.IntSize + msgp.StringPrefixSize + 11
-	if z.IncidentId == nil {
-		s += msgp.NilSize
-	} else {
-		s += msgp.Int64Size
 	}
 	return
 }
