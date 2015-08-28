@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"log"
 	"runtime"
 	"time"
 
@@ -58,6 +59,36 @@ func (p *Pipeline) Pass(e *event.Event) {
 	p.in <- e
 }
 
+// only adds polcies that are not already known of
+func (p *Pipeline) refreshPolicies(m map[string]*alarm.Policy) {
+	if p.policies == nil {
+		p.policies = make(map[string]*alarm.Policy)
+	}
+	for k, v := range m {
+
+		// if the name of the new polcy is not known of, insert it
+		if _, inMap := p.policies[k]; !inMap {
+			p.policies[k] = v
+		} else {
+
+			// stop the policy if not. Stops the memory leak
+			v.Stop()
+		}
+	}
+}
+
+// RemovePolicy will stop and remove the policy if it exists
+func (p *Pipeline) RemovePolicy(name string) {
+	p.Pause()
+	pol, ok := p.policies[name]
+	if ok {
+		log.Println("stopping", name)
+		pol.Stop()
+		delete(p.policies, name)
+	}
+	p.Unpause()
+}
+
 // refresh load all config params that don't require a restart
 func (p *Pipeline) Refresh(conf *config.AppConfig) {
 	p.Pause()
@@ -75,7 +106,7 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 		p.providers = *conf.EventProviders
 	}
 
-	p.policies = conf.Policies
+	p.refreshPolicies(conf.Policies)
 	p.keepAliveAge = conf.KeepAliveAge
 	p.globalPolicy = conf.GlobalPolicy
 

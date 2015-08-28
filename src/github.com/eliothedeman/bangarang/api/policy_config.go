@@ -93,6 +93,7 @@ func (p *PolicyConfig) Delete(w http.ResponseWriter, r *http.Request) {
 		conf.GlobalPolicy.Compile()
 	} else {
 		delete(conf.Policies, id)
+		p.pipeline.RemovePolicy(id)
 	}
 
 	conf.Provider().PutConfig(conf)

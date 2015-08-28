@@ -68,6 +68,7 @@ func NewReport() *TrackerReport {
 	}
 }
 
+// TrackIncident will allow the tracker to keep state about an incident
 func (t *Tracker) TrackIncident(i *event.Incident) {
 	if i.GetResolve() != nil {
 		t.Query(func(r *Tracker) {

@@ -60,6 +60,13 @@ func (p *Policy) start() {
 					t.refresh()
 				}
 			case <-p.stop:
+				logrus.Info("Stopping policy", p.Name)
+
+				// cleanup the policy. Sometimes they hangaround.
+				p.clean()
+
+				// stop this policy from being stopped again
+				p.stop = nil
 				return
 			case in = <-p.in:
 
@@ -87,6 +94,14 @@ func (p *Policy) start() {
 			}
 		}
 	}()
+}
+
+// remove all used memeory by this policy
+func (p *Policy) clean() {
+	p.Crit = nil
+	p.Warn = nil
+	p.r_match = nil
+	p.r_not_match = nil
 }
 
 type pack struct {
