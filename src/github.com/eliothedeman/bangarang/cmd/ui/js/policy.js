@@ -46,6 +46,47 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 
 	}
 
+	$scope.estimateMemFootprint = function(s) {
+		crit = 0;
+		warn = 0;
+		baseConditionFootprint = function() {
+			operators = 24	
+			specials = 4
+			options = 16
+			status = 80
+			return operators + specials + options + status
+		}
+
+		dataFrameFootprint = function(size) {
+			return 8 + (size * 8)
+		}
+
+		if (s.crit) {
+			crit += baseConditionFootprint()
+			if (s.crit.window_size) {
+				crit += dataFrameFootprint(s.crit.window_size)
+
+			} else {
+				crit += dataFrameFootprint(100)
+			}
+		}
+		if (s.warn) {
+			warn += baseConditionFootprint()
+			if (s.warn.window_size) {
+				warn += dataFrameFootprint(s.warn.window_size)
+
+			} else {
+				warn += dataFrameFootprint(100)
+			}
+		}
+
+		return {
+			crit: crit,
+			warn: warn,
+			total: crit+warn
+		}
+	}
+
 	$scope.createPolicyStruct = function() {
 		if (!$scope.np.name) {
 			$scope.showIncompleteDialog("Must name the policy before submitting.");
