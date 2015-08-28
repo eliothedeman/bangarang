@@ -283,6 +283,7 @@ function PolicyController($scope, $http, $cookies) {
 	$scope.removePolicy = function(name) {
 		$http.delete("api/policy/config/"+name).success(function(data) {
 			t.fetchPolicies();
+			$scope.hideRemoveDialog(name);
 		});
 	}
 
