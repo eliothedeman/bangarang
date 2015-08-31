@@ -6,7 +6,7 @@ func TestDerivativeFalsePositive(t *testing.T) {
 	c := &Condition{
 		Greater:    test_f(10),
 		Derivative: true,
-		WindowSize: 100,
+		WindowSize: 1,
 	}
 
 	c.init(DEFAULT_GROUP_BY)
@@ -27,7 +27,7 @@ func TestDerivative(t *testing.T) {
 		Greater:    test_f(100),
 		Derivative: true,
 		Occurences: 1,
-		WindowSize: 100,
+		WindowSize: 1,
 	}
 
 	c.init(DEFAULT_GROUP_BY)
@@ -38,7 +38,7 @@ func TestDerivative(t *testing.T) {
 
 	e = newTestEvent("machine.test.com", "test_service", float64(111))
 	if !c.TrackEvent(e) {
-		t.Fatal()
+		t.Fatal(c.getTracker(e).df.Data())
 	}
 
 	// make sure it will resolve
@@ -53,7 +53,7 @@ func TestNegativeDerivative(t *testing.T) {
 		Less:       test_f(-10),
 		Derivative: true,
 		Occurences: 1,
-		WindowSize: 100,
+		WindowSize: 1,
 	}
 
 	c.init(DEFAULT_GROUP_BY)
