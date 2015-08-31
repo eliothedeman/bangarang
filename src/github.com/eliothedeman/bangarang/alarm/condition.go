@@ -341,7 +341,6 @@ func getTrackingFunc(c *Condition) TrackFunc {
 // init compiles checks and sanatizes the conditon before returning itself
 func (c *Condition) init(groupBy map[string]string) {
 	c.groupBy = compileGrouper(groupBy)
-
 	c.checks = c.compileChecks()
 
 	// fixes issue where occurences are hit, even when the event doesn't satisify the condition
@@ -350,10 +349,12 @@ func (c *Condition) init(groupBy map[string]string) {
 		c.Occurences = 1
 	}
 
+	// if we have no trackers already, make an empty map of them
 	if c.eventTrackers == nil {
 		c.eventTrackers = make(map[string]*eventTracker)
 	}
 
+	// WindowSize must be above 2. At least one piece of data is needed for historical checks.
 	if c.WindowSize < 2 {
 		logrus.Warnf("WindowSize must be >= 1. %d given. Window size for this condition will be set to %d", c.WindowSize, DEFAULT_WINDOW_SIZE)
 		c.WindowSize = DEFAULT_WINDOW_SIZE
