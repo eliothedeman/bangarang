@@ -10,9 +10,10 @@ import (
 
 func newTestCondition(g, l, e float64) *Condition {
 	c := &Condition{
-		Greater: &g,
-		Less:    &l,
-		Exactly: &e,
+		Greater:    &g,
+		Less:       &l,
+		Exactly:    &e,
+		WindowSize: 100,
 	}
 
 	c.init(DEFAULT_GROUP_BY)

@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	DEFAULT_WINDOW_SIZE = 100 // The default size of the dataframe used in window operations
-	STATUS_SIZE         = 10  // The default size of the dataframe used to count statuses
+	DEFAULT_WINDOW_SIZE = 2  // The default size of the dataframe used in window operations
+	STATUS_SIZE         = 10 // The default size of the dataframe used to count statuses
 )
 
 // Condition holds conditional information to check events against
@@ -252,14 +252,13 @@ func (c *Condition) compileChecks() []satisfier {
 				logrus.Infof("Adding derivative check of %f", check)
 				s = append(s, func(e *event.Event) bool {
 					t := c.getTracker(e)
-					t.count++
 
-					// we need to have seen at least 2 values
-					if t.count < 2 {
+					// we need to have seen at least enough events to
+					if t.count < t.df.Len() {
 						return false
 					}
 
-					diff := e.Metric - t.df.Index(t.df.Len()-2)
+					diff := e.Metric - t.df.Index(0)
 					switch kind {
 					case 1:
 						return diff > check
@@ -339,9 +338,9 @@ func getTrackingFunc(c *Condition) TrackFunc {
 	return SimpleTrack
 }
 
+// init compiles checks and sanatizes the conditon before returning itself
 func (c *Condition) init(groupBy map[string]string) {
 	c.groupBy = compileGrouper(groupBy)
-
 	c.checks = c.compileChecks()
 
 	// fixes issue where occurences are hit, even when the event doesn't satisify the condition
@@ -350,11 +349,14 @@ func (c *Condition) init(groupBy map[string]string) {
 		c.Occurences = 1
 	}
 
+	// if we have no trackers already, make an empty map of them
 	if c.eventTrackers == nil {
 		c.eventTrackers = make(map[string]*eventTracker)
 	}
 
-	if c.WindowSize == 0 {
+	// WindowSize must be above 2. At least one piece of data is needed for historical checks.
+	if c.WindowSize < 2 {
+		logrus.Warnf("WindowSize must be >= 1. %d given. Window size for this condition will be set to %d", c.WindowSize, DEFAULT_WINDOW_SIZE)
 		c.WindowSize = DEFAULT_WINDOW_SIZE
 	}
 
