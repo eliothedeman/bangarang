@@ -1,6 +1,10 @@
 package alarm
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/eliothedeman/bangarang/event"
+)
 
 func TestDerivativeFalsePositive(t *testing.T) {
 	c := &Condition{
@@ -20,6 +24,72 @@ func TestDerivativeFalsePositive(t *testing.T) {
 			})
 		}
 	}
+}
+
+func TestDerivativeWindow(t *testing.T) {
+	var tests = []struct {
+		desc string
+		c    *Condition
+		e    []*event.Event
+		want []bool
+	}{
+		{
+			desc: "two events, large window size",
+			c: &Condition{
+				Greater:    test_f(100),
+				Derivative: true,
+				Occurences: 1,
+				WindowSize: 100,
+			},
+			e: []*event.Event{
+				&event.Event{
+					Host:    "machine.test.com",
+					Service: "test.service",
+					Metric:  0,
+				},
+				&event.Event{
+					Host:    "machine.test.com",
+					Service: "test.service",
+					Metric:  1000,
+				},
+			},
+			want: []bool{false, false},
+		},
+		{
+			desc: "hit window size",
+			c: &Condition{
+				Greater:    test_f(100),
+				Derivative: true,
+				Occurences: 1,
+				WindowSize: 2,
+			},
+			e: []*event.Event{
+				&event.Event{
+					Host:    "machine.test.com",
+					Service: "test.service",
+					Metric:  0,
+				},
+				&event.Event{
+					Host:    "machine.test.com",
+					Service: "test.service",
+					Metric:  1000,
+				},
+			},
+			want: []bool{false, true},
+		},
+	}
+
+	for i, tt := range tests {
+		tt.c.init(DEFAULT_GROUP_BY)
+		for x, e := range tt.e {
+			got := tt.c.TrackEvent(e)
+			if tt.want[x] != got {
+				t.Fatalf("%d test: %s wanted %t got %t", i, tt.desc, tt.want[x], got)
+			}
+		}
+
+	}
+
 }
 
 func TestDerivative(t *testing.T) {

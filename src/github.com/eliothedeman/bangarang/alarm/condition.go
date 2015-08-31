@@ -338,6 +338,7 @@ func getTrackingFunc(c *Condition) TrackFunc {
 	return SimpleTrack
 }
 
+// init compiles checks and sanatizes the conditon before returning itself
 func (c *Condition) init(groupBy map[string]string) {
 	c.groupBy = compileGrouper(groupBy)
 
