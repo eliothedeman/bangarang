@@ -342,6 +342,7 @@ func getTrackingFunc(c *Condition) TrackFunc {
 func (c *Condition) init(groupBy map[string]string) {
 	c.groupBy = compileGrouper(groupBy)
 	c.checks = c.compileChecks()
+	c.eventTrackers = make(map[string]*eventTracker)
 
 	// fixes issue where occurences are hit, even when the event doesn't satisify the condition
 	if c.Occurences < 1 {

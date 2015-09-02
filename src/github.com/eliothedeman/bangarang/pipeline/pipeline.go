@@ -16,6 +16,7 @@ const (
 	KEEP_ALIVE_SERVICE_NAME = "KeepAlive"
 )
 
+// Pipeline
 type Pipeline struct {
 	keepAliveAge       time.Duration
 	keepAliveCheckTime time.Duration
@@ -33,6 +34,7 @@ type Pipeline struct {
 	in                 chan *event.Event
 }
 
+// NewPipeline
 func NewPipeline(conf *config.AppConfig) *Pipeline {
 	p := &Pipeline{
 		encodingPool:       event.NewEncodingPool(event.EncoderFactories[conf.Encoding], event.DecoderFactories[conf.Encoding], runtime.NumCPU()),
@@ -70,9 +72,11 @@ func (p *Pipeline) refreshPolicies(m map[string]*alarm.Policy) {
 		if _, inMap := p.policies[k]; !inMap {
 			p.policies[k] = v
 		} else {
+			println("here")
 
 			// stop the policy if not. Stops the memory leak
 			v.Stop()
+			println("there")
 		}
 	}
 }
