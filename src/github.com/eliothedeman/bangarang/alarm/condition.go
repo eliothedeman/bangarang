@@ -101,6 +101,9 @@ func (c *Condition) DoOnTracker(e *event.Event, dot func(*eventTracker)) {
 }
 
 func (c *Condition) getTracker(e *event.Event) *eventTracker {
+	if c.eventTrackers == nil {
+		c.eventTrackers = make(map[string]*eventTracker)
+	}
 	et, ok := c.eventTrackers[c.groupBy.genIndexName(e)]
 	if !ok {
 		et = c.newTracker()
@@ -342,6 +345,7 @@ func getTrackingFunc(c *Condition) TrackFunc {
 func (c *Condition) init(groupBy map[string]string) {
 	c.groupBy = compileGrouper(groupBy)
 	c.checks = c.compileChecks()
+	c.eventTrackers = make(map[string]*eventTracker)
 
 	// fixes issue where occurences are hit, even when the event doesn't satisify the condition
 	if c.Occurences < 1 {

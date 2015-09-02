@@ -1,6 +1,7 @@
 package event
 
 import (
+	"encoding/binary"
 	"strings"
 	"sync"
 )
@@ -22,6 +23,18 @@ type Event struct {
 	Tags       map[string]string `json:"tags" msg:"tags"`
 	indexName  string
 	wait       sync.WaitGroup
+}
+
+func (e *Event) MarshalBinary() ([]byte, error) {
+	buff := make([]byte, e.Msgsize()+8)
+	tmp, err := e.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	copy(buff[8:], tmp)
+
+	binary.PutUvarint(buff[:8], uint64(len(tmp)))
+	return buff[:8+len(tmp)], nil
 }
 
 func (e *Event) Wait() {
