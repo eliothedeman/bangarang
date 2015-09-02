@@ -77,7 +77,6 @@ func (t *TCPProvider) Start(p event.Passer) {
 			c, err := t.listener.AcceptTCP()
 			if err != nil {
 				logrus.Errorf("Cannot accept new tcp connection %s", err.Error())
-				return
 			} else {
 				// consume the connection
 				logrus.Infof("Accpeted new tcp connection from %s", c.RemoteAddr().String())

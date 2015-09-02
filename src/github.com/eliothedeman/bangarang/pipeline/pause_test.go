@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"log"
 	"testing"
 
 	"github.com/Sirupsen/logrus"
@@ -20,6 +21,32 @@ func TestPausePipeline(t *testing.T) {
 
 	// make sure we can still insert events
 	p.Pass(&event.Event{})
+}
+
+func TestAddConfig(t *testing.T) {
+	c := testCondition(test_f(0), nil, nil, 1)
+	pipe := testPolicy(c, nil, map[string]string{"service": "KeepAlive"}, nil)
+	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	defer p.index.Delete()
+	p.Process(&event.Event{})
+
+	conf := &config.AppConfig{}
+	conf.Policies = map[string]*alarm.Policy{"new": testPolicy(c, nil, map[string]string{"2": "2"}, nil)}
+
+	log.Println(p.policies)
+	p.Refresh(conf)
+	p.Pass(&event.Event{})
+
+	conf = p.GetConfig()
+	log.Println(p.policies)
+	conf.Policies["other"] = testPolicy(c, nil, map[string]string{"1": "1"}, nil)
+	p.Refresh(conf)
+	log.Println(p.policies)
+	for i := 0; i < 100; i++ {
+		p.Pass(&event.Event{})
+
+	}
+
 }
 
 func TestPausePipelineCache(t *testing.T) {

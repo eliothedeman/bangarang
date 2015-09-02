@@ -72,11 +72,11 @@ func (p *Pipeline) refreshPolicies(m map[string]*alarm.Policy) {
 		if _, inMap := p.policies[k]; !inMap {
 			p.policies[k] = v
 		} else {
-			println("here")
 
 			// stop the policy if not. Stops the memory leak
-			v.Stop()
-			println("there")
+			if p.policies[k] != v {
+				v.Stop()
+			}
 		}
 	}
 }
