@@ -154,21 +154,7 @@ func (t *TCPProvider) listen() error {
 	l, err := net.ListenTCP("tcp", t.laddr)
 	if err != nil {
 		logrus.Error(err)
-
-		// check to see if it is an already initilized bangarang provider
-		conn, err := net.Dial("tcp", t.laddr.String())
-		if err != nil {
-			return err
-		}
-		buff := make([]byte, len(START_HANDSHAKE))
-		conn.Read(buff)
-		if string(buff) != START_HANDSHAKE {
-			logrus.Error(string(buff))
-			return err
-		} else {
-			logrus.Infof("TCP provider already running on %s", t.laddr.String())
-		}
-		conn.Close()
+		return err
 	}
 
 	t.listener = l

@@ -101,6 +101,9 @@ func (c *Condition) DoOnTracker(e *event.Event, dot func(*eventTracker)) {
 }
 
 func (c *Condition) getTracker(e *event.Event) *eventTracker {
+	if c.eventTrackers == nil {
+		c.eventTrackers = make(map[string]*eventTracker)
+	}
 	et, ok := c.eventTrackers[c.groupBy.genIndexName(e)]
 	if !ok {
 		et = c.newTracker()
