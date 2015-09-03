@@ -2,6 +2,7 @@ package event
 
 import (
 	"encoding/binary"
+	"math"
 	"strings"
 	"sync"
 )
@@ -25,16 +26,113 @@ type Event struct {
 	wait       sync.WaitGroup
 }
 
+// MarshalBinary creates the binary representation of an event
+// Size header 8 bytes
+// Metric 8 bytes
+// Host Size 1 byte
+// Host (max 256 bytes)
+// Service Size 1 byte
+// Service (max 256 bytes)
 func (e *Event) MarshalBinary() ([]byte, error) {
-	buff := make([]byte, e.Msgsize()+8)
-	tmp, err := e.MarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	copy(buff[8:], tmp)
+	size := e.binSize()
+	buff := make([]byte, size)
+	offset := 0
 
-	binary.PutUvarint(buff[:8], uint64(len(tmp)))
-	return buff[:8+len(tmp)], nil
+	// size
+	binary.PutUvarint(buff[:8], uint64(size))
+	offset += 8
+
+	// metric
+	binary.PutUvarint(buff[offset:offset+8], math.Float64bits(e.Metric))
+	offset += 8
+
+	// host
+	buff[offset] = uint8(sizeOfString(e.Host))
+	offset += 1
+	copy(buff[offset:offset+sizeOfString(e.Host)], []byte(e.Host))
+	offset += sizeOfString(e.Host)
+
+	// service
+	buff[offset] = uint8(sizeOfString(e.Service))
+	offset += 1
+	copy(buff[offset:offset+sizeOfString(e.Service)], []byte(e.Service))
+	offset += sizeOfString(e.Service)
+
+	// service
+	buff[offset] = uint8(sizeOfString(e.SubService))
+	offset += 1
+	copy(buff[offset:offset+sizeOfString(e.SubService)], []byte(e.SubService))
+	offset += sizeOfString(e.SubService)
+
+	// tags
+	for k, v := range e.Tags {
+		buff[offset] = uint8(sizeOfString(k))
+		offset += 1
+		copy(buff[offset:offset+sizeOfString(k)], []byte(k))
+		offset += sizeOfString(k)
+
+		buff[offset] = uint8(sizeOfString(v))
+		offset += 1
+		copy(buff[offset:offset+sizeOfString(v)], []byte(v))
+		offset += sizeOfString(v)
+	}
+
+	return buff, nil
+}
+
+// binSize returns the size of an event once encoded as binary
+func (e *Event) binSize() int {
+
+	// start with the size of the "size" header
+	size := 8
+
+	// add the size of the metric
+	size += 8
+
+	// all non-fixed sizes also have an 1 byte size field
+
+	// get the size of all the strings
+	size += sizeOfString(e.Host)
+	size += 1
+
+	size += sizeOfString(e.Service)
+	size += 1
+
+	size += sizeOfString(e.SubService)
+	size += 1
+
+	// get the size of the tags
+	size += sizeOfMap(e.Tags)
+
+	return size
+}
+
+func sizeOfString(s string) int {
+	size := len(s)
+	if size > 256 {
+		return 256
+	}
+
+	return size
+}
+
+// return the size of all the string in the map
+func sizeOfMap(m map[string]string) int {
+	size := 0
+	for k, v := range m {
+		// header
+		size += 1
+
+		// size of key
+		size += sizeOfString(k)
+
+		// val header
+		size += 1
+
+		// size of value
+		size += sizeOfString(v)
+	}
+	return size
 }
 
 func (e *Event) Wait() {
