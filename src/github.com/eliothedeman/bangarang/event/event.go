@@ -15,6 +15,8 @@ const (
 //go:generate ffjson $GOFILE
 //go:generate msgp $GOFILE
 
+// Event represents a metric as it passes through the pipeline.
+// it holds meta data about the metric, as well as methods to trace the event as it is processed
 type Event struct {
 	Host       string            `json:"host" msg:"host"`
 	Service    string            `json:"service" msg:"service"`
