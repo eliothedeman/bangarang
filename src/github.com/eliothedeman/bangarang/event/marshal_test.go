@@ -1,11 +1,15 @@
 package event
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestMarshalBinary(t *testing.T) {
 	e := &Event{
 		Host:    "hello",
 		Service: "what's up",
+		Metric:  3.0005,
 	}
 	buff, err := e.MarshalBinary()
 	if err != nil {
@@ -17,7 +21,26 @@ func TestMarshalBinary(t *testing.T) {
 	}
 }
 
-func TestBinSize(t *testing.T) {
+func TestUnmarshal(t *testing.T) {
+	e := &Event{
+		Host:    "machine01.deployment.company.com",
+		Service: "load",
+		Metric:  2.001,
+		Tags: map[string]string{
+			"key": "value",
+		},
+	}
+
+	buff, _ := e.MarshalBinary()
+
+	n := &Event{}
+	err := n.UnmarshalBinary(buff)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Printf("%+v\n", e)
+	fmt.Printf("%+v\n", n)
 
 }
 

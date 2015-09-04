@@ -76,7 +76,44 @@ function NewEscalationController($scope, $http, $interval) {
 			value: ""
 		}
 	];
-	this.emailOpts = [];
+
+	this.emailOpts = [
+		{
+			title: "To",
+			name: "recipients",
+			value: ""
+			format: function() {
+				if (typeof this.value == "string") {
+					this.value = this.value.split(",");
+				}
+			}
+		},
+		{
+			title: "From",
+			name:"sender",
+			value:""
+		},
+		{
+			title: "User",
+			name:"user",
+			value:""
+		},
+		{
+			title: "Password",
+			name:"password",
+			value:""
+		},
+		{
+			title:"Host",
+			name:"host",
+			value: "smtp.gmail.com"
+		},
+		{
+			title:"Port",
+			name:"port",
+			value: 465
+		}
+	];
 	this.consoleOpts = [];
 	this.chips = [];
 
@@ -110,6 +147,11 @@ function NewEscalationController($scope, $http, $interval) {
 
 		var opts = this.getOpts(this.type);
 		for (var i = 0; i < opts.length; i++) {
+
+			// if the opts value has a format function, all it
+			if (opts[i].format) {
+				opts[i].format()
+			}
 			e[opts[i].name] = opts[i].value;
 		}
 

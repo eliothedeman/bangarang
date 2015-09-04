@@ -2,6 +2,8 @@ package event
 
 import (
 	"encoding/binary"
+	"fmt"
+	"log"
 	"math"
 	"strings"
 	"sync"
@@ -26,6 +28,18 @@ type Event struct {
 	wait       sync.WaitGroup
 }
 
+func (e *Event) UnmarshalBinary(buff []byte) error {
+	if len(buff) != int(buff[0]) {
+		return fmt.Errorf("Unmarshal Binary: Malformed binary blob. Expected length of %d got %d", buff[0], len(buff))
+	}
+
+	// load the metric's bits as a uint64
+	i, _ := binary.Uvarint(buff[8:16])
+	e.Metric = math.Float64frombits(i)
+
+	return nil
+}
+
 // MarshalBinary creates the binary representation of an event
 // Size header 8 bytes
 // Metric 8 bytes
@@ -43,6 +57,7 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 	offset += 8
 
 	// metric
+	log.Println(buff[offset : offset+8])
 	binary.PutUvarint(buff[offset:offset+8], math.Float64bits(e.Metric))
 	offset += 8
 
