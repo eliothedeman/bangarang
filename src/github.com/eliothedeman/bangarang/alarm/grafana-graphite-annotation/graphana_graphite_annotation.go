@@ -1,0 +1,59 @@
+package graphite_grafana_annotation
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/eliothedeman/bangarang/alarm"
+	"github.com/eliothedeman/bangarang/event"
+)
+import "github.com/marpaia/graphite-golang"
+
+const (
+	ANNOTATION_PREFIX = "bangarang.annotation"
+)
+
+func init() {
+	alarm.LoadFactory("grafana_graphite_annotation", NewGrafanaGraphite)
+}
+
+type GrafanaGraphiteAnnotation struct {
+	client *graphite.Graphite
+}
+
+type GrafanaGraphiteAnnotationConfig struct {
+	Host string `json:"host"`
+	Port int    `json:"port"`
+}
+
+// bangarang.annotation.{status}.{host}.{service}
+func formatName(i *event.Incident) string {
+	service := strings.Replace(i.Service, " ", "_", -1)
+	return fmt.Sprintf("%s.%s.%s", ANNOTATION_PREFIX, event.Status(i.Status), service)
+}
+
+func (g *GrafanaGraphiteAnnotation) Send(i *event.Incident) error {
+	return g.client.SimpleSend(formatName(i), fmt.Sprintf("%d", i.Metric))
+}
+
+func (g *GrafanaGraphiteAnnotation) ConfigStruct() interface{} {
+	return &GrafanaGraphiteAnnotationConfig{}
+}
+
+func (g *GrafanaGraphiteAnnotation) Init(i interface{}) error {
+	c, ok := i.(*GrafanaGraphiteAnnotationConfig)
+	if !ok {
+		return fmt.Errorf("Incorrect config type. Expecting GrafanaGraphiteAnnotationConfig not %+v", i)
+	}
+
+	client, err := graphite.NewGraphite(c.Host, c.Port)
+	if err != nil {
+		return err
+	}
+	g.client = client
+	return nil
+}
+
+func NewGrafanaGraphite() alarm.Alarm {
+	return &GrafanaGraphiteAnnotation{}
+}

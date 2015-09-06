@@ -145,6 +145,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/marpaia/graphite-golang",
+			"repository": "https://github.com/marpaia/graphite-golang",
+			"revision": "a21ff3a5cd50cef156cd648a5141e3bcd6f0c22a",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/mjibson/go-dsp",
 			"repository": "https://github.com/mjibson/go-dsp",
 			"revision": "1b9e25a19e16952f6c3a5b54601010a17498d9c0",
