@@ -81,7 +81,7 @@ function NewEscalationController($scope, $http, $interval) {
 		{
 			title: "To",
 			name: "recipients",
-			value: ""
+			value: "",
 			format: function() {
 				if (typeof this.value == "string") {
 					this.value = this.value.split(",");
