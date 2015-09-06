@@ -61,7 +61,12 @@ function NewEscalationController($scope, $http, $interval) {
 		{
 			title: "Console",
 			name: "console"
+		},
+		{
+			title: "Grafana Graphite Annotation",
+			name: "grafana_graphite_annotation"
 		}
+
 	]
 
 	this.pdOpts = [
@@ -76,6 +81,19 @@ function NewEscalationController($scope, $http, $interval) {
 			value: ""
 		}
 	];
+
+	this.ggaOpts = [
+		{
+			title:"Host",
+			name: "host",
+			value: ""
+		},
+		{
+			title:"Port",
+			name: "port",
+			value: 2003
+		}
+	]
 
 	this.emailOpts = [
 		{
@@ -127,6 +145,9 @@ function NewEscalationController($scope, $http, $interval) {
 
 			case "console":
 				return this.consoleOpts;
+
+			case "grafana_graphite_annotation":
+				return this.ggaOpts;
 
 			default:
 				return [];

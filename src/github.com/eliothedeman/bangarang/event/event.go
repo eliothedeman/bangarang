@@ -89,7 +89,7 @@ func (e *Event) IndexName() string {
 	return e.indexName
 }
 
-func status(code int) string {
+func Status(code int) string {
 	switch code {
 	case WARNING:
 		return "warning"
