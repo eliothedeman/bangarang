@@ -79,7 +79,7 @@ func (p *Policy) start() {
 						case <-res:
 							logrus.Info("Attempted to resolve an incident on a policy that no longer exists")
 
-						case <-time.After(5 * time.Minute):
+						case <-time.After(1 * time.Minute):
 							return
 						}
 					}
