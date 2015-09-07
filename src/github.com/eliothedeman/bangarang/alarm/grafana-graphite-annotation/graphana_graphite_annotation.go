@@ -3,7 +3,9 @@ package graphite_grafana_annotation
 import (
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/event"
 )
@@ -33,7 +35,8 @@ func formatName(i *event.Incident) string {
 }
 
 func (g *GrafanaGraphiteAnnotation) Send(i *event.Incident) error {
-	return g.client.SimpleSend(formatName(i), fmt.Sprintf("%d", i.Metric))
+	err := g.client.SendMetric(graphite.NewMetric(formatName(i), fmt.Sprintf("%f", i.Metric), time.Now().Unix()))
+	return err
 }
 
 func (g *GrafanaGraphiteAnnotation) ConfigStruct() interface{} {
@@ -41,6 +44,7 @@ func (g *GrafanaGraphiteAnnotation) ConfigStruct() interface{} {
 }
 
 func (g *GrafanaGraphiteAnnotation) Init(i interface{}) error {
+	logrus.Info("Initializing Grafana Graphite Annotation")
 	c, ok := i.(*GrafanaGraphiteAnnotationConfig)
 	if !ok {
 		return fmt.Errorf("Incorrect config type. Expecting GrafanaGraphiteAnnotationConfig not %+v", i)

@@ -209,11 +209,9 @@ func (p *Pipeline) checkExpired() {
 	var events []*event.Event
 	for {
 		time.Sleep(p.keepAliveCheckTime)
-		logrus.Info("Checking for expired events.")
 
 		// get keepalive events for all known hosts
 		events = createKeepAliveEvents(p.tracker.HostTimes())
-		logrus.Infof("Found %d hosts with keepalives", len(events))
 
 		// process every event as if it was an incomming event
 		for _, e := range events {
