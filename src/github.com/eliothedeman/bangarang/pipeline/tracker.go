@@ -72,7 +72,11 @@ func NewReport() *TrackerReport {
 func (t *Tracker) TrackIncident(i *event.Incident) {
 	if i.GetResolve() != nil {
 		t.Query(func(r *Tracker) {
-			r.incidentResolvers[string(i.IndexName())] = i.GetResolve()
+
+			// Don't keep track of "OK" incident resolvers, as ok's can't be resolved
+			if i.Status != event.OK {
+				r.incidentResolvers[string(i.IndexName())] = i.GetResolve()
+			}
 			r.totalIncidents.inc()
 		})
 	}

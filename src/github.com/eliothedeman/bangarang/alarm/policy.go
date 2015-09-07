@@ -4,6 +4,7 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/event"
@@ -67,6 +68,23 @@ func (p *Policy) start() {
 
 				// stop this policy from being stopped again
 				p.stop = nil
+
+				// catch resolve's that could be sent to this policy
+				res := p.resolve
+				p.resolve = nil
+
+				go func() {
+					for {
+						select {
+						case <-res:
+							logrus.Info("Attempted to resolve an incident on a policy that no longer exists")
+
+						case <-time.After(1 * time.Minute):
+							return
+						}
+					}
+
+				}()
 				return
 			case in = <-p.in:
 
