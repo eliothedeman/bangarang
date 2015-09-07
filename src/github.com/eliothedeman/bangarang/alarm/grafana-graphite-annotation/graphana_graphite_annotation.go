@@ -30,8 +30,7 @@ type GrafanaGraphiteAnnotationConfig struct {
 
 // bangarang.annotation.{status}.{host}.{service}
 func formatName(i *event.Incident) string {
-	service := strings.Replace(i.Service, " ", "_", -1)
-	return fmt.Sprintf("%s.%s.%s", ANNOTATION_PREFIX, event.Status(i.Status), service)
+	return strings.Replace(fmt.Sprintf("%s.%s.%s.%s", ANNOTATION_PREFIX, event.Status(i.Status), i.Host, i.Service), " ", "_", -1)
 }
 
 func (g *GrafanaGraphiteAnnotation) Send(i *event.Incident) error {
