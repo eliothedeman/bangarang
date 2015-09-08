@@ -216,8 +216,6 @@ func (p *Pipeline) checkExpired() {
 		// process every event as if it was an incomming event
 		for _, e := range events {
 			p.Pass(e)
-			// wait for the event to be done processing before sending the next
-			e.Wait()
 		}
 	}
 }
