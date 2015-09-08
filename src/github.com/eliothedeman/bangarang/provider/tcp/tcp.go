@@ -101,7 +101,6 @@ func readFull(conn *net.TCPConn, buff []byte) error {
 func (t *TCPProvider) consume(conn *net.TCPConn, p event.Passer) {
 	buff := make([]byte, 1024*200)
 	var size_buff = make([]byte, 8)
-	var e *event.Event
 	var nextEventSize uint64
 	var n int
 	var err error
@@ -136,10 +135,9 @@ func (t *TCPProvider) consume(conn *net.TCPConn, p event.Passer) {
 				conn.Close()
 				return
 			}
+			e := &event.Event{}
 
-			t.pool.Decode(func(d event.Decoder) {
-				e, err = d.Decode(buff[:nextEventSize])
-			})
+			err = t.pool.Decode(buff[:nextEventSize], e)
 
 			if err != nil {
 				logrus.Error(err, string(buff[:nextEventSize]))

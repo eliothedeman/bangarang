@@ -99,12 +99,8 @@ func (h *HTTPProvider) Start(p event.Passer) {
 			return
 		}
 
-		logrus.Debug(string(buff))
-		var e *event.Event
-		h.pool.Decode(func(d event.Decoder) {
-			e, err = d.Decode(buff)
-			logrus.Debug(e)
-		})
+		e := &event.Event{}
+		err = h.pool.Decode(buff, e)
 
 		if err != nil {
 			logrus.Error(err)
