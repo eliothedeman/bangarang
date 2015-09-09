@@ -1,7 +1,5 @@
 package event
 
-import "github.com/Sirupsen/logrus"
-
 const (
 	ENCODING_TYPE_JSON    = "json"
 	ENCODING_TYPE_MSGPACK = "msgp"
@@ -25,7 +23,7 @@ type Encoder interface {
 
 // decodes the raw event and sends the decoded event to it's destination
 type Decoder interface {
-	Decode(raw []byte) (*Event, error)
+	Decode(raw []byte, ev *Event) error
 }
 
 type EncoderDecoder interface {
@@ -34,11 +32,8 @@ type EncoderDecoder interface {
 }
 
 type EncodingPool struct {
-	sigBuff     chan chan struct{}
-	encoders    chan Encoder
-	decoders    chan Decoder
-	encWorkChan chan EncFunc
-	decWorkChan chan DecFunc
+	encoders chan Encoder
+	decoders chan Decoder
 }
 
 type EncoderFactory func() Encoder
@@ -46,83 +41,44 @@ type DecoderFactory func() Decoder
 
 func NewEncodingPool(enc EncoderFactory, dec DecoderFactory, maxSize int) *EncodingPool {
 	p := &EncodingPool{
-		encoders:    make(chan Encoder, maxSize),
-		decoders:    make(chan Decoder, maxSize),
-		encWorkChan: make(chan EncFunc, maxSize),
-		decWorkChan: make(chan DecFunc, maxSize),
-		sigBuff:     make(chan chan struct{}, maxSize*2),
+		encoders: make(chan Encoder, maxSize),
+		decoders: make(chan Decoder, maxSize),
 	}
 
 	// fill the encoders/decoders
 	for i := 0; i < maxSize; i++ {
 		p.encoders <- enc()
 		p.decoders <- dec()
-		p.sigBuff <- make(chan struct{})
-		p.sigBuff <- make(chan struct{})
 	}
-
-	// start your engines!
-	p.manage()
 
 	return p
 }
 
-type EncFunc func(e Encoder)
-type DecFunc func(d Decoder)
-
-// starts up a goroutine for each encoder/decoder and managages incoming work on them
-func (t *EncodingPool) manage() {
-
-	logrus.Infof("Starting %d encoders", cap(t.encoders))
-	// manage encoders
-	for i := 0; i < cap(t.encoders); i++ {
-		go func() {
-			var work EncFunc
-			var enc Encoder
-			for {
-				work = <-t.encWorkChan
-				enc = <-t.encoders
-				work(enc)
-				t.encoders <- enc
-			}
-		}()
-	}
-
-	logrus.Infof("Starting %d decoders", cap(t.encoders))
-	// manage decoders
-	for i := 0; i < cap(t.decoders); i++ {
-		go func() {
-			var work DecFunc
-			var dec Decoder
-			for {
-				work = <-t.decWorkChan
-				dec = <-t.decoders
-				work(dec)
-				t.decoders <- dec
-			}
-		}()
-	}
-}
-
 // use one of the pooled encoders to encode the given event
-func (t *EncodingPool) Encode(e EncFunc) {
-	sig := <-t.sigBuff
-	t.encWorkChan <- func(enc Encoder) {
-		e(enc)
-		sig <- struct{}{}
-	}
-	<-sig
-	t.sigBuff <- sig
+func (t *EncodingPool) Encode(ev *Event) ([]byte, error) {
+	// grab a decoder from the pool
+	en := <-t.encoders
+
+	// run the encoding
+	buff, err := en.Encode(ev)
+
+	// re-add the encoder to the pool
+	t.encoders <- en
+
+	return buff, err
 }
 
 // use one of the pooled decoders to decode the given event
-func (t *EncodingPool) Decode(d DecFunc) {
-	sig := <-t.sigBuff
-	t.decWorkChan <- func(dec Decoder) {
-		d(dec)
-		sig <- struct{}{}
-	}
+func (t *EncodingPool) Decode(buff []byte, ev *Event) error {
 
-	<-sig
-	t.sigBuff <- sig
+	// grab a decoder from the pool
+	d := <-t.decoders
+
+	// run the decodeing
+	err := d.Decode(buff, ev)
+
+	// re-add the decoder to the pool
+	t.decoders <- d
+
+	return err
 }

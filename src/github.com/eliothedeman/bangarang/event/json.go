@@ -32,8 +32,7 @@ func NewJsonDecoder() Decoder {
 type JsonDecoder struct {
 }
 
-func (j *JsonDecoder) Decode(raw []byte) (*Event, error) {
-	e := &Event{}
+func (j *JsonDecoder) Decode(raw []byte, e *Event) error {
 	err := ffjson.UnmarshalFast(raw, e)
-	return e, err
+	return err
 }
