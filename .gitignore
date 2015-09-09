@@ -5,6 +5,7 @@ pkg
 *.deb
 *.db
 *.out
+*.test
 bin
 *sublime*
 *bindata.go*
