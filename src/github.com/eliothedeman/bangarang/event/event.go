@@ -4,8 +4,10 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"reflect"
 	"strings"
 	"sync"
+	"unsafe"
 )
 
 const (
@@ -113,21 +115,21 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 	tmp = sizeOfString(e.Host)
 	buff[offset] = uint8(tmp)
 	offset += 1
-	copy(buff[offset:offset+tmp], []byte(e.Host))
+	copy(buff[offset:offset+tmp], unsafeBytes(e.Host))
 	offset += tmp
 
 	// service
 	tmp = sizeOfString(e.Service)
 	buff[offset] = uint8(tmp)
 	offset += 1
-	copy(buff[offset:offset+tmp], []byte(e.Service))
+	copy(buff[offset:offset+tmp], unsafeBytes(e.Service))
 	offset += tmp
 
 	// service
 	tmp = sizeOfString(e.SubService)
 	buff[offset] = uint8(tmp)
 	offset += 1
-	copy(buff[offset:offset+tmp], []byte(e.SubService))
+	copy(buff[offset:offset+tmp], unsafeBytes(e.SubService))
 	offset += tmp
 
 	// tags
@@ -135,13 +137,13 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 		tmp = sizeOfString(k)
 		buff[offset] = uint8(tmp)
 		offset += 1
-		copy(buff[offset:offset+tmp], []byte(k))
+		copy(buff[offset:offset+tmp], unsafeBytes(k))
 		offset += tmp
 
 		tmp = sizeOfString(v)
 		buff[offset] = uint8(tmp)
 		offset += 1
-		copy(buff[offset:offset+tmp], []byte(v))
+		copy(buff[offset:offset+tmp], unsafeBytes(v))
 		offset += tmp
 	}
 
@@ -151,11 +153,8 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 // binSize returns the size of an event once encoded as binary
 func (e *Event) binSize() int {
 
-	// start with the size of the "size" header
-	size := 8
-
-	// add the size of the metric
-	size += 8
+	// start with the size of the "size" header + size of metric
+	size := 16
 
 	// all non-fixed sizes also have an 1 byte size field
 
@@ -184,12 +183,19 @@ func sizeOfString(s string) int {
 	return size
 }
 
+func unsafeBytes(s string) []byte {
+	return *(*[]byte)(unsafe.Pointer(&reflect.SliceHeader{
+		Len:  len(s),
+		Cap:  len(s),
+		Data: (*(*reflect.StringHeader)(unsafe.Pointer(&s))).Data,
+	}))
+}
+
 // return the size of all the string in the map
 func sizeOfMap(m map[string]string) int {
-	size := 0
+	// key/val headers
+	size := len(m) * 2
 	for k, v := range m {
-		// key/val header
-		size += 2
 
 		// size of key
 		size += sizeOfString(k)
