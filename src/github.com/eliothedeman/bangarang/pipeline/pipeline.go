@@ -87,6 +87,19 @@ func (p *Pipeline) RemovePolicy(name string) {
 	pol, ok := p.policies[name]
 	if ok {
 		log.Println("stopping", name)
+
+		// resolve all incidents that were created by this policy, and are still alive
+		ins := p.index.ListIncidents()
+		for _, i := range ins {
+
+			// if the incident matched this policy, resolve it
+			if i.Policy == name {
+				i.Status = event.OK
+
+				// process the resolved incident
+				go p.ProcessIncident(i)
+			}
+		}
 		pol.Stop()
 		delete(p.policies, name)
 	}
@@ -196,11 +209,9 @@ func (p *Pipeline) checkExpired() {
 	var events []*event.Event
 	for {
 		time.Sleep(p.keepAliveCheckTime)
-		logrus.Info("Checking for expired events.")
 
 		// get keepalive events for all known hosts
 		events = createKeepAliveEvents(p.tracker.HostTimes())
-		logrus.Infof("Found %d hosts with keepalives", len(events))
 
 		// process every event as if it was an incomming event
 		for _, e := range events {
@@ -255,7 +266,6 @@ func (p *Pipeline) ProcessIncident(in *event.Incident) {
 
 	// start tracking this incident in memory so we can call back to it
 	p.tracker.TrackIncident(in)
-	println(string(in.IndexName()))
 
 	// dedup the incident
 	if p.Dedupe(in) {

@@ -61,7 +61,12 @@ function NewEscalationController($scope, $http, $interval) {
 		{
 			title: "Console",
 			name: "console"
+		},
+		{
+			title: "Grafana Graphite Annotation",
+			name: "grafana_graphite_annotation"
 		}
+
 	]
 
 	this.pdOpts = [
@@ -77,11 +82,24 @@ function NewEscalationController($scope, $http, $interval) {
 		}
 	];
 
+	this.ggaOpts = [
+		{
+			title:"Host",
+			name: "host",
+			value: ""
+		},
+		{
+			title:"Port",
+			name: "port",
+			value: 2003
+		}
+	]
+
 	this.emailOpts = [
 		{
 			title: "To",
 			name: "recipients",
-			value: ""
+			value: "",
 			format: function() {
 				if (typeof this.value == "string") {
 					this.value = this.value.split(",");
@@ -127,6 +145,9 @@ function NewEscalationController($scope, $http, $interval) {
 
 			case "console":
 				return this.consoleOpts;
+
+			case "grafana_graphite_annotation":
+				return this.ggaOpts;
 
 			default:
 				return [];

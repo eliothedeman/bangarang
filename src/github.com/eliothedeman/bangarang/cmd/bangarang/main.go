@@ -9,6 +9,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	_ "github.com/eliothedeman/bangarang/alarm/console"
 	_ "github.com/eliothedeman/bangarang/alarm/email"
+	_ "github.com/eliothedeman/bangarang/alarm/grafana-graphite-annotation"
 	_ "github.com/eliothedeman/bangarang/alarm/pd"
 	"github.com/eliothedeman/bangarang/api"
 	"github.com/eliothedeman/bangarang/config"
@@ -26,7 +27,7 @@ var (
 )
 
 const (
-	versionNumber = "0.9.1"
+	versionNumber = "0.9.9"
 )
 
 func init() {

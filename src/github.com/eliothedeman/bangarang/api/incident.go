@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
@@ -48,6 +49,24 @@ func makeKV(in []*event.Incident) map[string]*event.Incident {
 		out[string(i.IndexName())] = i
 	}
 	return out
+}
+
+// Create an incident
+func (i *Incident) Post(w http.ResponseWriter, r *http.Request) {
+	buff, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	in := &event.Incident{}
+	err = json.Unmarshal(buff, in)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	i.pipeline.ProcessIncident(in)
 }
 
 // Delete will resolve a given event

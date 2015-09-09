@@ -2,14 +2,17 @@ package email
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
-	"github.com/eliothedeman/bangarang/alarm"
-	"github.com/eliothedeman/bangarang/event"
 	"log"
 	"net/mail"
 	"net/smtp"
 	"strconv"
 	"strings"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/eliothedeman/bangarang/alarm"
+	"github.com/eliothedeman/bangarang/event"
 )
 
 func init() {
@@ -46,7 +49,9 @@ func writeEmailBuffer(headers map[string]string, body string) string {
 	return buf
 }
 
+// Send an email via smtp
 func (e *Email) Send(i *event.Incident) error {
+
 	//For now set the description as both the subject and body
 	headers := make(map[string]string)
 	headers["From"] = e.conf.Sender
@@ -55,14 +60,20 @@ func (e *Email) Send(i *event.Incident) error {
 	headers["MIME-Version"] = "1.0"
 	headers["Content-Type"] = "text/plain; charset=\"utf-8\""
 	headers["Content-Transfer-Encoding"] = "base64"
-	body := i.FormatDescription()
-	buf := writeEmailBuffer(headers, body)
 
-	err := smtp.SendMail(e.conf.Host+":"+strconv.Itoa(e.conf.Port), *e.Auth,
-		e.conf.Sender, e.conf.Recipients, []byte(buf))
+	// make the body a json encoded representation of the incidnent
+	body, err := json.MarshalIndent(i, "", "    ")
 	if err != nil {
-		log.Println(i.FormatDescription())
+		logrus.Errorf("Unable to encode incidnet for email %s", err.Error())
 	}
+
+	log.Println("sending email")
+	err = smtp.SendMail(e.conf.Host+":"+strconv.Itoa(e.conf.Port), *e.Auth,
+		e.conf.Sender, e.conf.Recipients, []byte(writeEmailBuffer(headers, string(body))))
+	if err != nil {
+		logrus.Errorf("Unable to send email via smtp %s", err)
+	}
+	log.Println("done sending mail")
 	return err
 }
 
