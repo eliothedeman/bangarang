@@ -4,6 +4,8 @@ install:
 	- go get -u github.com/jteeuwen/go-bindata/...
 	- go get -u github.com/pquerna/ffjson
 	- export PATH=$PATH:$HOME/gopath/bin
+env:
+	- export GOPATH=$(dir):$(dir)/vendor
 
 test:
 	- export GOPATH=$(dir):$(dir)/vendor; go test -p=1 github.com/eliothedeman/bangarang/...

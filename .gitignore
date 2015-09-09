@@ -4,6 +4,7 @@ alerts
 pkg
 *.deb
 *.db
+*.out
 bin
 *sublime*
 *bindata.go*

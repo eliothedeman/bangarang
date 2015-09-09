@@ -3,7 +3,6 @@ package event
 import (
 	"encoding/binary"
 	"fmt"
-	"log"
 	"math"
 	"strings"
 	"sync"
@@ -31,13 +30,52 @@ type Event struct {
 }
 
 func (e *Event) UnmarshalBinary(buff []byte) error {
-	if len(buff) != int(buff[0]) {
+	if len(buff) != int(binary.BigEndian.Uint64(buff[:8])) {
 		return fmt.Errorf("Unmarshal Binary: Malformed binary blob. Expected length of %d got %d", buff[0], len(buff))
 	}
 
 	// load the metric's bits as a uint64
-	i, _ := binary.Uvarint(buff[8:16])
+	i := binary.BigEndian.Uint64(buff[8:16])
 	e.Metric = math.Float64frombits(i)
+
+	// host
+	offset := 16
+	l := int(buff[offset])
+	offset += 1
+	e.Host = string(buff[offset : offset+l])
+	offset += l
+	println(e.Host)
+
+	// service
+	l = int(buff[offset])
+	println(l)
+	offset += 1
+	e.Service = string(buff[offset : offset+l])
+	offset += l
+
+	// sub_service
+	l = int(buff[offset])
+	offset += 1
+	e.SubService = string(buff[offset : offset+l])
+	offset += l
+
+	// tags
+	e.Tags = map[string]string{}
+	for offset < len(buff) {
+
+		// key
+		l = int(buff[offset])
+		offset += 1
+		key := string(buff[offset : offset+l])
+		offset += l
+
+		l = int(buff[offset])
+		offset += 1
+		value := string(buff[offset : offset+l])
+		offset += l
+
+		e.Tags[key] = value
+	}
 
 	return nil
 }
@@ -49,49 +87,62 @@ func (e *Event) UnmarshalBinary(buff []byte) error {
 // Host (max 256 bytes)
 // Service Size 1 byte
 // Service (max 256 bytes)
+// SubService Size 1 byte
+// SubService (max 256 bytes)
+//
+// Tags: key size 1 byte
+// Tags: key (max 256 bytes)
+// Tags: value size 1 byte
+// Tags: value (max 256 bytes)
+// repeat
 func (e *Event) MarshalBinary() ([]byte, error) {
 	size := e.binSize()
 	buff := make([]byte, size)
 	offset := 0
+	tmp := 0
 
 	// size
-	binary.PutUvarint(buff[:8], uint64(size))
+	binary.BigEndian.PutUint64(buff[:8], uint64(size))
 	offset += 8
 
 	// metric
-	log.Println(buff[offset : offset+8])
-	binary.PutUvarint(buff[offset:offset+8], math.Float64bits(e.Metric))
+	binary.BigEndian.PutUint64(buff[offset:offset+8], math.Float64bits(e.Metric))
 	offset += 8
 
 	// host
-	buff[offset] = uint8(sizeOfString(e.Host))
+	tmp = sizeOfString(e.Host)
+	buff[offset] = uint8(tmp)
 	offset += 1
-	copy(buff[offset:offset+sizeOfString(e.Host)], []byte(e.Host))
-	offset += sizeOfString(e.Host)
+	copy(buff[offset:offset+tmp], []byte(e.Host))
+	offset += tmp
 
 	// service
-	buff[offset] = uint8(sizeOfString(e.Service))
+	tmp = sizeOfString(e.Service)
+	buff[offset] = uint8(tmp)
 	offset += 1
-	copy(buff[offset:offset+sizeOfString(e.Service)], []byte(e.Service))
-	offset += sizeOfString(e.Service)
+	copy(buff[offset:offset+tmp], []byte(e.Service))
+	offset += tmp
 
 	// service
-	buff[offset] = uint8(sizeOfString(e.SubService))
+	tmp = sizeOfString(e.SubService)
+	buff[offset] = uint8(tmp)
 	offset += 1
-	copy(buff[offset:offset+sizeOfString(e.SubService)], []byte(e.SubService))
-	offset += sizeOfString(e.SubService)
+	copy(buff[offset:offset+tmp], []byte(e.SubService))
+	offset += tmp
 
 	// tags
 	for k, v := range e.Tags {
-		buff[offset] = uint8(sizeOfString(k))
+		tmp = sizeOfString(k)
+		buff[offset] = uint8(tmp)
 		offset += 1
-		copy(buff[offset:offset+sizeOfString(k)], []byte(k))
-		offset += sizeOfString(k)
+		copy(buff[offset:offset+tmp], []byte(k))
+		offset += tmp
 
-		buff[offset] = uint8(sizeOfString(v))
+		tmp = sizeOfString(v)
+		buff[offset] = uint8(tmp)
 		offset += 1
-		copy(buff[offset:offset+sizeOfString(v)], []byte(v))
-		offset += sizeOfString(v)
+		copy(buff[offset:offset+tmp], []byte(v))
+		offset += tmp
 	}
 
 	return buff, nil
@@ -137,14 +188,11 @@ func sizeOfString(s string) int {
 func sizeOfMap(m map[string]string) int {
 	size := 0
 	for k, v := range m {
-		// header
-		size += 1
+		// key/val header
+		size += 2
 
 		// size of key
 		size += sizeOfString(k)
-
-		// val header
-		size += 1
 
 		// size of value
 		size += sizeOfString(v)
