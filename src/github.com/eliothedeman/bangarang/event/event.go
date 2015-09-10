@@ -46,11 +46,9 @@ func (e *Event) UnmarshalBinary(buff []byte) error {
 	offset += 1
 	e.Host = string(buff[offset : offset+l])
 	offset += l
-	println(e.Host)
 
 	// service
 	l = int(buff[offset])
-	println(l)
 	offset += 1
 	e.Service = string(buff[offset : offset+l])
 	offset += l

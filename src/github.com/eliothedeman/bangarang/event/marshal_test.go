@@ -1,9 +1,6 @@
 package event
 
-import (
-	"fmt"
-	"testing"
-)
+import "testing"
 
 func TestMarshalBinary(t *testing.T) {
 	e := &Event{
@@ -39,8 +36,28 @@ func TestUnmarshal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fmt.Printf("%+v\n", e)
-	fmt.Printf("%+v\n", n)
+	if e.Metric != n.Metric {
+		t.Fatalf("wanted: %v got %v", e.Metric, n.Metric)
+
+	}
+
+	if e.Host != n.Host {
+		t.Fatalf("wanted: %v got %v", e.Host, n.Host)
+	}
+
+	if e.Service != n.Service {
+		t.Fatalf("wanted: %v got %v", e.Service, n.Service)
+	}
+
+	if e.SubService != n.SubService {
+		t.Fatalf("wanted: %v got %v", e.SubService, n.SubService)
+	}
+
+	for k, v := range e.Tags {
+		if n.Tags[k] != v {
+			t.Fatalf("wanted: %v got %v", v, n.Tags[k])
+		}
+	}
 
 }
 

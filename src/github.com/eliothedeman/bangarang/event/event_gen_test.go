@@ -36,6 +36,7 @@ func TestEventMarshalUnmarshal(t *testing.T) {
 
 func BenchmarkEventMarshalMsg(b *testing.B) {
 	v := Event{}
+	v.Tags = map[string]string{"key": "value"}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
