@@ -23,14 +23,16 @@ const (
 	CurrentBucketName = "current"
 
 	// CurrentVersionHash is the "hash" name of the current config
-	CurrentVersionHash  = "current"
-	appConfigBucketName = "app"
+	CurrentVersionHash   = "current"
+	appConfigBucketName  = "app"
+	userCOnfigBucketName = "user"
 )
 
 var (
 	// BucketNames holds the names of the buckets used to store versioned configs
 	BucketNames = []string{
 		"app",
+		"user",
 	}
 )
 
@@ -80,17 +82,98 @@ func (d *DBConf) decode(buff []byte, i interface{}) error {
 
 // Snapshot represents a bangarang config at a given point in time
 type Snapshot struct {
-	Hash      string     `json:"hash"`
-	Timestamp time.Time  `json:"time_stamp"`
-	App       *AppConfig `json:"app"`
+	Hash        string     `json:"hash"`
+	Timestamp   time.Time  `json:"time_stamp"`
+	App         *AppConfig `json:"app"`
+	CreatorId   uint16     `json:"creator_id"` // the User.Id of who created this snapshot
+	CreatorName string     `json:"creator_name"`
 }
 
-func newSnapshot(ac *AppConfig) *Snapshot {
+func newSnapshot(ac *AppConfig, creator *User) *Snapshot {
 	return &Snapshot{
-		Timestamp: time.Now(),
-		App:       ac,
-		Hash:      fmt.Sprintf("%x", HashConfig(ac)),
+		Timestamp:   time.Now(),
+		App:         ac,
+		CreatorId:   creator.Id,
+		CreatorName: creator.Name,
+		Hash:        fmt.Sprintf("%x", HashConfig(ac)),
 	}
+}
+
+//  GetUser by their User.Id
+func (d *DBConf) GetUser(id uint16) (*User, error) {
+	var buff []byte
+
+	err := d.db.View(func(t *bolt.Tx) error {
+		b := t.Bucket([]byte(userCOnfigBucketName))
+		buff = b.Get([]byte(idToBin(id)))
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	// if the found buffer is of len 0, then the user's record was not found
+	if len(buff) == 0 {
+		return nil, fmt.Errorf("User: %d not found", id)
+	}
+
+	// unmarshal the user
+	u := &User{}
+	err = d.decode(buff, u)
+
+	return u, err
+}
+
+// PutUser inserts the user into the db
+func (d *DBConf) PutUser(u *User) error {
+
+	// encode the user
+	buff, err := d.encode(u)
+	if err != nil {
+		return err
+	}
+
+	// write the user to the db
+	err = d.db.Update(func(t *bolt.Tx) error {
+		b := t.Bucket([]byte(userCOnfigBucketName))
+		return b.Put(idToBin(u.Id), buff)
+	})
+
+	return err
+}
+
+// DeleteUser by the User.Id
+func (d *DBConf) DeleteUser(id uint16) error {
+	return d.db.Update(func(t *bolt.Tx) error {
+		b := t.Bucket([]byte(userCOnfigBucketName))
+		return b.Delete(idToBin(id))
+	})
+}
+
+// ListUsers fetches all known users
+func (d *DBConf) ListUsers() ([]*User, error) {
+	var u []*User
+
+	err := d.db.View(func(t *bolt.Tx) error {
+		b := t.Bucket([]byte(userCOnfigBucketName))
+		u = make([]*User, 0, b.Stats().KeyN)
+
+		// for every key/value decode the user and append it to the user list
+		return b.ForEach(func(key, val []byte) error {
+			x := &User{}
+			err := d.decode(val, x)
+			if err != nil {
+				return err
+			}
+
+			// add the user to the list
+			u = append(u, x)
+			return nil
+		})
+
+	})
+	return u, err
 }
 
 func (d *DBConf) getVersion(version string) (*AppConfig, error) {
@@ -115,7 +198,7 @@ func (d *DBConf) getVersion(version string) (*AppConfig, error) {
 	}
 
 	// decode the snapshot
-	s := newSnapshot(NewDefaultConfig())
+	s := newSnapshot(NewDefaultConfig(), nil)
 	s.App.provider = d
 
 	// if the buffer is of zero size, then the config was not found
@@ -177,7 +260,7 @@ func (d *DBConf) PutConfig(a *AppConfig) (string, error) {
 		b := tx.Bucket([]byte(appConfigBucketName))
 		oldBuff := b.Get([]byte(CurrentVersionHash))
 		if len(oldBuff) > 0 {
-			old := newSnapshot(NewDefaultConfig())
+			old := newSnapshot(NewDefaultConfig(), nil)
 			err := d.decode(oldBuff, old)
 			if err != nil {
 				log.Println(err)
@@ -193,7 +276,7 @@ func (d *DBConf) PutConfig(a *AppConfig) (string, error) {
 		}
 
 		// write the new snapshot to disk
-		newBuff, err := d.encode(newSnapshot(a))
+		newBuff, err := d.encode(newSnapshot(a, nil))
 		if err != nil {
 			log.Println(err)
 			return err
