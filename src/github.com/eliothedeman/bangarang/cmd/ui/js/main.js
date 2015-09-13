@@ -1,4 +1,4 @@
-function Router($scope, $cookies) {
+function Router($scope, $cookies, $http) {
 	this.selected = 0;
 	this.getSelected = function() {
 		var s = $cookies.get("router:tab");
@@ -13,6 +13,14 @@ function Router($scope, $cookies) {
 		$cookies.put("router:tab", index); 
 		this.selected = index;
 	}
+
+    this.login = function(username, password) {
+
+    }
+
+    this.logout = function() {
+
+    }
 }
 
 angular.module("bangarang").controller("Router", Router);

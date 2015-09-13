@@ -6,7 +6,7 @@ install:
 	- export PATH=$PATH:$HOME/gopath/bin
 
 test:
-	- export GOPATH=$(dir):$(dir)/vendor; go test -p=1 github.com/eliothedeman/bangarang/...
+	- export GOPATH=$(dir):$(dir)/vendor; go test -race -p=1 github.com/eliothedeman/bangarang/...
 
 
 testing:

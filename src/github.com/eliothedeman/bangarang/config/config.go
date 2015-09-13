@@ -23,9 +23,10 @@ type Configer interface {
 type Provider interface {
 	GetConfig(version string) (*AppConfig, error)
 	GetCurrent() (*AppConfig, error)
-	PutConfig(*AppConfig) (string, error)
+	PutConfig(*AppConfig, *User) (string, error)
 	ListSnapshots() []*Snapshot
 	GetUser(id uint16) (*User, error)
+	GetUserByUserName(string) (*User, error)
 	DeleteUser(id uint16) error
 	PutUser(u *User) error
 	ListUsers() ([]*User, error)

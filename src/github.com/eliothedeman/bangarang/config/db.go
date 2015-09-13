@@ -25,7 +25,7 @@ const (
 	// CurrentVersionHash is the "hash" name of the current config
 	CurrentVersionHash   = "current"
 	appConfigBucketName  = "app"
-	userCOnfigBucketName = "user"
+	userConfigBucketName = "user"
 )
 
 var (
@@ -35,6 +35,37 @@ var (
 		"user",
 	}
 )
+
+func (d *DBConf) initAdminUser() error {
+	adminExists := false
+	err := d.db.Update(func(t *bolt.Tx) error {
+		b := t.Bucket([]byte(userConfigBucketName))
+
+		// the admin user is always user_id 0
+		buff := b.Get(idToBin(0))
+
+		if len(buff) != 0 {
+			adminExists = true
+		}
+
+		return nil
+	})
+
+	// if the admin already exists, no need to do anything
+	if adminExists {
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	// if no user is found, we must created one
+	u := NewUser(0, "admin", "admin", "admin", ADMIN)
+	logrus.Info("Adding default admin user. user: admin passs: admin")
+	// add the user to the database
+	return d.PutUser(u)
+}
 
 func (d *DBConf) initBuckets() {
 	err := d.db.Update(func(tx *bolt.Tx) error {
@@ -47,7 +78,11 @@ func (d *DBConf) initBuckets() {
 		}
 		return nil
 	})
+	if err != nil {
+		logrus.Errorf("Unable to init config buckets %s", err)
+	}
 
+	err = d.initAdminUser()
 	if err != nil {
 		logrus.Errorf("Unable to init config buckets %s", err)
 	}
@@ -99,12 +134,29 @@ func newSnapshot(ac *AppConfig, creator *User) *Snapshot {
 	}
 }
 
+//  GetUserByUserName
+func (d *DBConf) GetUserByUserName(name string) (*User, error) {
+	users, err := d.ListUsers()
+	if err != nil {
+		return nil, err
+	}
+
+	// for every user, check to see if it has the user name we are looking for
+	for _, u := range users {
+		if u.UserName == name {
+			return u, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Unable to find users with name %s", name)
+}
+
 //  GetUser by their User.Id
 func (d *DBConf) GetUser(id uint16) (*User, error) {
 	var buff []byte
 
 	err := d.db.View(func(t *bolt.Tx) error {
-		b := t.Bucket([]byte(userCOnfigBucketName))
+		b := t.Bucket([]byte(userConfigBucketName))
 		buff = b.Get([]byte(idToBin(id)))
 		return nil
 	})
@@ -136,7 +188,7 @@ func (d *DBConf) PutUser(u *User) error {
 
 	// write the user to the db
 	err = d.db.Update(func(t *bolt.Tx) error {
-		b := t.Bucket([]byte(userCOnfigBucketName))
+		b := t.Bucket([]byte(userConfigBucketName))
 		return b.Put(idToBin(u.Id), buff)
 	})
 
@@ -146,7 +198,7 @@ func (d *DBConf) PutUser(u *User) error {
 // DeleteUser by the User.Id
 func (d *DBConf) DeleteUser(id uint16) error {
 	return d.db.Update(func(t *bolt.Tx) error {
-		b := t.Bucket([]byte(userCOnfigBucketName))
+		b := t.Bucket([]byte(userConfigBucketName))
 		return b.Delete(idToBin(id))
 	})
 }
@@ -156,7 +208,7 @@ func (d *DBConf) ListUsers() ([]*User, error) {
 	var u []*User
 
 	err := d.db.View(func(t *bolt.Tx) error {
-		b := t.Bucket([]byte(userCOnfigBucketName))
+		b := t.Bucket([]byte(userConfigBucketName))
 		u = make([]*User, 0, b.Stats().KeyN)
 
 		// for every key/value decode the user and append it to the user list
@@ -198,7 +250,9 @@ func (d *DBConf) getVersion(version string) (*AppConfig, error) {
 	}
 
 	// decode the snapshot
-	s := newSnapshot(NewDefaultConfig(), nil)
+	s := &Snapshot{
+		App: NewDefaultConfig(),
+	}
 	s.App.provider = d
 
 	// if the buffer is of zero size, then the config was not found
@@ -255,7 +309,12 @@ func (d *DBConf) ListSnapshots() []*Snapshot {
 
 // PutConfig writes the given config to the database and returns
 // the new hash and an error
-func (d *DBConf) PutConfig(a *AppConfig) (string, error) {
+func (d *DBConf) PutConfig(a *AppConfig, u *User) (string, error) {
+
+	// check to see if the given user has write permissions
+	if u.Permissions < WRITE {
+		return "", InsufficientPermissions(WRITE, u.Permissions)
+	}
 	err := d.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(appConfigBucketName))
 		oldBuff := b.Get([]byte(CurrentVersionHash))
@@ -267,7 +326,7 @@ func (d *DBConf) PutConfig(a *AppConfig) (string, error) {
 				return err
 			}
 
-			// write the old snapshot at it's
+			// write the old snapshot at it's hash
 			err = b.Put([]byte(old.Hash), oldBuff)
 			if err != nil {
 				log.Println(err)
@@ -276,7 +335,7 @@ func (d *DBConf) PutConfig(a *AppConfig) (string, error) {
 		}
 
 		// write the new snapshot to disk
-		newBuff, err := d.encode(newSnapshot(a, nil))
+		newBuff, err := d.encode(newSnapshot(a, u))
 		if err != nil {
 			log.Println(err)
 			return err
