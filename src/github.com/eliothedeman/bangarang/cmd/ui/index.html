@@ -24,10 +24,11 @@
 <body ng-app="bangarang">
 	<script type="text/javascript">
 		angular.module("bangarang", ["ngMaterial", "ngAnimate", "ngCookies", "jsonFormatter", "ngSanitize"])
-		.config(function($httpProvider, $mdThemingProvider, $mdIconProvider) {
+		.config(function($httpProvider, $mdThemingProvider, $mdIconProvider, $cookiesProvider) {
 			$httpProvider.defaults.headers.common["Access-Control-Allow-Origin"] = "*";
 			$mdThemingProvider.theme("default").primaryPalette("brown");
 			$mdThemingProvider.theme("default").accentPalette("red");
+
 		});
 	</script>
 	<script type="text/javascript" src="js/policy.js"></script>
@@ -35,21 +36,45 @@
 	<script type="text/javascript" src="js/provider.js"></script>
 	<script type="text/javascript" src="js/dashboard.js"></script>
 	<script type="text/javascript" src="js/escalation.js"></script>
-	<md-content layout-padding>
-		<md-toolbar layout="row" style="background: white;">
-			<div class="md-toolbar-tools">
-				<h1 style="color: black">
-					<span>Bangarang</span>
-				</h1>
-				<span flex></span>
-				<md-button class="md-fab" href="https://github.com/eliothedeman/bangarang">
-					<md-icon ng-style="">help</md-icon>
-				</md-button>
-			</div>
-		</md-toolbar>
-	</md-content>
 	<div ng-controller="Router as r" >
-		<md-tabs md-dynamic-height md-center-tabs md-border-bottom md-selected="r.selected" ng-init="r.getSelected()">
+		<md-content layout-padding>
+			<md-toolbar layout="row" style="background: white;">
+				<div class="md-toolbar-tools">
+					<h1 style="color: black">
+						<span>Bangarang</span>
+					</h1>
+					<span flex></span>
+					<md-button class="md-warn" ng-click="r.logout()">
+						Logout
+					</md-button>
+					<md-button class="md-fab" href="https://github.com/eliothedeman/bangarang">
+						<md-icon ng-style="">help</md-icon>
+					</md-button>
+				</div>
+			</md-toolbar>
+		</md-content>
+
+		<md-card class="md-whiteframe-z2" ng-if="!logged_in">
+		<!-- login logic -->
+			<md-card-content>
+				<h2>Login</h2>
+				<p>
+					<md-input-container>
+						<label>Username</label>
+						<input name="username" ng-model="user_name">
+					</md-input-container>
+					<md-input-container>
+						<label>Password</label>
+						<input type="password" ng-model="password">
+					</md-input-container>
+					<md-button ng-click="r.login(user_name,password)">
+					Submit
+					</md-button>
+				</p>
+
+			</md-card-content>
+		</md-card>
+		<md-tabs md-dynamic-height md-center-tabs md-border-bottom ng-if="logged_in" md-selected="r.selected" ng-init="r.getSelected()">
 			<div ng-controller="DashboardController as dc">
 				<md-tab label="dashboard" md-on-select="r.updateSelected(0);startFetching()" md-on-deselect="stopFetching()">
 				<div layout="row">

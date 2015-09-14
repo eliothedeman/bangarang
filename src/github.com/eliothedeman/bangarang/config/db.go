@@ -319,7 +319,7 @@ func (d *DBConf) PutConfig(a *AppConfig, u *User) (string, error) {
 		b := tx.Bucket([]byte(appConfigBucketName))
 		oldBuff := b.Get([]byte(CurrentVersionHash))
 		if len(oldBuff) > 0 {
-			old := newSnapshot(NewDefaultConfig(), nil)
+			old := newSnapshot(NewDefaultConfig(), u)
 			err := d.decode(oldBuff, old)
 			if err != nil {
 				log.Println(err)

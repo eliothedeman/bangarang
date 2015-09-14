@@ -1,5 +1,6 @@
 function Router($scope, $cookies, $http) {
 	this.selected = 0;
+    this.auth_token
 	this.getSelected = function() {
 		var s = $cookies.get("router:tab");
 		if (s) {
@@ -14,13 +15,54 @@ function Router($scope, $cookies, $http) {
 		this.selected = index;
 	}
 
-    this.login = function(username, password) {
+    get_auth_token = function() {
+        return $cookies.get("session:token");
+    }
 
+    set_auth_token = function(token) {
+        $cookies.put("session:token", token);
+        $http.defaults.headers.common["BANG_SESSION"] = token;
+    }
+
+    delete_auth_token = function() {
+        $cookies.remove("session:token");
+    }
+
+    this.login = function(username, password) {
+        $http.get("api/auth/user?user="+username+"&pass="+password).then(function(response){
+            set_auth_token(response.data.token);
+            $cookies.put("session:logged_in", true);
+
+            // refresh
+            document.location.reload();
+
+        }, function(response){
+            alert("Invalid username/password")
+        });
     }
 
     this.logout = function() {
+        delete_auth_token();
 
+        // refresh
+        document.location.reload();
     }
+
+    init = function() {
+        if (get_auth_token()) {
+            $scope.logged_in = true;
+            session = get_auth_token();
+            if (session) {
+                set_auth_token(session);
+            }
+
+            $scope.logged_in = true;
+        } else {
+            $scope.logged_in = false;
+        }
+    }
+
+    init()
 }
 
 angular.module("bangarang").controller("Router", Router);
