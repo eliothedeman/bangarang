@@ -59,7 +59,7 @@ func (u *User) Get(w http.ResponseWriter, r *http.Request) {
 		for _, usr := range users {
 			resp = append(resp, getUserResponseFromUser(usr))
 		}
-	} else {
+	} else if len(uName) > 0 {
 		// handle the single case
 		usr, err := u.pipeline.GetConfig().Provider().GetUserByUserName(uName)
 		if err != nil {
@@ -70,6 +70,19 @@ func (u *User) Get(w http.ResponseWriter, r *http.Request) {
 		resp = []*GetUserResponse{
 			getUserResponseFromUser(usr),
 		}
+	} else {
+		// handle the "get self" case
+		usr, err := authUser(u.pipeline.GetConfig().Provider(), r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			logrus.Error(err)
+			return
+		}
+
+		resp = []*GetUserResponse{
+			getUserResponseFromUser(usr),
+		}
+
 	}
 
 	buff, err := json.Marshal(resp)

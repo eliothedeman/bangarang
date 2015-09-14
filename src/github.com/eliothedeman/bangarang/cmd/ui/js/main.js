@@ -1,6 +1,8 @@
 function Router($scope, $cookies, $http) {
 	this.selected = 0;
-    this.auth_token
+    this.auth_token = "";
+    this.user = {};
+    r = this;
 	this.getSelected = function() {
 		var s = $cookies.get("router:tab");
 		if (s) {
@@ -77,7 +79,6 @@ function Router($scope, $cookies, $http) {
                 confirm = opt.value;
             }
         }
-        console.log(req)
 
         // Make sure the passwords are the same
         if (confirm != password) {
@@ -124,7 +125,7 @@ function Router($scope, $cookies, $http) {
     }
     logout = this.logout;
 
-    init = function() {
+    this.init = function() {
         if (get_auth_token()) {
             $scope.logged_in = true;
             session = get_auth_token();
@@ -133,8 +134,12 @@ function Router($scope, $cookies, $http) {
             }
 
             // attempt to make an api call to verify that we are successfully authed
-            $http.get("api/stats/event").then(function(resp){
+            $http.get("api/user").then(function(resp){
                 $scope.logged_in = true;
+                r.user = resp.data[0];
+                r.permissions = r.user.permissions;
+
+
             },function(resp) {
                 // handle invalid / expired
                 if (resp.status == 4001 || resp.status == 4000) {
@@ -148,11 +153,30 @@ function Router($scope, $cookies, $http) {
             $scope.logged_in = false;
         }
     }
-
-    init()
 }
 
 angular.module("bangarang").controller("Router", Router);
+
+function Admin($scope, $cookies, $http, $mdDialog) {
+    $scope.users = [];
+
+    this.get_users = function() {
+        $http.get("api/user?user=*").then(function(resp){
+            $scope.users = resp.data;
+
+        }, function() {
+
+        })
+    }
+    this.init = function() {
+        this.get_users();
+    }
+
+    this.init();
+
+}
+
+angular.module("bangarang").controller("AdminController", Admin)
 
 function Config($scope, $cookies, $http, $mdDialog) {
 	$scope.snapshots = [];

@@ -36,7 +36,7 @@
 	<script type="text/javascript" src="js/provider.js"></script>
 	<script type="text/javascript" src="js/dashboard.js"></script>
 	<script type="text/javascript" src="js/escalation.js"></script>
-	<div ng-controller="Router as r" >
+	<div ng-controller="Router as r" ng-init="r.init()">
 		<md-content layout-padding>
 			<md-toolbar layout="row" style="background: white;">
 				<div class="md-toolbar-tools">
@@ -44,7 +44,7 @@
 						<span>Bangarang</span>
 					</h1>
 					<span flex></span>
-					<md-button class="md-warn" ng-click="r.logout()">
+					<md-button class="md-warn" ng-if="logged_in" ng-click="r.logout()">
 						Logout
 					</md-button>
 					<md-button class="md-fab" href="https://github.com/eliothedeman/bangarang">
@@ -470,6 +470,20 @@
 					</md-card>
 				</div>
 			</md-tab>
+			<md-tab label="admin" md-on-select="r.updateSelected(5)" ng-if="r.permissions=='admin'"> 
+				<div ng-controller="AdminController as ac" >
+					<md-card class="md-whiteframe-z2" ng-repeat="usr in users">
+						<md-card-content>
+							<h2>{{usr.name}}</h2>
+							<p>
+								UserName: {{usr.user_name}}
+								Permissions: {{usr.permissions}}
+							</p>
+						</md-card-content>
+					</md-card>
+				</div>
+			</md-tab>
+
 		</md-tabs>
 	</div>
 </body>
