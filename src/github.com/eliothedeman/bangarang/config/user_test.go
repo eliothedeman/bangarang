@@ -3,11 +3,7 @@ package config
 import "testing"
 
 func TestNewUser(t *testing.T) {
-	u := NewUser(0, "Test User", "albert", "password", ADMIN)
-
-	if u.Id != 0 {
-		t.Fatal()
-	}
+	u := NewUser("Test User", "albert", "password", ADMIN)
 
 	if u.Name != "Test User" {
 		t.Fatal()
@@ -23,7 +19,7 @@ func TestNewUser(t *testing.T) {
 }
 
 func TestPasswordCheck(t *testing.T) {
-	u := NewUser(0, "Test User", "albert", "password", ADMIN)
+	u := NewUser("Test User", "albert", "password", ADMIN)
 
 	if !CheckUserPassword(u, "password") {
 		t.Fatal()

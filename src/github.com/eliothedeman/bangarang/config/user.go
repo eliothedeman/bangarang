@@ -2,7 +2,6 @@ package config
 
 import (
 	"crypto/md5"
-	"encoding/binary"
 	"fmt"
 )
 
@@ -35,7 +34,6 @@ const (
 
 // User holds information about who a user is, and what they are allowed to do
 type User struct {
-	Id           uint16          `json:"id"`
 	Name         string          `json:"name"`
 	UserName     string          `json:"user_name"`
 	PasswordHash string          `json:"password_hash"`
@@ -43,25 +41,13 @@ type User struct {
 	provider     *Provider
 }
 
-// encode the id as binary
-func idToBin(id uint16) []byte {
-	b := []byte{0, 0}
-	binary.BigEndian.PutUint16(b, id)
-	return b
-}
-
-func binToId(b []byte) uint16 {
-	return binary.BigEndian.Uint16(b)
-}
-
 // CheckUserPassword compares a raw password against the the stored hash'ed password
 func CheckUserPassword(u *User, pass string) bool {
 	return HashUserPassword(u, pass) == u.PasswordHash
 }
 
-func NewUser(id uint16, name, userName, rawPassword string, permissions UserPermissions) *User {
+func NewUser(name, userName, rawPassword string, permissions UserPermissions) *User {
 	u := &User{
-		Id:          id,
 		Name:        name,
 		UserName:    userName,
 		Permissions: permissions,

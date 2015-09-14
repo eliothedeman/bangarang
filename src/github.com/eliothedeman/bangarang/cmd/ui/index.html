@@ -54,26 +54,50 @@
 			</md-toolbar>
 		</md-content>
 
-		<md-card class="md-whiteframe-z2" ng-if="!logged_in">
-		<!-- login logic -->
-			<md-card-content>
-				<h2>Login</h2>
-				<p>
-					<md-input-container>
-						<label>Username</label>
-						<input name="username" ng-model="user_name">
-					</md-input-container>
-					<md-input-container>
-						<label>Password</label>
-						<input type="password" ng-model="password">
-					</md-input-container>
-					<md-button ng-click="r.login(user_name,password)">
-					Submit
-					</md-button>
-				</p>
+		<div  layout layout-sm="row" ng-if="!logged_in">
+			<!-- login logic -->
+			<md-card class="md-whiteframe-z2" >
+				<md-card-content>
+					<h2>Login</h2>
+					<p>
+						<md-input-container>
+							<label>Username</label>
+							<input name="username" ng-model="user_name">
+						</md-input-container>
+						<md-input-container>
+							<label>Password</label>
+							<input type="password" ng-model="password">
+						</md-input-container>
+						<md-button ng-click="r.login(user_name,password)">
+						Submit
+						</md-button>
+					</p>
 
-			</md-card-content>
-		</md-card>
+				</md-card-content>
+			</md-card>
+			<br>
+
+			<!-- new user -->
+			<md-card class="md-whiteframe-z2" >
+				<md-card-content>
+					<h2>Sign Up</h2>
+					<p>
+						<md-input-container ng-repeat="opt in new_user_opts">
+							<label>{{opt.title}}</label>
+							<input name="{{opt.name}}" type="{{opt.type}}" ng-model="opt.value">
+						</md-input-container>
+
+						<md-button ng-click="r.new_user()">
+						Submit
+						</md-button>
+					</p>
+
+				</md-card-content>
+			</md-card>
+			
+		</div>
+
+
 		<md-tabs md-dynamic-height md-center-tabs md-border-bottom ng-if="logged_in" md-selected="r.selected" ng-init="r.getSelected()">
 			<div ng-controller="DashboardController as dc">
 				<md-tab label="dashboard" md-on-select="r.updateSelected(0);startFetching()" md-on-deselect="stopFetching()">

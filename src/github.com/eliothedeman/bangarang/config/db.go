@@ -42,7 +42,7 @@ func (d *DBConf) initAdminUser() error {
 		b := t.Bucket([]byte(userConfigBucketName))
 
 		// the admin user is always user_id 0
-		buff := b.Get(idToBin(0))
+		buff := b.Get([]byte("admin"))
 
 		if len(buff) != 0 {
 			adminExists = true
@@ -61,7 +61,7 @@ func (d *DBConf) initAdminUser() error {
 	}
 
 	// if no user is found, we must created one
-	u := NewUser(0, "admin", "admin", "admin", ADMIN)
+	u := NewUser("admin", "admin", "admin", ADMIN)
 	logrus.Info("Adding default admin user. user: admin passs: admin")
 	// add the user to the database
 	return d.PutUser(u)
@@ -117,25 +117,27 @@ func (d *DBConf) decode(buff []byte, i interface{}) error {
 
 // Snapshot represents a bangarang config at a given point in time
 type Snapshot struct {
-	Hash        string     `json:"hash"`
-	Timestamp   time.Time  `json:"time_stamp"`
-	App         *AppConfig `json:"app"`
-	CreatorId   uint16     `json:"creator_id"` // the User.Id of who created this snapshot
-	CreatorName string     `json:"creator_name"`
+	Hash            string     `json:"hash"`
+	Timestamp       time.Time  `json:"time_stamp"`
+	App             *AppConfig `json:"app"`
+	CreatorId       uint16     `json:"creator_id"` // the User.Id of who created this snapshot
+	CreatorName     string     `json:"creator_name"`
+	CreatorUserName string     `json:"creator_user_name"`
 }
 
 func newSnapshot(ac *AppConfig, creator *User) *Snapshot {
 	return &Snapshot{
-		Timestamp:   time.Now(),
-		App:         ac,
-		CreatorId:   creator.Id,
-		CreatorName: creator.Name,
-		Hash:        fmt.Sprintf("%x", HashConfig(ac)),
+		Timestamp:       time.Now(),
+		App:             ac,
+		CreatorName:     creator.Name,
+		CreatorUserName: creator.UserName,
+		Hash:            fmt.Sprintf("%x", HashConfig(ac)),
 	}
 }
 
 //  GetUserByUserName
 func (d *DBConf) GetUserByUserName(name string) (*User, error) {
+	println(name)
 	users, err := d.ListUsers()
 	if err != nil {
 		return nil, err
@@ -152,12 +154,12 @@ func (d *DBConf) GetUserByUserName(name string) (*User, error) {
 }
 
 //  GetUser by their User.Id
-func (d *DBConf) GetUser(id uint16) (*User, error) {
+func (d *DBConf) GetUser(name string) (*User, error) {
 	var buff []byte
 
 	err := d.db.View(func(t *bolt.Tx) error {
 		b := t.Bucket([]byte(userConfigBucketName))
-		buff = b.Get([]byte(idToBin(id)))
+		buff = b.Get([]byte(name))
 		return nil
 	})
 
@@ -167,7 +169,7 @@ func (d *DBConf) GetUser(id uint16) (*User, error) {
 
 	// if the found buffer is of len 0, then the user's record was not found
 	if len(buff) == 0 {
-		return nil, fmt.Errorf("User: %d not found", id)
+		return nil, fmt.Errorf("User: %d not found", name)
 	}
 
 	// unmarshal the user
@@ -189,17 +191,17 @@ func (d *DBConf) PutUser(u *User) error {
 	// write the user to the db
 	err = d.db.Update(func(t *bolt.Tx) error {
 		b := t.Bucket([]byte(userConfigBucketName))
-		return b.Put(idToBin(u.Id), buff)
+		return b.Put([]byte(u.UserName), buff)
 	})
 
 	return err
 }
 
 // DeleteUser by the User.Id
-func (d *DBConf) DeleteUser(id uint16) error {
+func (d *DBConf) DeleteUser(name string) error {
 	return d.db.Update(func(t *bolt.Tx) error {
 		b := t.Bucket([]byte(userConfigBucketName))
-		return b.Delete(idToBin(id))
+		return b.Delete([]byte(name))
 	})
 }
 

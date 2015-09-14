@@ -13,8 +13,10 @@ func init() {
 }
 
 var (
-	defaultExparation = time.Hour * 48
-	GlobalSession     *Session
+	defaultExparation   = time.Hour * 48
+	GlobalSession       *Session
+	InvalidSessionToken = errors.New("Invalid Session Token")
+	ExpiredSessionToken = errors.New("Session Token Expired")
 )
 
 type Session struct {
@@ -28,15 +30,15 @@ func NewSession() *Session {
 	}
 }
 
-// Get a User.Id from the session store that corrospondes with the session token
-func (s *Session) Get(token string) (uint16, error) {
+// Get a User.UserName from the session store that corrospondes with the session token
+func (s *Session) Get(token string) (string, error) {
 	s.Lock()
 	defer s.Unlock()
 	t, ok := s.store[token]
 
 	// no token found
 	if !ok {
-		return 0, errors.New("Invalid session token")
+		return "", InvalidSessionToken
 	}
 
 	// if the token is expired, remove it, and return the error
@@ -45,9 +47,9 @@ func (s *Session) Get(token string) (uint16, error) {
 		// remove the token from the store
 		delete(s.store, token)
 
-		return 0, errors.New("Session token expired")
+		return "", ExpiredSessionToken
 	}
-	return t.userId, nil
+	return t.userName, nil
 }
 
 // Delete the token from the session store
@@ -59,33 +61,33 @@ func (s *Session) Delete(token string) {
 }
 
 // Put a new session token into the store for the given user id, and return the token
-func (s *Session) Put(id uint16) string {
+func (s *Session) Put(userName string) string {
 	s.Lock()
 	defer s.Unlock()
-	t := NewSessionToken(id)
+	t := NewSessionToken(userName)
 
 	s.store[t.token] = t
 	return t.token
 }
 
 // NewSessionToken create a unique session token for the given user id
-func NewSessionToken(id uint16) SessionToken {
+func NewSessionToken(userName string) SessionToken {
 
 	// create a new uuid
 	u := uuid.NewV4()
 
 	// use that uuid as the token
 	t := SessionToken{
-		token:  u.String(),
-		userId: id,
-		expire: time.Now().Add(defaultExparation),
+		token:    u.String(),
+		userName: userName,
+		expire:   time.Now().Add(defaultExparation),
 	}
 
 	return t
 }
 
 type SessionToken struct {
-	token  string
-	userId uint16
-	expire time.Time
+	token    string
+	userName string
+	expire   time.Time
 }

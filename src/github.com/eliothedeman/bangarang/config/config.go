@@ -25,9 +25,9 @@ type Provider interface {
 	GetCurrent() (*AppConfig, error)
 	PutConfig(*AppConfig, *User) (string, error)
 	ListSnapshots() []*Snapshot
-	GetUser(id uint16) (*User, error)
+	GetUser(userName string) (*User, error)
 	GetUserByUserName(string) (*User, error)
-	DeleteUser(id uint16) error
+	DeleteUser(userName string) error
 	PutUser(u *User) error
 	ListUsers() ([]*User, error)
 }

@@ -28,6 +28,76 @@ function Router($scope, $cookies, $http) {
         $cookies.remove("session:token");
     }
 
+    defualt_user_opts = [
+        {
+            title: "Name",
+            name: "name",
+            type: "text",
+            value: ""
+
+        },
+        {
+            title: "Username",
+            name: "user_name",
+            type: "text",
+            value: ""
+
+        },
+        {
+            title: "Password",
+            name: "password",
+            type: "password",
+            value: ""
+
+        },
+        {
+            title: "Confirm Password",
+            type: "password",
+            name: "confirm_password",
+            value: ""
+        }
+    ]
+
+    $scope.new_user_opts = defualt_user_opts
+    this.new_user = function() {
+
+        // create the request object
+        var user_name = "";
+        var confirm = ""
+        var password = "";
+        req = {};
+        for (opt in $scope.new_user_opts) {
+            opt = $scope.new_user_opts[opt]
+            req[opt.name] = opt.value;
+            if (opt.name == "user_name") {
+                user_name = opt.value;
+            } else if (opt.name == "password") {
+                password = opt.value;
+            } else if (opt.name == "confirm_password") {
+                confirm = opt.value;
+            }
+        }
+        console.log(req)
+
+        // Make sure the passwords are the same
+        if (confirm != password) {
+            alert("Passwords don't match");
+            return
+        }
+
+
+        // make the request
+        $http.post("api/user", req).then(function(){
+            // login 
+            login(user_name, password);
+
+
+
+        },function(resp){
+            alert(resp.data)
+        });
+    }
+
     this.login = function(username, password) {
         $http.get("api/auth/user?user="+username+"&pass="+password).then(function(response){
             set_auth_token(response.data.token);
@@ -39,7 +109,12 @@ function Router($scope, $cookies, $http) {
         }, function(response){
             alert("Invalid username/password")
         });
+
+        $scope.user_name = null;
+        $scope.password = null;
     }
+
+    login = this.login;
 
     this.logout = function() {
         delete_auth_token();
@@ -47,6 +122,7 @@ function Router($scope, $cookies, $http) {
         // refresh
         document.location.reload();
     }
+    logout = this.logout;
 
     init = function() {
         if (get_auth_token()) {
@@ -56,7 +132,18 @@ function Router($scope, $cookies, $http) {
                 set_auth_token(session);
             }
 
-            $scope.logged_in = true;
+            // attempt to make an api call to verify that we are successfully authed
+            $http.get("api/stats/event").then(function(resp){
+                $scope.logged_in = true;
+            },function(resp) {
+                // handle invalid / expired
+                if (resp.status == 4001 || resp.status == 4000) {
+                    logout();
+                    return;
+                }
+
+            });
+
         } else {
             $scope.logged_in = false;
         }

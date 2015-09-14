@@ -12,7 +12,9 @@ import (
 )
 
 const (
-	SESSION_HEADER_NAME = "BANG_SESSION"
+	SESSION_HEADER_NAME   = "BANG_SESSION"
+	EXPIRED_SESSION_TOKEN = 4000
+	INVALID_SESSION_TOKEN = 4001
 )
 
 // An EndPointer returns the end point for this method
@@ -78,15 +80,20 @@ func authUser(confProvider config.Provider, r *http.Request) (*config.User, erro
 	// check for a session token
 	session := r.Header.Get(SESSION_HEADER_NAME)
 
-	// fetch the user id fromt he session store for this token
+	// create user doesn't require auth
+	if r.URL.Path == "/api/user" && r.Method == "POST" {
+		return confProvider.GetUserByUserName("admin")
+	}
+
+	// fetch the user id from the session store for this token
 	if session != "" {
-		userId, err := GlobalSession.Get(session)
+		userName, err := GlobalSession.Get(session)
 		if err != nil {
 			return nil, err
 		}
 
 		//  get the user by the given id
-		return confProvider.GetUser(userId)
+		return confProvider.GetUser(userName)
 	}
 	user, password, ok := r.BasicAuth()
 	if !ok {
@@ -129,6 +136,20 @@ func (s *Server) wrapAuth(h interface{}) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add("Access-Control-Allow-Origin", "*")
 			u, err := authUser(s.pipeline.GetConfig().Provider(), r)
+
+			// handle error types
+			if err == InvalidSessionToken {
+				http.Error(w, err.Error(), INVALID_SESSION_TOKEN)
+				logrus.Error(err)
+				return
+			}
+
+			if err == ExpiredSessionToken {
+				http.Error(w, err.Error(), EXPIRED_SESSION_TOKEN)
+				logrus.Error(err)
+				return
+			}
+
 			if err != nil {
 				if needs == config.READ {
 					call(w, r)
@@ -204,5 +225,6 @@ func NewServer(port int, pipe *pipeline.Pipeline) *Server {
 	s.construct(NewEscalationConfig(pipe))
 	s.construct(NewHost(pipe))
 	s.construct(NewAuthUser(pipe))
+	s.construct(NewUser(pipe))
 	return s
 }

@@ -47,7 +47,7 @@ func (c *AuthUser) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token := GlobalSession.Put(u.Id)
+	token := GlobalSession.Put(u.UserName)
 
 	// encode the response as json
 	buff, err := json.Marshal(map[string]string{
