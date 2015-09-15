@@ -61,12 +61,6 @@ func (up *UserPassword) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// can't update admin's permissions
-	if userToUpdate.UserName == "admin" {
-		http.Error(w, "updating admin's permissions is not allowed", http.StatusBadRequest)
-		return
-	}
-
 	userToUpdate.PasswordHash = config.HashUserPassword(userToUpdate, newPass)
 	err = up.pipeline.GetConfig().Provider().PutUser(userToUpdate)
 	if err != nil {
