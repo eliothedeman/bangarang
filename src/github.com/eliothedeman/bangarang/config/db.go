@@ -137,7 +137,8 @@ func newSnapshot(ac *AppConfig, creator *User) *Snapshot {
 
 //  GetUserByUserName
 func (d *DBConf) GetUserByUserName(name string) (*User, error) {
-	println(name)
+
+	// get all the users
 	users, err := d.ListUsers()
 	if err != nil {
 		return nil, err
@@ -169,7 +170,7 @@ func (d *DBConf) GetUser(name string) (*User, error) {
 
 	// if the found buffer is of len 0, then the user's record was not found
 	if len(buff) == 0 {
-		return nil, fmt.Errorf("User: %d not found", name)
+		return nil, fmt.Errorf("User: %s not found", name)
 	}
 
 	// unmarshal the user

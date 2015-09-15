@@ -227,5 +227,6 @@ func NewServer(port int, pipe *pipeline.Pipeline) *Server {
 	s.construct(NewAuthUser(pipe))
 	s.construct(NewUser(pipe))
 	s.construct(NewUserPermissions(pipe))
+	s.construct(NewUserPassword(pipe))
 	return s
 }

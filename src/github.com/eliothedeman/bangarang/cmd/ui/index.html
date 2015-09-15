@@ -473,22 +473,35 @@
 			</md-tab>
 			<md-tab label="admin" md-on-select="r.updateSelected(5)" ng-if="r.permissions=='admin'"> 
 				<div ng-controller="AdminController as ac" >
-					<md-card class="md-whiteframe-z2" ng-repeat="usr in users">
-						<md-card-content>
-							<h2>{{usr.name}}</h2>
-							<p>
-								UserName: {{usr.user_name}}
-								<md-input-container>
-									<label>Permissions</label>		
-									<md-select ng-model="new_permissions" md-on-close="updatePermissions(usr.user_name, new_permissions)">
-										<md-option ng-value="opt" ng-repeat="opt in permissions">
-											{{opt}}
-										</md-option>
-									</md-select>
-								</md-input-container>
-							</p>
-						</md-card-content>
-					</md-card>
+					<div ng-controller="User as u">
+						<md-card ng-repeat="usr in users">
+							<md-card-content>
+								<h3>{{usr.name}}</h4>
+								<h4>UserName: {{usr.user_name}}</h4>	
+								<p>
+									<md-input-container>
+										<label>Permissions</label>		
+										<md-select ng-model="usr.permissions" md-on-close="updatePermissions(usr)">
+											<md-option ng-value="opt" ng-repeat="opt in permissions_options">
+												{{opt}}
+											</md-option>
+										</md-select>
+									</md-input-container>
+									<md-input-container>
+										<label>New Password</label>
+										<input type="password" ng-model="usr.new_password">
+									</md-input-container>
+									<md-input-container>
+										<label>Confirm Password</label>
+										<input type="password" ng-model="usr.confirm_password">
+									</md-input-container>
+									<md-button ng-click="updatePassword(usr)">
+										Update
+									</md-button>
+								</p>
+							</md-card-content>
+						</md-card>
+					</div>
 				</div>
 			</md-tab>
 

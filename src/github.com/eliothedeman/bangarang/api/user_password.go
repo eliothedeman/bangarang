@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
@@ -9,30 +8,25 @@ import (
 	"github.com/eliothedeman/bangarang/pipeline"
 )
 
-// UserPermissions handles the api methods for incidents
-type UserPermissions struct {
+// UserPassword handles the api methods for incidents
+type UserPassword struct {
 	pipeline *pipeline.Pipeline
 }
 
-// NewUserPermissions Create a new UserPermissions api method
-func NewUserPermissions(pipe *pipeline.Pipeline) *UserPermissions {
-	return &UserPermissions{
+// NewUserPassword Create a new UserPassword api method
+func NewUserPassword(pipe *pipeline.Pipeline) *UserPassword {
+	return &UserPassword{
 		pipeline: pipe,
 	}
 }
 
 // EndPoint return the endpoint of this method
-func (u *UserPermissions) EndPoint() string {
-	return "/api/user/permissions"
-}
-
-// Get all users with the given permissions
-func (up *UserPermissions) Get(w http.ResponseWriter, r *http.Request) {
-
+func (u *UserPassword) EndPoint() string {
+	return "/api/user/password"
 }
 
 // Post changes the permissions for this user
-func (up *UserPermissions) Post(w http.ResponseWriter, r *http.Request) {
+func (up *UserPassword) Post(w http.ResponseWriter, r *http.Request) {
 	u, err := authUser(up.pipeline.GetConfig().Provider(), r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -54,15 +48,9 @@ func (up *UserPermissions) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	perms := q.Get("perms")
-	if perms == "" {
-		http.Error(w, "perms must be supplied", http.StatusBadRequest)
-		return
-	}
-
-	uPerms := config.NameToPermissions(perms)
-	if uPerms == -1 {
-		http.Error(w, fmt.Sprintf("invalid permissions %s", perms), http.StatusBadRequest)
+	newPass := q.Get("new")
+	if newPass == "" {
+		http.Error(w, "new password must be supplied", http.StatusBadRequest)
 		return
 	}
 
@@ -79,7 +67,7 @@ func (up *UserPermissions) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userToUpdate.Permissions = uPerms
+	userToUpdate.PasswordHash = config.HashUserPassword(userToUpdate, newPass)
 	err = up.pipeline.GetConfig().Provider().PutUser(userToUpdate)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

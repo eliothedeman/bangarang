@@ -157,34 +157,55 @@ function Router($scope, $cookies, $http) {
 
 angular.module("bangarang").controller("Router", Router);
 
-function Admin($scope, $cookies, $http, $mdDialog) {
-    $scope.users = [];
+function User($scope, $cookies, $http, $mdDialog) {
     $scope.self = {};
-    $scope.permissions = ["read", "write", "admin"];
-    $scope.new_permissions = "admin"
-
-   grant_permissions = function(user, perms) {
-        $http.post("api/user/permissions/" + user + "/" + perms).then(function(resp) {
-            alert("it worked")
-        },function(resp){
-            alert(resp.data)
-        }); 
-    }
+    $scope.permissions_options = ["read", "write", "admin"];
 
     get_self = function() {
         $http.get("api/user").then(function(resp) {
-            $scope.self = resp.data;
+            $scope.self = resp.data[0];
         }, function(resp) {
             alert(resp.data);
         });
     }
 
-    $scope.updatePermissions = function(name) {
-        console.log("updatting")
-        grant_permissions(name, $scope.new_permissions);
+    $scope.updatePassword = function(usr) {
+        if (usr.new != usr.confirm) {
+            alert("Passwords don't match");
+            return
+        }
+
+        $http.post("api/user/password?user=" + usr.user_name + "&new=" + usr.new_password).then(function(resp) {
+            console.log(usr.user_name + "'s password has been updated");
+
+        }, function(resp) {
+            alert(resp.data);
+        });
     }
 
-    this.get_users = function() {
+    $scope.updatePermissions = function(usr) {
+        $http.post("api/user/permissions?user=" + usr.user_name + "&perms=" + usr.permissions).then(function(resp) {
+            console.log("updated " + usr.user_name + "'s permissions to " + usr.permissions);
+        },function(resp){
+            alert(resp.data);
+        }); 
+    }
+
+    init = function() {
+        get_self();
+    }
+
+    init();
+}
+
+angular.module("bangarang").controller("User", User);
+
+function Admin($scope, $cookies, $http, $mdDialog) {
+    $scope.users = [];
+    $scope.self = {};
+    this.new_permissions = "admin"
+
+    this.list_users = function() {
         $http.get("api/user?user=*").then(function(resp){
             $scope.users = resp.data;
 
@@ -196,8 +217,7 @@ function Admin($scope, $cookies, $http, $mdDialog) {
 
 
     this.init = function() {
-        this.get_users();
-        get_self();
+        this.list_users();
     }
 
     this.init();
