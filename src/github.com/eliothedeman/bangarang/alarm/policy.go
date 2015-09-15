@@ -29,6 +29,7 @@ type Policy struct {
 	Crit        *Condition        `json:"crit"`
 	Warn        *Condition        `json:"warn"`
 	Name        string            `json:"name"`
+	Comment     string            `json:"comment"`
 	r_match     map[string]*regexp.Regexp
 	r_not_match map[string]*regexp.Regexp
 	stop        chan struct{}

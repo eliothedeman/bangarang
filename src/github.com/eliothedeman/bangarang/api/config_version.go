@@ -74,6 +74,17 @@ func (c *ConfigVersion) Get(w http.ResponseWriter, r *http.Request) {
 // change the current config to a spesific version
 func (c *ConfigVersion) Post(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("content-type", "application/json")
+
+	// get the user for this method
+	u, err := authUser(c.pipeline.GetConfig().Provider(), r)
+	if err != nil {
+		if err != nil {
+			logrus.Error(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
 	vars := mux.Vars(r)
 	version, ok := vars["version"]
 	if !ok {
@@ -93,7 +104,7 @@ func (c *ConfigVersion) Post(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, err = p.PutConfig(conf)
+	_, err = p.PutConfig(conf, u)
 	if err != nil {
 		if err != nil {
 			logrus.Error(err)

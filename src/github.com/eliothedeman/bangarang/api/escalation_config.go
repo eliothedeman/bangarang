@@ -55,6 +55,15 @@ func (p *EscalationConfig) Get(w http.ResponseWriter, r *http.Request) {
 
 // Delete the given event provider
 func (p *EscalationConfig) Delete(w http.ResponseWriter, r *http.Request) {
+	// get the user for this method
+	u, err := authUser(p.pipeline.GetConfig().Provider(), r)
+	if err != nil {
+		if err != nil {
+			logrus.Error(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
@@ -66,19 +75,29 @@ func (p *EscalationConfig) Delete(w http.ResponseWriter, r *http.Request) {
 	conf := p.pipeline.GetConfig()
 	logrus.Info("Removing escalation: %s", id)
 	conf.Escalations.RemoveRaw(id)
-	err := conf.Escalations.UnmarshalRaw()
+	err = conf.Escalations.UnmarshalRaw()
 	if err != nil {
 		logrus.Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	conf.Provider().PutConfig(conf)
+	conf.Provider().PutConfig(conf, u)
 	p.pipeline.Refresh(conf)
 }
 
 // Post HTTP get method
 func (p *EscalationConfig) Post(w http.ResponseWriter, r *http.Request) {
+	// get the user for this method
+	u, err := authUser(p.pipeline.GetConfig().Provider(), r)
+	if err != nil {
+		if err != nil {
+			logrus.Error(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
 	conf := p.pipeline.GetConfig()
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
@@ -113,7 +132,7 @@ func (p *EscalationConfig) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conf.Provider().PutConfig(conf)
+	conf.Provider().PutConfig(conf, u)
 
 	p.pipeline.Refresh(conf)
 }

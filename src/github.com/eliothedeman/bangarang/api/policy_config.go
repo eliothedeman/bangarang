@@ -78,6 +78,15 @@ func (p *PolicyConfig) Get(w http.ResponseWriter, r *http.Request) {
 
 // Delete the given event provider
 func (p *PolicyConfig) Delete(w http.ResponseWriter, r *http.Request) {
+	// get the user for this method
+	u, err := authUser(p.pipeline.GetConfig().Provider(), r)
+	if err != nil {
+		if err != nil {
+			logrus.Error(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
 	conf := p.pipeline.GetConfig()
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
@@ -96,12 +105,22 @@ func (p *PolicyConfig) Delete(w http.ResponseWriter, r *http.Request) {
 		p.pipeline.RemovePolicy(id)
 	}
 
-	conf.Provider().PutConfig(conf)
+	conf.Provider().PutConfig(conf, u)
 	p.pipeline.Refresh(conf)
 }
 
 // Post HTTP get method
 func (p *PolicyConfig) Post(w http.ResponseWriter, r *http.Request) {
+	// get the user for this method
+	u, err := authUser(p.pipeline.GetConfig().Provider(), r)
+	if err != nil {
+		if err != nil {
+			logrus.Error(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
 	conf := p.pipeline.GetConfig()
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
@@ -148,7 +167,7 @@ func (p *PolicyConfig) Post(w http.ResponseWriter, r *http.Request) {
 		conf.Policies[id] = pol
 	}
 
-	conf.Provider().PutConfig(conf)
+	conf.Provider().PutConfig(conf, u)
 
 	p.pipeline.Refresh(conf)
 }

@@ -60,6 +60,15 @@ func (c *ProviderConfig) Get(w http.ResponseWriter, r *http.Request) {
 
 // Delete the given event provider
 func (p *ProviderConfig) Delete(w http.ResponseWriter, r *http.Request) {
+	// get the user for this method
+	u, err := authUser(p.pipeline.GetConfig().Provider(), r)
+	if err != nil {
+		if err != nil {
+			logrus.Error(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
 	conf := p.pipeline.GetConfig()
 	cp := conf.Provider()
 	vars := mux.Vars(r)
@@ -74,12 +83,21 @@ func (p *ProviderConfig) Delete(w http.ResponseWriter, r *http.Request) {
 	delete(conf.EventProviders.Raw(), id)
 
 	// refresh the config without the provider
-	cp.PutConfig(conf)
+	cp.PutConfig(conf, u)
 	p.pipeline.Refresh(conf)
 }
 
 // Post HTTP get method
 func (c *ProviderConfig) Post(w http.ResponseWriter, r *http.Request) {
+	// get the user for this method
+	u, err := authUser(c.pipeline.GetConfig().Provider(), r)
+	if err != nil {
+		if err != nil {
+			logrus.Error(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
 
 	// get the config.Provider for our current config
 	conf := c.pipeline.GetConfig()
@@ -120,7 +138,7 @@ func (c *ProviderConfig) Post(w http.ResponseWriter, r *http.Request) {
 	conf.EventProviders.Add(id, ep, buff)
 
 	// write the new config
-	_, err = p.PutConfig(conf)
+	_, err = p.PutConfig(conf, u)
 	if err != nil {
 		logrus.Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)

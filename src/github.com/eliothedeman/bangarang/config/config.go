@@ -23,8 +23,13 @@ type Configer interface {
 type Provider interface {
 	GetConfig(version string) (*AppConfig, error)
 	GetCurrent() (*AppConfig, error)
-	PutConfig(*AppConfig) (string, error)
+	PutConfig(*AppConfig, *User) (string, error)
 	ListSnapshots() []*Snapshot
+	GetUser(userName string) (*User, error)
+	GetUserByUserName(string) (*User, error)
+	DeleteUser(userName string) error
+	PutUser(u *User) error
+	ListUsers() ([]*User, error)
 }
 
 // GetProvider returns a config provider at that given path.
@@ -43,15 +48,6 @@ func GetProvider(kind string, path string) Provider {
 
 		return d
 
-	case "json":
-		f := &FileConf{}
-		f.path = path
-		err := f.initPath()
-		if err != nil {
-			logrus.Error(err)
-			return nil
-		}
-		return f
 	}
 
 	logrus.Errorf("Unknown config provider type %s", kind)
