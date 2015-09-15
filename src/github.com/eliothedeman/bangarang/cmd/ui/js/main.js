@@ -159,6 +159,7 @@ angular.module("bangarang").controller("Router", Router);
 
 function Admin($scope, $cookies, $http, $mdDialog) {
     $scope.users = [];
+    $scope.self = {};
     $scope.permissions = ["read", "write", "admin"];
     $scope.new_permissions = "admin"
 
@@ -168,6 +169,14 @@ function Admin($scope, $cookies, $http, $mdDialog) {
         },function(resp){
             alert(resp.data)
         }); 
+    }
+
+    get_self = function() {
+        $http.get("api/user").then(function(resp) {
+            $scope.self = resp.data;
+        }, function(resp) {
+            alert(resp.data);
+        });
     }
 
     $scope.updatePermissions = function(name) {
@@ -180,12 +189,15 @@ function Admin($scope, $cookies, $http, $mdDialog) {
             $scope.users = resp.data;
 
         }, function() {
-
+            alert(resp.data);
         })
     }
 
+
+
     this.init = function() {
         this.get_users();
+        get_self();
     }
 
     this.init();
