@@ -3,6 +3,7 @@ package config
 import (
 	"crypto/md5"
 	"fmt"
+	"strings"
 )
 
 // UserPermissions describes what a user is allowed to do
@@ -23,7 +24,20 @@ func PermissionsToName(p UserPermissions) string {
 	default:
 		return "unknown"
 	}
+}
 
+func NameToPermissions(name string) UserPermissions {
+	switch strings.ToLower(name) {
+	case "read":
+		return READ
+	case "write":
+		return WRITE
+	case "admin":
+		return ADMIN
+	}
+
+	// default
+	return -1
 }
 
 const (

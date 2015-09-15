@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
@@ -109,7 +108,6 @@ func (u *User) Post(w http.ResponseWriter, r *http.Request) {
 		logrus.Error(err)
 		return
 	}
-	log.Println(string(buff))
 
 	nur := &NewUserRequest{}
 	err = json.Unmarshal(buff, nur)
@@ -118,8 +116,6 @@ func (u *User) Post(w http.ResponseWriter, r *http.Request) {
 		logrus.Error(err)
 		return
 	}
-
-	log.Println(nur)
 
 	// create the user in  the database
 	nu := config.NewUser(nur.Name, nur.UserName, nur.Password, config.READ)

@@ -462,7 +462,8 @@
 				<div ng-controller="Config as cc" ng-init="fetchSnapshots()">
 					<md-card ng-repeat="snapshot in snapshots">
 						<md-card-content>
-							<h4>{{snapshot.date}}</h3>
+							<h3>{{snapshot.date}}</h3>
+							<h4>Created by: {{snapshot.creator_user_name}}</h4>
 							<p ng-if="snapshot.hash == 'current'">{{snapshot.hash}}</p>
 							<md-button aria-label="Update Current" class="md-warn" ng-if="snapshot.hash != 'current'" ng-click="showRevert(snapshot.hash)">Revert</md-button>
 							<json-formatter json=snapshot.app></json-formatter>
@@ -477,7 +478,14 @@
 							<h2>{{usr.name}}</h2>
 							<p>
 								UserName: {{usr.user_name}}
-								Permissions: {{usr.permissions}}
+								<md-input-container>
+									<label>Permissions</label>		
+									<md-select ng-model="new_permissions" md-on-close="updatePermissions(usr.user_name, new_permissions)">
+										<md-option ng-value="opt" ng-repeat="opt in permissions">
+											{{opt}}
+										</md-option>
+									</md-select>
+								</md-input-container>
 							</p>
 						</md-card-content>
 					</md-card>
