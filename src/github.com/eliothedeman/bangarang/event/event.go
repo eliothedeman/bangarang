@@ -25,6 +25,7 @@ type Event struct {
 	Tags       map[string]string `json:"tags" msg:"tags"`
 	indexName  string
 	wait       sync.WaitGroup
+	sync.Mutex
 }
 
 func (e *Event) MarshalBinary() ([]byte, error) {
@@ -45,12 +46,16 @@ func (e *Event) Wait() {
 
 // WaitDec decrements the event's waitgroup counter
 func (e *Event) WaitDec() {
+	e.Lock()
 	e.wait.Done()
+	e.Unlock()
 }
 
 // WaitAdd increments ot the event's waitgroup counter
 func (e *Event) WaitInc() {
+	e.Lock()
 	e.wait.Add(1)
+	e.Unlock()
 }
 
 // Passer provides a method for passing an event down a step in the pipeline

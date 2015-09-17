@@ -130,7 +130,7 @@ func (t *Tracker) GetServices() []string {
 // GetHosts returns all of the host names we have seen thus far
 func (t *Tracker) GetHosts() []string {
 	var hosts []string
-	t.query(func(t *Tracker) {
+	t.Query(func(t *Tracker) {
 		hosts = make([]string, len(t.hostTimes))
 		x := 0
 		for k, _ := range t.hostTimes {

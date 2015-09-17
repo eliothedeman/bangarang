@@ -40,7 +40,7 @@ func (c *ConfigVersion) Get(w http.ResponseWriter, r *http.Request) {
 
 	// return all config versions
 	if ver == "*" {
-		buff, err := json.Marshal(p.ListSnapshots())
+		buff, err := json.Marshal(p.ListRawSnapshots())
 		if err != nil {
 			logrus.Error(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

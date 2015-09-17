@@ -86,9 +86,11 @@ func TestKeepAlive(t *testing.T) {
 	go p.checkExpired()
 	time.Sleep(100 * time.Millisecond)
 
-	if len(ta.Events) != 1 {
-		t.Fatal(ta.Events)
-	}
+	ta.Do(func(ta *test.TestAlert) {
+		if len(ta.Events) != 1 {
+			t.Fatal(ta.Events)
+		}
+	})
 
 }
 
@@ -107,11 +109,13 @@ func TestMatchPolicy(t *testing.T) {
 	if len(ta.Events) == 0 {
 		t.Fatal()
 	}
-	for k, _ := range ta.Events {
-		if k.IndexName() != e.IndexName() {
-			t.Fail()
+	ta.Do(func(ta *test.TestAlert) {
+		for k, _ := range ta.Events {
+			if k.IndexName() != e.IndexName() {
+				t.Fail()
+			}
 		}
-	}
+	})
 }
 
 func TestOccurences(t *testing.T) {
@@ -127,9 +131,11 @@ func TestOccurences(t *testing.T) {
 	p.Pass(e)
 	e.Wait()
 
-	if len(ta.Events) != 0 {
-		t.Error("occrences hit too early")
-	}
+	ta.Do(func(ta *test.TestAlert) {
+		if len(ta.Events) != 0 {
+			t.Error("occrences hit too early")
+		}
+	})
 	e = event.NewEvent()
 	e.Host = "test"
 	e.Service = "test"
@@ -138,9 +144,11 @@ func TestOccurences(t *testing.T) {
 	p.Pass(e)
 	e.Wait()
 
-	if len(ta.Events) != 1 {
-		t.Error("occrences not hit", ta.Events)
-	}
+	ta.Do(func(ta *test.TestAlert) {
+		if len(ta.Events) != 1 {
+			t.Error("occrences not hit", ta.Events)
+		}
+	})
 }
 
 func genEventSlice(size int) []*event.Event {

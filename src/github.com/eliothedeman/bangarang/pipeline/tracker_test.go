@@ -13,6 +13,16 @@ func TestTrackerStart(t *testing.T) {
 	}
 }
 
+func isInSlice(key string, s []string) bool {
+	for _, x := range s {
+		if x == key {
+			return true
+		}
+	}
+
+	return false
+}
+
 func TestTrackerTrackEvent(t *testing.T) {
 	e := &event.Event{}
 	e.Host = "test"
@@ -22,13 +32,10 @@ func TestTrackerTrackEvent(t *testing.T) {
 	go x.Start()
 	x.TrackEvent(e)
 
-	if x.hosts[e.Host].get() != 1 {
+	if !isInSlice(e.Host, x.GetHosts()) {
 		t.Fail()
 	}
-	if x.services[e.Service].get() != 1 {
-		t.Fail()
-	}
-	if x.subServices[e.SubService].get() != 1 {
+	if !isInSlice(e.Service, x.GetServices()) {
 		t.Fail()
 	}
 
