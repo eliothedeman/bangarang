@@ -27,7 +27,7 @@ var (
 )
 
 const (
-	versionNumber = "0.10.3"
+	versionNumber = "0.10.4"
 )
 
 func init() {
