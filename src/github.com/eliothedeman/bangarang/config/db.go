@@ -289,6 +289,24 @@ func (d *DBConf) GetConfig(versionHash string) (*AppConfig, error) {
 	return d.getVersion(versionHash)
 }
 
+func (d *DBConf) ListRawSnapshots() []json.RawMessage {
+	raw := []json.RawMessage{}
+	err := d.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(appConfigBucketName))
+		return b.ForEach(func(k, v []byte) error {
+			raw = append(raw, json.RawMessage(v))
+			return nil
+		})
+	})
+
+	if err != nil {
+		logrus.Error(err)
+	}
+
+	return raw
+
+}
+
 func (d *DBConf) ListSnapshots() []*Snapshot {
 	snaps := []*Snapshot{}
 	err := d.db.View(func(tx *bolt.Tx) error {
