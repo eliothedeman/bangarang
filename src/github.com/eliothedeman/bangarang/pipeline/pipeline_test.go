@@ -112,7 +112,7 @@ func TestMatchPolicy(t *testing.T) {
 	ta.Do(func(ta *test.TestAlert) {
 		for k, _ := range ta.Events {
 			if k.IndexName() != e.IndexName() {
-				t.Fail()
+				t.Fatal(k.IndexName(), e.IndexName())
 			}
 		}
 	})

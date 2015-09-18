@@ -61,6 +61,7 @@ func NewIncident(policy string, escalation string, status int, e *Event) *Incide
 	}
 
 	in.Service = e.Service
+	in.Host = e.Host
 	in.SubService = e.SubService
 	in.Tags = e.Tags
 	in.Metric = e.Metric

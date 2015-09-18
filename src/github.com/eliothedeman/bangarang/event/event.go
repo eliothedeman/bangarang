@@ -90,10 +90,7 @@ func (e *Event) Get(key string) string {
 }
 
 func (e *Event) IndexName() string {
-	if len(e.indexName) == 0 {
-		e.indexName = e.Host + e.Service + e.SubService
-	}
-	return e.indexName
+	return e.Host + e.Service + e.SubService
 }
 
 func Status(code int) string {

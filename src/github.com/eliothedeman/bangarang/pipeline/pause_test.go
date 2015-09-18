@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"encoding/json"
 	"log"
 	"testing"
 
@@ -77,7 +78,9 @@ func TestRefreshPipeline(t *testing.T) {
 	"keep_alive_age": "10s",
     "escalations_dir": "alerts/"
 }`)
-	ac, err := config.ParseConfigFile(one)
+	ac := config.NewDefaultConfig()
+
+	err := json.Unmarshal(one, ac)
 	if err != nil {
 		t.Error(err)
 	}

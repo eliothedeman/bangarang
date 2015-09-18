@@ -183,11 +183,22 @@ func (p *Policy) Compile() {
 	}
 
 	for k, v := range p.Match {
-		p.r_match[k] = regexp.MustCompile(v)
+
+		m, err := regexp.Compile(v)
+		if err != nil {
+			logrus.Errorf("Unable to compile match for %s: %s", k, err.Error())
+		} else {
+			p.r_match[k] = m
+		}
 	}
 
 	for k, v := range p.NotMatch {
-		p.r_not_match[k] = regexp.MustCompile(v)
+		m, err := regexp.Compile(v)
+		if err != nil {
+			logrus.Errorf("Unable to compile not_match for %s: %s", k, err.Error())
+		} else {
+			p.r_not_match[k] = m
+		}
 	}
 
 	if p.Crit != nil {

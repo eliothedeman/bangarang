@@ -63,18 +63,30 @@ func (p *Pipeline) Pass(e *event.Event) {
 
 // only adds polcies that are not already known of
 func (p *Pipeline) refreshPolicies(m map[string]*alarm.Policy) {
+	logrus.Info("Refreshing policies")
+
+	// initilize the pipeline's polices if they don't already exist
 	if p.policies == nil {
 		p.policies = make(map[string]*alarm.Policy)
 	}
+
+	// add in new policies
 	for k, v := range m {
 
 		// if the name of the new polcy is not known of, insert it
 		if _, inMap := p.policies[k]; !inMap {
+
+			logrus.Infof("Adding new policy %s", k)
 			p.policies[k] = v
 		} else {
 
 			// stop the policy if not. Stops the memory leak
 			if p.policies[k] != v {
+
+				// trade the config for the new policies
+				m[k] = p.policies[k]
+
+				// stop the old one
 				v.Stop()
 			}
 		}
