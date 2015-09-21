@@ -34,7 +34,11 @@ func (c *AuthUser) Get(w http.ResponseWriter, r *http.Request) {
 	pass := r.URL.Query().Get("pass")
 
 	// fetch the user form the db
-	u, err := c.pipeline.GetConfig().Provider().GetUserByUserName(user)
+	var u *config.User
+	var err error
+	c.pipeline.ViewConfig(func(ac *config.AppConfig) {
+		u, err = ac.Provider().GetUserByUserName(user)
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		logrus.Error(err)

@@ -42,56 +42,58 @@ func getUserResponseFromUser(u *config.User) *GetUserResponse {
 }
 
 // Get fetches information about the spesified user
-func (u *User) Get(w http.ResponseWriter, r *http.Request) {
-	uName := r.URL.Query().Get("user")
+func (u *User) Get(req *Request) {
+	uName := req.r.URL.Query().Get("user")
 
-	var resp []*GetUserResponse
-	// handle the "all" case
-	if uName == "*" {
-		users, err := u.pipeline.GetConfig().Provider().ListUsers()
+	u.pipeline.ViewConfig(func(conf *config.AppConfig) {
+		var resp []*GetUserResponse
+		// handle the "all" case
+		if uName == "*" {
+			users, err := conf.Provider().ListUsers()
+			if err != nil {
+				http.Error(req.w, err.Error(), http.StatusBadRequest)
+				logrus.Error(err)
+				return
+			}
+			resp = make([]*GetUserResponse, 0, len(users))
+			for _, usr := range users {
+				resp = append(resp, getUserResponseFromUser(usr))
+			}
+		} else if len(uName) > 0 {
+			// handle the single case
+			usr, err := conf.Provider().GetUserByUserName(uName)
+			if err != nil {
+				http.Error(req.w, err.Error(), http.StatusBadRequest)
+				logrus.Error(err)
+				return
+			}
+			resp = []*GetUserResponse{
+				getUserResponseFromUser(usr),
+			}
+		} else {
+			// handle the "get self" case
+			usr, err := authUser(conf.Provider(), req.r)
+			if err != nil {
+				http.Error(req.w, err.Error(), http.StatusBadRequest)
+				logrus.Error(err)
+				return
+			}
+
+			resp = []*GetUserResponse{
+				getUserResponseFromUser(usr),
+			}
+
+		}
+
+		buff, err := json.Marshal(resp)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(req.w, err.Error(), http.StatusInternalServerError)
 			logrus.Error(err)
 			return
 		}
-		resp = make([]*GetUserResponse, 0, len(users))
-		for _, usr := range users {
-			resp = append(resp, getUserResponseFromUser(usr))
-		}
-	} else if len(uName) > 0 {
-		// handle the single case
-		usr, err := u.pipeline.GetConfig().Provider().GetUserByUserName(uName)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			logrus.Error(err)
-			return
-		}
-		resp = []*GetUserResponse{
-			getUserResponseFromUser(usr),
-		}
-	} else {
-		// handle the "get self" case
-		usr, err := authUser(u.pipeline.GetConfig().Provider(), r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			logrus.Error(err)
-			return
-		}
 
-		resp = []*GetUserResponse{
-			getUserResponseFromUser(usr),
-		}
-
-	}
-
-	buff, err := json.Marshal(resp)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logrus.Error(err)
-		return
-	}
-
-	w.Write(buff)
+		req.w.Write(buff)
+	})
 }
 
 type NewUserRequest struct {
@@ -101,27 +103,32 @@ type NewUserRequest struct {
 }
 
 // Post creates a new user
-func (u *User) Post(w http.ResponseWriter, r *http.Request) {
-	buff, err := ioutil.ReadAll(r.Body)
+func (u *User) Post(req *Request) {
+	buff, err := ioutil.ReadAll(req.r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(req.w, err.Error(), http.StatusBadRequest)
 		logrus.Error(err)
 		return
 	}
-
 	nur := &NewUserRequest{}
 	err = json.Unmarshal(buff, nur)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(req.w, err.Error(), http.StatusBadRequest)
 		logrus.Error(err)
 		return
 	}
 
-	// create the user in  the database
-	nu := config.NewUser(nur.Name, nur.UserName, nur.Password, config.READ)
-	err = u.pipeline.GetConfig().Provider().PutUser(nu)
+	err = u.pipeline.UpdateConfig(func(conf *config.AppConfig) error {
+
+		// create the user in  the database
+		nu := config.NewUser(nur.Name, nur.UserName, nur.Password, config.READ)
+		err = conf.Provider().PutUser(nu)
+		return nil
+
+	}, req.u)
+
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(req.w, err.Error(), http.StatusInternalServerError)
 		logrus.Error(err)
 		return
 	}

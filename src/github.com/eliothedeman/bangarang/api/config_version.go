@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/pipeline"
 	"github.com/gorilla/mux"
 )
@@ -36,7 +37,12 @@ func (c *ConfigVersion) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p := c.pipeline.GetConfig().Provider()
+	var conf *config.AppConfig
+	c.pipeline.ViewConfig(func(x *config.AppConfig) {
+		conf = x
+	})
+
+	p := conf.Provider()
 
 	// return all config versions
 	if ver == "*" {
@@ -75,8 +81,13 @@ func (c *ConfigVersion) Get(w http.ResponseWriter, r *http.Request) {
 func (c *ConfigVersion) Post(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("content-type", "application/json")
 
+	var p config.Provider
+	c.pipeline.ViewConfig(func(conf *config.AppConfig) {
+		p = conf.Provider()
+	})
+
 	// get the user for this method
-	u, err := authUser(c.pipeline.GetConfig().Provider(), r)
+	u, err := authUser(p, r)
 	if err != nil {
 		if err != nil {
 			logrus.Error(err)
@@ -91,8 +102,6 @@ func (c *ConfigVersion) Post(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "must append config version", http.StatusBadRequest)
 		return
 	}
-
-	p := c.pipeline.GetConfig().Provider()
 
 	// get the config that this version is looking for
 	conf, err := p.GetConfig(version)
