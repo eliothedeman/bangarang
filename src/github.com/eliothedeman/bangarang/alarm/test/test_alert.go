@@ -1,23 +1,31 @@
 package test
 
 import (
+	"sync"
+
 	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/event"
 )
 
 type TestAlert struct {
 	Events map[*event.Event]int
+	sync.Mutex
 }
 
 func init() {
 	alarm.LoadFactory("test", NewTest)
 }
 
-type Console struct {
+func (t *TestAlert) Do(f func(*TestAlert)) {
+	t.Lock()
+	f(t)
+	t.Unlock()
 }
 
 func (t *TestAlert) Send(i *event.Incident) error {
-	t.Events[i.GetEvent()] = i.Status
+	t.Do(func(t *TestAlert) {
+		t.Events[i.GetEvent()] = i.Status
+	})
 	return nil
 }
 

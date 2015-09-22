@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/pipeline"
 	"github.com/gorilla/mux"
 )
@@ -27,79 +28,78 @@ func (c *ConfigVersion) EndPoint() string {
 }
 
 // Get HTTP get method
-func (c *ConfigVersion) Get(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("content-type", "application/json")
-	vars := mux.Vars(r)
+func (c *ConfigVersion) Get(req *Request) {
+	vars := mux.Vars(req.r)
 	ver, ok := vars["version"]
 	if !ok {
-		http.Error(w, "must append config version", http.StatusBadRequest)
+		http.Error(req.w, "must append config version", http.StatusBadRequest)
 		return
 	}
 
-	p := c.pipeline.GetConfig().Provider()
+	var conf *config.AppConfig
+	c.pipeline.ViewConfig(func(x *config.AppConfig) {
+		conf = x
+	})
+
+	p := conf.Provider()
 
 	// return all config versions
 	if ver == "*" {
-		buff, err := json.Marshal(p.ListSnapshots())
+		buff, err := json.Marshal(p.ListRawSnapshots())
 		if err != nil {
 			logrus.Error(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(req.w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Write(buff)
+		req.w.Write(buff)
 		return
 	}
 
 	conf, err := p.GetConfig(vars["version"])
 	if err != nil {
-		if err != nil {
-			logrus.Error(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+		logrus.Error(err)
+		http.Error(req.w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	buff, err := json.Marshal(conf)
 	if err != nil {
-		if err != nil {
-			logrus.Error(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	}
-
-	w.Write(buff)
-}
-
-// change the current config to a spesific version
-func (c *ConfigVersion) Post(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("content-type", "application/json")
-	vars := mux.Vars(r)
-	version, ok := vars["version"]
-	if !ok {
-		http.Error(w, "must append config version", http.StatusBadRequest)
+		logrus.Error(err)
+		http.Error(req.w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	p := c.pipeline.GetConfig().Provider()
+	req.w.Write(buff)
+}
+
+// change the current config to a spesific version
+func (c *ConfigVersion) Post(req *Request) {
+
+	var p config.Provider
+	c.pipeline.ViewConfig(func(conf *config.AppConfig) {
+		p = conf.Provider()
+	})
+
+	vars := mux.Vars(req.r)
+	version, ok := vars["version"]
+	if !ok {
+		http.Error(req.w, "must append config version", http.StatusBadRequest)
+		return
+	}
 
 	// get the config that this version is looking for
 	conf, err := p.GetConfig(version)
 	if err != nil {
-		if err != nil {
-			logrus.Error(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+		logrus.Error(err)
+		http.Error(req.w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	_, err = p.PutConfig(conf)
+	_, err = p.PutConfig(conf, req.u)
 	if err != nil {
-		if err != nil {
-			logrus.Error(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+		logrus.Error(err)
+		http.Error(req.w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	c.pipeline.Refresh(conf)

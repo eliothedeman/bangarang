@@ -3,6 +3,7 @@ package pipeline
 import (
 	"log"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -27,6 +28,7 @@ type Pipeline struct {
 	providers          provider.EventProviderCollection
 	encodingPool       *event.EncodingPool
 	config             *config.AppConfig
+	confLock           sync.Mutex
 	tracker            *Tracker
 	pauseCache         map[*event.Event]struct{}
 	pauseChan          chan struct{}
@@ -63,18 +65,30 @@ func (p *Pipeline) Pass(e *event.Event) {
 
 // only adds polcies that are not already known of
 func (p *Pipeline) refreshPolicies(m map[string]*alarm.Policy) {
+	logrus.Info("Refreshing policies")
+
+	// initilize the pipeline's polices if they don't already exist
 	if p.policies == nil {
 		p.policies = make(map[string]*alarm.Policy)
 	}
+
+	// add in new policies
 	for k, v := range m {
 
 		// if the name of the new polcy is not known of, insert it
 		if _, inMap := p.policies[k]; !inMap {
+
+			logrus.Infof("Adding new policy %s", k)
 			p.policies[k] = v
 		} else {
 
 			// stop the policy if not. Stops the memory leak
 			if p.policies[k] != v {
+
+				// trade the config for the new policies
+				m[k] = p.policies[k]
+
+				// stop the old one
 				v.Stop()
 			}
 		}
@@ -109,6 +123,8 @@ func (p *Pipeline) RemovePolicy(name string) {
 // refresh load all config params that don't require a restart
 func (p *Pipeline) Refresh(conf *config.AppConfig) {
 	p.Pause()
+	p.confLock.Lock()
+	defer p.confLock.Unlock()
 
 	// if the config has changed at all, refresh the index
 	if p.config == nil || string(conf.Hash) != string(p.config.Hash) {
@@ -201,10 +217,6 @@ func (p *Pipeline) GetTracker() *Tracker {
 	return p.tracker
 }
 
-func (p *Pipeline) GetConfig() *config.AppConfig {
-	return p.config
-}
-
 func (p *Pipeline) checkExpired() {
 	var events []*event.Event
 	for {
@@ -236,6 +248,42 @@ func createKeepAliveEvents(times map[string]time.Time) []*event.Event {
 	}
 
 	return events
+}
+
+// ViewConfig gives access to a read only copy of the current config through a closure
+func (p *Pipeline) ViewConfig(f func(c *config.AppConfig)) {
+
+	// lock and get a copy of the current config
+	p.confLock.Lock()
+	cpy := *p.config
+	p.confLock.Unlock()
+
+	// fun the closure on the config copy
+	f(&cpy)
+}
+
+// UpdateConfig gives access to a copy ofthe pipeline, if no error is returned fron the closure, the pipeline will be refreshed with the given app config
+func (p *Pipeline) UpdateConfig(f func(c *config.AppConfig) error, u *config.User) error {
+
+	// lock and make a copy of the config
+	p.confLock.Lock()
+	cpy := *p.config
+	p.confLock.Unlock()
+
+	// run the closure on the config
+	err := f(&cpy)
+
+	// return the error if there is one
+	if err != nil {
+		return err
+	}
+
+	// update the config in the db
+	cpy.Provider().PutConfig(&cpy, u)
+
+	// if there is no error, refresh the pipeline with the new config
+	p.Refresh(&cpy)
+	return nil
 }
 
 func (p *Pipeline) Start() {

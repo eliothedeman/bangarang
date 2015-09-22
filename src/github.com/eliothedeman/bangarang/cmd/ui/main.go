@@ -45,6 +45,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		w.WriteHeader(resp.StatusCode)
 		w.Header().Add("Content-Type", "application/json")
 		_, err = io.Copy(w, resp.Body)
 		if err != nil {

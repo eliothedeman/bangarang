@@ -58,8 +58,13 @@ func NewIncident(policy string, escalation string, status int, e *Event) *Incide
 		Status:     status,
 		Policy:     policy,
 		Escalation: escalation,
-		Event:      *e,
 	}
+
+	in.Service = e.Service
+	in.Host = e.Host
+	in.SubService = e.SubService
+	in.Tags = e.Tags
+	in.Metric = e.Metric
 	in.Description = in.FormatDescription()
 
 	return in

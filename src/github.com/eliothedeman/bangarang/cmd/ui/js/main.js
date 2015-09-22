@@ -1,5 +1,8 @@
-function Router($scope, $cookies) {
+function Router($scope, $cookies, $http) {
 	this.selected = 0;
+    this.auth_token = "";
+    this.user = {};
+    r = this;
 	this.getSelected = function() {
 		var s = $cookies.get("router:tab");
 		if (s) {
@@ -13,9 +16,215 @@ function Router($scope, $cookies) {
 		$cookies.put("router:tab", index); 
 		this.selected = index;
 	}
+
+    get_auth_token = function() {
+        return $cookies.get("session:token");
+    }
+
+    set_auth_token = function(token) {
+        $cookies.put("session:token", token);
+        $http.defaults.headers.common["BANG_SESSION"] = token;
+    }
+
+    delete_auth_token = function() {
+        $cookies.remove("session:token");
+    }
+
+    defualt_user_opts = [
+        {
+            title: "Name",
+            name: "name",
+            type: "text",
+            value: ""
+
+        },
+        {
+            title: "Username",
+            name: "user_name",
+            type: "text",
+            value: ""
+
+        },
+        {
+            title: "Password",
+            name: "password",
+            type: "password",
+            value: ""
+
+        },
+        {
+            title: "Confirm Password",
+            type: "password",
+            name: "confirm_password",
+            value: ""
+        }
+    ]
+
+    $scope.new_user_opts = defualt_user_opts
+    this.new_user = function() {
+
+        // create the request object
+        var user_name = "";
+        var confirm = ""
+        var password = "";
+        req = {};
+        for (opt in $scope.new_user_opts) {
+            opt = $scope.new_user_opts[opt]
+            req[opt.name] = opt.value;
+            if (opt.name == "user_name") {
+                user_name = opt.value;
+            } else if (opt.name == "password") {
+                password = opt.value;
+            } else if (opt.name == "confirm_password") {
+                confirm = opt.value;
+            }
+        }
+
+        // Make sure the passwords are the same
+        if (confirm != password) {
+            alert("Passwords don't match");
+            return
+        }
+
+
+        // make the request
+        $http.post("api/user", req).then(function(){
+            // login 
+            login(user_name, password);
+
+
+
+        },function(resp){
+            alert(resp.data)
+        });
+    }
+
+    this.login = function(username, password) {
+        $http.get("api/auth/user?user="+username+"&pass="+password).then(function(response){
+            set_auth_token(response.data.token);
+            $cookies.put("session:logged_in", true);
+
+            // refresh
+            document.location.reload();
+
+        }, function(response){
+            alert("Invalid username/password")
+        });
+
+        $scope.user_name = null;
+        $scope.password = null;
+    }
+
+    login = this.login;
+
+    this.logout = function() {
+        delete_auth_token();
+
+        // refresh
+        document.location.reload();
+    }
+    logout = this.logout;
+
+    this.init = function() {
+        if (get_auth_token()) {
+            $scope.logged_in = true;
+            session = get_auth_token();
+            if (session) {
+                set_auth_token(session);
+            }
+
+            // attempt to make an api call to verify that we are successfully authed
+            $http.get("api/user").then(function(resp){
+                $scope.logged_in = true;
+                r.user = resp.data[0];
+                r.permissions = r.user.permissions;
+
+
+            },function(resp) {
+                // handle invalid / expired
+                if (resp.status == 4001 || resp.status == 4000) {
+                    logout();
+                    return;
+                }
+
+            });
+
+        } else {
+            $scope.logged_in = false;
+        }
+    }
 }
 
 angular.module("bangarang").controller("Router", Router);
+
+function User($scope, $cookies, $http, $mdDialog) {
+    $scope.self = {};
+    $scope.permissions_options = ["read", "write", "admin"];
+
+    get_self = function() {
+        $http.get("api/user").then(function(resp) {
+            $scope.self = resp.data[0];
+        }, function(resp) {
+            alert(resp.data);
+        });
+    }
+
+    $scope.updatePassword = function(usr) {
+        if (usr.new != usr.confirm) {
+            alert("Passwords don't match");
+            return
+        }
+
+        $http.post("api/user/password?user=" + usr.user_name + "&new=" + usr.new_password).then(function(resp) {
+            console.log(usr.user_name + "'s password has been updated");
+
+        }, function(resp) {
+            alert(resp.data);
+        });
+    }
+
+    $scope.updatePermissions = function(usr) {
+        $http.post("api/user/permissions?user=" + usr.user_name + "&perms=" + usr.permissions).then(function(resp) {
+            console.log("updated " + usr.user_name + "'s permissions to " + usr.permissions);
+        },function(resp){
+            alert(resp.data);
+        }); 
+    }
+
+    init = function() {
+        get_self();
+    }
+
+    init();
+}
+
+angular.module("bangarang").controller("User", User);
+
+function Admin($scope, $cookies, $http, $mdDialog) {
+    $scope.users = [];
+    $scope.self = {};
+    this.new_permissions = "admin"
+
+    this.list_users = function() {
+        $http.get("api/user?user=*").then(function(resp){
+            $scope.users = resp.data;
+
+        }, function() {
+            alert(resp.data);
+        })
+    }
+
+
+
+    this.init = function() {
+        this.list_users();
+    }
+
+    this.init();
+
+}
+
+angular.module("bangarang").controller("AdminController", Admin)
 
 function Config($scope, $cookies, $http, $mdDialog) {
 	$scope.snapshots = [];

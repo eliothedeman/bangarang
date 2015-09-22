@@ -10,6 +10,9 @@ env:
 test:
 	- export GOPATH=$(dir):$(dir)/vendor; go test -p=1 github.com/eliothedeman/bangarang/...
 
+race:
+	- export GOPATH=$(dir):$(dir)/vendor; go test -race -p=1 github.com/eliothedeman/bangarang/...
+
 
 testing:
 	- cd src/github.com/eliothedeman/bangarang/cmd/ui && go-bindata -dev ./...

@@ -29,6 +29,7 @@ type Event struct {
 	Tags       map[string]string `json:"tags" msg:"tags"`
 	indexName  string
 	wait       sync.WaitGroup
+	mut        sync.Mutex
 }
 
 func (e *Event) UnmarshalBinary(buff []byte) error {
@@ -210,12 +211,16 @@ func (e *Event) Wait() {
 
 // WaitDec decrements the event's waitgroup counter
 func (e *Event) WaitDec() {
+	e.mut.Lock()
 	e.wait.Done()
+	e.mut.Unlock()
 }
 
 // WaitAdd increments ot the event's waitgroup counter
 func (e *Event) WaitInc() {
+	e.mut.Lock()
 	e.wait.Add(1)
+	e.mut.Unlock()
 }
 
 // Passer provides a method for passing an event down a step in the pipeline
@@ -250,10 +255,7 @@ func (e *Event) Get(key string) string {
 }
 
 func (e *Event) IndexName() string {
-	if len(e.indexName) == 0 {
-		e.indexName = e.Host + e.Service + e.SubService
-	}
-	return e.indexName
+	return e.Host + e.Service + e.SubService
 }
 
 func Status(code int) string {

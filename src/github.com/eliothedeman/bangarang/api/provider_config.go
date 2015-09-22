@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/pipeline"
 	"github.com/eliothedeman/bangarang/provider"
 	"github.com/gorilla/mux"
@@ -29,111 +30,99 @@ func (c *ProviderConfig) EndPoint() string {
 }
 
 // Get HTTP get method
-func (c *ProviderConfig) Get(w http.ResponseWriter, r *http.Request) {
-	confs := c.pipeline.GetConfig().EventProviders.Raw()
-	vars := mux.Vars(r)
-	id, ok := vars["id"]
-	if !ok {
-		http.Error(w, "must append provider id", http.StatusBadRequest)
-		return
-	}
-
-	// if the provider is "*" fetch all configs
-	if id == "*" {
-		buff, err := json.Marshal(confs)
-		if err != nil {
-			logrus.Error(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+func (c *ProviderConfig) Get(req *Request) {
+	c.pipeline.ViewConfig(func(cfg *config.AppConfig) {
+		confs := cfg.EventProviders.Raw()
+		vars := mux.Vars(req.r)
+		id, ok := vars["id"]
+		if !ok {
+			http.Error(req.w, "must append provider id", http.StatusBadRequest)
+			return
 		}
-		w.Write(buff)
-		return
-	}
 
-	conf, ok := confs[id]
-	if !ok {
-		http.Error(w, fmt.Sprintf("Unknown event provider %s", id), http.StatusBadRequest)
-		return
-	}
+		// if the provider is "*" fetch all configs
+		if id == "*" {
+			buff, err := json.Marshal(confs)
+			if err != nil {
+				logrus.Error(err)
+				http.Error(req.w, err.Error(), http.StatusInternalServerError)
+			}
+			req.w.Write(buff)
+			return
+		}
 
-	w.Write(conf)
+		conf, ok := confs[id]
+		if !ok {
+			http.Error(req.w, fmt.Sprintf("Unknown event provider %s", id), http.StatusBadRequest)
+			return
+		}
+
+		req.w.Write(conf)
+	})
 }
 
 // Delete the given event provider
-func (p *ProviderConfig) Delete(w http.ResponseWriter, r *http.Request) {
-	conf := p.pipeline.GetConfig()
-	cp := conf.Provider()
-	vars := mux.Vars(r)
-	id, ok := vars["id"]
-	if !ok {
-		logrus.Error("Must append provider id", r.URL.String())
-		http.Error(w, "must append provider id", http.StatusBadRequest)
-		return
+func (p *ProviderConfig) Delete(req *Request) {
+	err := p.pipeline.UpdateConfig(func(conf *config.AppConfig) error {
+		vars := mux.Vars(req.r)
+		id, ok := vars["id"]
+		if !ok {
+			return fmt.Errorf("Must append provider id %s", req.r.URL)
+		}
+
+		delete(conf.EventProviders.Collection, id)
+		delete(conf.EventProviders.Raw(), id)
+
+		return nil
+
+	}, req.u)
+
+	if err != nil {
+		logrus.Error(err)
+		http.Error(req.w, err.Error(), http.StatusBadRequest)
 	}
 
-	delete(conf.EventProviders.Collection, id)
-	delete(conf.EventProviders.Raw(), id)
-
-	// refresh the config without the provider
-	cp.PutConfig(conf)
-	p.pipeline.Refresh(conf)
 }
 
 // Post HTTP get method
-func (c *ProviderConfig) Post(w http.ResponseWriter, r *http.Request) {
+func (c *ProviderConfig) Post(req *Request) {
 
 	// get the config.Provider for our current config
-	conf := c.pipeline.GetConfig()
-	p := conf.Provider()
-	vars := mux.Vars(r)
-	id, ok := vars["id"]
-	if !ok {
-		logrus.Error("Must append provider id", r.URL.String())
-		http.Error(w, "must append provider id", http.StatusBadRequest)
-		return
-	}
-	if _, inMap := conf.EventProviders.Collection[id]; inMap {
-		http.Error(w, fmt.Sprintf("Provider \"%s\" already exists", id), http.StatusBadRequest)
-		return
-	}
-
-	// read out the new raw provider
-	buff, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		logrus.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	ep, err := provider.ParseProvider(buff)
-	if err != nil {
-		if err != nil {
-			logrus.Error(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+	err := c.pipeline.UpdateConfig(func(conf *config.AppConfig) error {
+		vars := mux.Vars(req.r)
+		id, ok := vars["id"]
+		if !ok {
+			return fmt.Errorf("Must append provider id %s", req.r.URL)
 		}
-	}
+		if _, inMap := conf.EventProviders.Collection[id]; inMap {
+			return fmt.Errorf("Provider \"%s\" already exists", id)
+		}
 
-	if conf.EventProviders.Collection == nil {
-		conf.EventProviders.Collection = make(map[string]provider.EventProvider)
-	}
+		// read out the new raw provider
+		buff, err := ioutil.ReadAll(req.r.Body)
+		if err != nil {
+			return err
+		}
 
-	conf.EventProviders.Add(id, ep, buff)
+		ep, err := provider.ParseProvider(buff)
+		if err != nil {
+			return err
+		}
 
-	// write the new config
-	_, err = p.PutConfig(conf)
+		if conf.EventProviders.Collection == nil {
+			conf.EventProviders.Collection = make(map[string]provider.EventProvider)
+		}
+
+		logrus.Infof("Adding new event provider %s", id)
+		conf.EventProviders.Add(id, ep, buff)
+		return nil
+
+	}, req.u)
+
 	if err != nil {
 		logrus.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(req.w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// pull the new config out, and restart the pipeline
-	conf, err = conf.Provider().GetCurrent()
-	if err != nil {
-		logrus.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	c.pipeline.Refresh(conf)
 }

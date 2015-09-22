@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/pipeline"
 )
 
@@ -35,7 +36,10 @@ type HashResponse struct {
 func (c *ConfigHash) Get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("content-type", "application/json")
 
-	snaps := c.pipeline.GetConfig().Provider().ListSnapshots()
+	var snaps []*config.Snapshot
+	c.pipeline.ViewConfig(func(conf *config.AppConfig) {
+		snaps = conf.Provider().ListSnapshots()
+	})
 	res := make([]*HashResponse, 0, len(snaps))
 
 	for _, s := range snaps {

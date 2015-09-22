@@ -11,9 +11,10 @@ import (
 	"github.com/eliothedeman/smoothie"
 )
 
-var (
-	DEFAULT_WINDOW_SIZE = 2  // The default size of the dataframe used in window operations
-	STATUS_SIZE         = 10 // The default size of the dataframe used to count statuses
+const (
+	DEFAULT_WINDOW_SIZE     = 2  // The default size of the dataframe used in window operations
+	STATUS_SIZE             = 10 // The default size of the dataframe used to count statuses
+	MIN_STD_DEV_WINDOW_SIZE = 5  // the smallets a window size can be for a standard deviation check
 )
 
 // Condition holds conditional information to check events against
@@ -204,6 +205,15 @@ func (c *Condition) compileChecks() []satisfier {
 	// if any of the special checks are included, only one check can be implemented per condition
 	if !c.isSimple() {
 		if c.StdDev {
+
+			// check to see if the window size is large enough. The minimum 5.
+			if c.WindowSize < MIN_STD_DEV_WINDOW_SIZE {
+				logrus.Errorf("Window size %d is too small for a standard deviation check", c.WindowSize)
+
+				// stop short
+				return s
+			}
+
 			sigma := math.NaN()
 			// get the sigma value
 			if c.Greater != nil {
@@ -214,6 +224,7 @@ func (c *Condition) compileChecks() []satisfier {
 			}
 
 			logrus.Infof("Adding standard deviation check of %f sigma", sigma)
+
 			s = append(s, func(e *event.Event) bool {
 				t := c.getTracker(e)
 
@@ -226,8 +237,7 @@ func (c *Condition) compileChecks() []satisfier {
 					}
 
 					// take a sublslice of populated values
-					sub := t.df.Slice(t.df.Len()-t.count, t.df.Len()-1)
-					return math.Abs(e.Metric-sub.Avg()) > (sigma * t.df.StdDev())
+					return math.Abs(e.Metric-t.df.Index(t.df.Len()-2)) > (sigma * t.df.StdDev())
 				}
 				return false
 			})

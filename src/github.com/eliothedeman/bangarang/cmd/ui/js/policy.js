@@ -94,7 +94,8 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 		}
 
 		var p = {
-			name: $scope.np.name
+			name: $scope.np.name,
+			comment: $scope.np.comment
 		};
 
 		// set up match
@@ -133,6 +134,7 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 			p.warn[$scope.wSpec] = true;
 			p.warn["window_size"] = $scope.wWinSize;
 		}
+
 		return p;
 	}
 
@@ -197,6 +199,7 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 		$scope.wOcc = 1;
 		$scope.cOcc = 1;
 		$scope.escalations = [];
+		$scope.np.comment = "";
 	}
 
 	$scope.reset = function() {

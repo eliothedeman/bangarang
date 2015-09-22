@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"log"
 	"testing"
 
 	_ "github.com/eliothedeman/bangarang/alarm/console"
@@ -76,12 +75,9 @@ func TestParseUnParse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.Printf("%+v", ac)
-	buff, err := json.Marshal(ac)
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	log.Println(string(buff))
+	if len(ac.EventProviders.Collection) != 1 {
+		t.Fatal()
+	}
 
 }
