@@ -52,17 +52,17 @@ func makeKV(in []*event.Incident) map[string]*event.Incident {
 }
 
 // Create an incident
-func (i *Incident) Post(w http.ResponseWriter, r *http.Request) {
-	buff, err := ioutil.ReadAll(r.Body)
+func (i *Incident) Post(req *Request) {
+	buff, err := ioutil.ReadAll(req.r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(req.w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	in := &event.Incident{}
 	err = json.Unmarshal(buff, in)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(req.w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -70,11 +70,11 @@ func (i *Incident) Post(w http.ResponseWriter, r *http.Request) {
 }
 
 // Delete will resolve a given event
-func (i *Incident) Delete(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
+func (i *Incident) Delete(req *Request) {
+	vars := mux.Vars(req.r)
 	id, ok := vars["id"]
 	if !ok {
-		http.Error(w, "Must append incident id", http.StatusBadRequest)
+		http.Error(req.w, "Must append incident id", http.StatusBadRequest)
 		return
 	}
 

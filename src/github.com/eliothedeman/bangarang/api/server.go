@@ -127,6 +127,7 @@ func authUser(confProvider config.Provider, r *http.Request) (*config.User, erro
 func (s *Server) wrapAuth(h interface{}) http.HandlerFunc {
 
 	call := func(w http.ResponseWriter, r *http.Request) {
+
 		var u *config.User
 		var err error
 
@@ -155,7 +156,8 @@ func (s *Server) wrapAuth(h interface{}) http.HandlerFunc {
 	if needsAuth, is := h.(NeedsAuther); is {
 		needs := needsAuth.NeedsAuth()
 
-		call = func(w http.ResponseWriter, r *http.Request) {
+		return func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Add("Content-Type", "application/json")
 			w.Header().Add("Access-Control-Allow-Origin", "*")
 			var u *config.User
 			var err error

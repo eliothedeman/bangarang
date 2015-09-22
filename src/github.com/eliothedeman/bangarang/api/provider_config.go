@@ -64,7 +64,6 @@ func (c *ProviderConfig) Get(req *Request) {
 // Delete the given event provider
 func (p *ProviderConfig) Delete(req *Request) {
 	err := p.pipeline.UpdateConfig(func(conf *config.AppConfig) error {
-		cp := conf.Provider()
 		vars := mux.Vars(req.r)
 		id, ok := vars["id"]
 		if !ok {
@@ -90,7 +89,6 @@ func (c *ProviderConfig) Post(req *Request) {
 
 	// get the config.Provider for our current config
 	err := c.pipeline.UpdateConfig(func(conf *config.AppConfig) error {
-		p := conf.Provider()
 		vars := mux.Vars(req.r)
 		id, ok := vars["id"]
 		if !ok {

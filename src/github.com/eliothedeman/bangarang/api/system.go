@@ -83,7 +83,7 @@ func getUptime() time.Duration {
 	return now.Sub(startTime)
 }
 
-func (e *SystemStats) Get(w http.ResponseWriter, r *http.Request) {
+func (e *SystemStats) Get(req *Request) {
 	m := map[string]interface{}{}
 
 	m["memory"] = getMem()
@@ -93,9 +93,9 @@ func (e *SystemStats) Get(w http.ResponseWriter, r *http.Request) {
 
 	buff, err := json.Marshal(m)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(req.w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Write(buff)
+	req.w.Write(buff)
 }

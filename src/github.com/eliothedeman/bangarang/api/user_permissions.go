@@ -26,63 +26,52 @@ func (u *UserPermissions) EndPoint() string {
 	return "/api/user/permissions"
 }
 
-// Get all users with the given permissions
-func (up *UserPermissions) Get(w http.ResponseWriter, r *http.Request) {
-
-}
-
 // Post changes the permissions for this user
-func (up *UserPermissions) Post(w http.ResponseWriter, r *http.Request) {
-	u, err := authUser(up.pipeline.GetConfig().Provider(), r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		logrus.Error(err)
-		return
-	}
+func (up *UserPermissions) Post(req *Request) {
 
 	// MUST HAS ADMIN
-	if u.Permissions != config.ADMIN {
-		http.Error(w, config.InsufficientPermissions(config.ADMIN, u.Permissions).Error(), http.StatusBadRequest)
+	if req.u.Permissions != config.ADMIN {
+		http.Error(req.w, config.InsufficientPermissions(config.ADMIN, req.u.Permissions).Error(), http.StatusBadRequest)
 		return
 	}
 
 	// get the user we want to update
-	q := r.URL.Query()
+	q := req.r.URL.Query()
 	userName := q.Get("user")
 	if userName == "" {
-		http.Error(w, "user name must be supplied", http.StatusBadRequest)
+		http.Error(req.w, "user name must be supplied", http.StatusBadRequest)
 		return
 	}
 
 	perms := q.Get("perms")
 	if perms == "" {
-		http.Error(w, "perms must be supplied", http.StatusBadRequest)
+		http.Error(req.w, "perms must be supplied", http.StatusBadRequest)
 		return
 	}
 
 	uPerms := config.NameToPermissions(perms)
 	if uPerms == -1 {
-		http.Error(w, fmt.Sprintf("invalid permissions %s", perms), http.StatusBadRequest)
+		http.Error(req.w, fmt.Sprintf("invalid permissions %s", perms), http.StatusBadRequest)
 		return
 	}
 
-	userToUpdate, err := up.pipeline.GetConfig().Provider().GetUser(userName)
+	err := up.pipeline.UpdateConfig(func(conf *config.AppConfig) error {
+		userToUpdate, err := conf.Provider().GetUser(userName)
+		if err != nil {
+			return err
+		}
+
+		// can't update admin's permissions
+		if userToUpdate.UserName == "admin" {
+			return fmt.Errorf("updating admin's permissions is not allowed")
+		}
+
+		userToUpdate.Permissions = uPerms
+		return conf.Provider().PutUser(userToUpdate)
+
+	}, req.u)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logrus.Error(err)
-		return
-	}
-
-	// can't update admin's permissions
-	if userToUpdate.UserName == "admin" {
-		http.Error(w, "updating admin's permissions is not allowed", http.StatusBadRequest)
-		return
-	}
-
-	userToUpdate.Permissions = uPerms
-	err = up.pipeline.GetConfig().Provider().PutUser(userToUpdate)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(req.w, err.Error(), http.StatusInternalServerError)
 		logrus.Error(err)
 		return
 	}

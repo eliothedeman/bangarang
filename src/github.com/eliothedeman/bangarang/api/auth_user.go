@@ -27,11 +27,11 @@ func (c *AuthUser) EndPoint() string {
 }
 
 // Get HTTP get method
-func (c *AuthUser) Get(w http.ResponseWriter, r *http.Request) {
+func (c *AuthUser) Get(req *Request) {
 
 	// get the username/password
-	user := r.URL.Query().Get("user")
-	pass := r.URL.Query().Get("pass")
+	user := req.r.URL.Query().Get("user")
+	pass := req.r.URL.Query().Get("pass")
 
 	// fetch the user form the db
 	var u *config.User
@@ -40,14 +40,14 @@ func (c *AuthUser) Get(w http.ResponseWriter, r *http.Request) {
 		u, err = ac.Provider().GetUserByUserName(user)
 	})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(req.w, err.Error(), http.StatusBadRequest)
 		logrus.Error(err)
 		return
 	}
 
 	// if the user does not have the correct password, fail
 	if !config.CheckUserPassword(u, pass) {
-		http.Error(w, "invalid password", http.StatusBadRequest)
+		http.Error(req.w, "invalid password", http.StatusBadRequest)
 		return
 	}
 
@@ -59,11 +59,10 @@ func (c *AuthUser) Get(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(req.w, err.Error(), http.StatusInternalServerError)
 		logrus.Error(err)
 		return
 	}
 
-	w.Header().Add("content-type", "application/json")
-	w.Write(buff)
+	req.w.Write(buff)
 }
