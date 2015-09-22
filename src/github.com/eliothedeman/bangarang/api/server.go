@@ -17,6 +17,14 @@ const (
 	INVALID_SESSION_TOKEN = 4001
 )
 
+type Request struct {
+	r *http.Request
+	w http.ResponseWriter
+	u *config.User
+}
+
+type RequestHandler func(*Request)
+
 // An EndPointer returns the end point for this method
 type EndPointer interface {
 	EndPoint() string
@@ -24,13 +32,13 @@ type EndPointer interface {
 
 // A Getter provides an http "GET" method
 type Getter interface {
-	Get(http.ResponseWriter, *http.Request)
+	Get(*Request)
 }
 
-type Get func(http.ResponseWriter, *http.Request)
-type Post func(http.ResponseWriter, *http.Request)
-type Put func(http.ResponseWriter, *http.Request)
-type Delete func(http.ResponseWriter, *http.Request)
+type Get RequestHandler
+type Post RequestHandler
+type Put RequestHandler
+type Delete RequestHandler
 
 func (g Get) NeedsAuth() config.UserPermissions {
 	return config.READ
@@ -38,7 +46,7 @@ func (g Get) NeedsAuth() config.UserPermissions {
 
 // A Poster provides an http "POST" method
 type Poster interface {
-	Post(http.ResponseWriter, *http.Request)
+	Post(*Request)
 }
 
 func (p Post) NeedsAuth() config.UserPermissions {
@@ -47,7 +55,7 @@ func (p Post) NeedsAuth() config.UserPermissions {
 
 // A Putter provides an http "POST" method
 type Putter interface {
-	Put(http.ResponseWriter, *http.Request)
+	Put(*Request)
 }
 
 func (p Put) NeedsAuth() config.UserPermissions {
@@ -56,7 +64,7 @@ func (p Put) NeedsAuth() config.UserPermissions {
 
 // A Deleter provides an http "DELETE" method
 type Deleter interface {
-	Delete(http.ResponseWriter, *http.Request)
+	Delete(*Request)
 }
 
 func (d Delete) NeedsAuth() config.UserPermissions {
@@ -117,25 +125,46 @@ func authUser(confProvider config.Provider, r *http.Request) (*config.User, erro
 // wrap the given handler func in a closure that checks for auth first if the
 // server is configured to use basic auth
 func (s *Server) wrapAuth(h interface{}) http.HandlerFunc {
+
 	call := func(w http.ResponseWriter, r *http.Request) {
+
+		var u *config.User
+		var err error
+
+		s.pipeline.ViewConfig(func(conf *config.AppConfig) {
+			u, err = authUser(conf.Provider(), r)
+		})
+
+		req := &Request{
+			u: u,
+			r: r,
+			w: w,
+		}
 		switch h := h.(type) {
 		case Get:
-			h(w, r)
+			h(req)
 		case Post:
-			h(w, r)
+			h(req)
 		case Put:
-			h(w, r)
+			h(req)
 		case Delete:
-			h(w, r)
+			h(req)
 		}
 	}
+
 	// check to see if this auther needs
 	if needsAuth, is := h.(NeedsAuther); is {
 		needs := needsAuth.NeedsAuth()
 
 		return func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Add("Content-Type", "application/json")
 			w.Header().Add("Access-Control-Allow-Origin", "*")
-			u, err := authUser(s.pipeline.GetConfig().Provider(), r)
+			var u *config.User
+			var err error
+
+			s.pipeline.ViewConfig(func(conf *config.AppConfig) {
+				u, err = authUser(conf.Provider(), r)
+			})
 
 			// handle error types
 			if err == InvalidSessionToken {
@@ -175,6 +204,7 @@ func (s *Server) wrapAuth(h interface{}) http.HandlerFunc {
 	// else auth is not required
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Access-Control-Allow-Origin", "*")
+		w.Header().Add("Content-Type", "application/json")
 		call(w, r)
 	}
 }

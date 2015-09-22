@@ -2,11 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/pipeline"
 	"github.com/gorilla/mux"
 )
@@ -28,13 +29,16 @@ func (p *EscalationConfig) EndPoint() string {
 }
 
 // Get HTTP get method
-func (p *EscalationConfig) Get(w http.ResponseWriter, r *http.Request) {
-	conf := p.pipeline.GetConfig()
-	vars := mux.Vars(r)
+func (p *EscalationConfig) Get(req *Request) {
+	var conf *config.AppConfig
+	p.pipeline.ViewConfig(func(cf *config.AppConfig) {
+		conf = cf
+	})
+	vars := mux.Vars(req.r)
 	id, ok := vars["id"]
 	if !ok {
-		logrus.Error("Must append escalation id", r.URL.String())
-		http.Error(w, "must append escalation id", http.StatusBadRequest)
+		logrus.Error("Must append escalation id", req.r.URL.String())
+		http.Error(req.w, "must append escalation id", http.StatusBadRequest)
 		return
 	}
 
@@ -42,10 +46,10 @@ func (p *EscalationConfig) Get(w http.ResponseWriter, r *http.Request) {
 		buff, err := json.Marshal(&conf.Escalations)
 		if err != nil {
 			logrus.Error(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(req.w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		w.Write(buff)
+		req.w.Write(buff)
 		return
 	}
 
@@ -54,85 +58,67 @@ func (p *EscalationConfig) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 // Delete the given event provider
-func (p *EscalationConfig) Delete(w http.ResponseWriter, r *http.Request) {
-	// get the user for this method
-	u, err := authUser(p.pipeline.GetConfig().Provider(), r)
-	if err != nil {
-		if err != nil {
-			logrus.Error(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	}
-	vars := mux.Vars(r)
-	id, ok := vars["id"]
-	if !ok {
-		logrus.Error("Must append escalation id", r.URL.String())
-		http.Error(w, "must append escalation id", http.StatusBadRequest)
-		return
-	}
+func (p *EscalationConfig) Delete(req *Request) {
 
-	conf := p.pipeline.GetConfig()
-	logrus.Info("Removing escalation: %s", id)
-	conf.Escalations.RemoveRaw(id)
-	err = conf.Escalations.UnmarshalRaw()
+	err := p.pipeline.UpdateConfig(func(conf *config.AppConfig) error {
+		vars := mux.Vars(req.r)
+		id, ok := vars["id"]
+		if !ok {
+			return fmt.Errorf("Must append escalation id %s", req.r.URL)
+		}
+
+		logrus.Info("Removing escalation: %s", id)
+		conf.Escalations.RemoveRaw(id)
+		err := conf.Escalations.UnmarshalRaw()
+		if err != nil {
+			return err
+		}
+		return nil
+
+	}, req.u)
+
 	if err != nil {
 		logrus.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		http.Error(req.w, err.Error(), http.StatusBadRequest)
 	}
-
-	conf.Provider().PutConfig(conf, u)
-	p.pipeline.Refresh(conf)
 }
 
 // Post HTTP get method
-func (p *EscalationConfig) Post(w http.ResponseWriter, r *http.Request) {
-	// get the user for this method
-	u, err := authUser(p.pipeline.GetConfig().Provider(), r)
-	if err != nil {
-		if err != nil {
-			logrus.Error(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+func (p *EscalationConfig) Post(req *Request) {
+
+	err := p.pipeline.UpdateConfig(func(conf *config.AppConfig) error {
+		vars := mux.Vars(req.r)
+
+		id, ok := vars["id"]
+		if !ok {
+			return fmt.Errorf("Must append escalation id %s", req.r.URL)
 		}
-	}
 
-	conf := p.pipeline.GetConfig()
-	vars := mux.Vars(r)
-	id, ok := vars["id"]
-	if !ok {
-		logrus.Error("Must append escalation id", r.URL.String())
-		http.Error(w, "must append escalation id", http.StatusBadRequest)
-		return
-	}
+		buff, err := ioutil.ReadAll(req.r.Body)
+		if err != nil {
+			return err
+		}
 
-	buff, err := ioutil.ReadAll(r.Body)
+		t := []json.RawMessage{}
+		err = json.Unmarshal(buff, &t)
+		if err != nil {
+			return err
+		}
+
+		conf.Escalations.AddRaw(id, t)
+		err = conf.Escalations.UnmarshalRaw()
+		if err != nil {
+			return err
+		}
+
+		return nil
+
+	}, req.u)
+
 	if err != nil {
 		logrus.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		http.Error(req.w, err.Error(), http.StatusBadRequest)
+
 	}
 
-	t := []json.RawMessage{}
-	err = json.Unmarshal(buff, &t)
-	if err != nil {
-		logrus.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	log.Println(conf.Escalations)
-
-	conf.Escalations.AddRaw(id, t)
-	err = conf.Escalations.UnmarshalRaw()
-	if err != nil {
-		logrus.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	conf.Provider().PutConfig(conf, u)
-
-	p.pipeline.Refresh(conf)
 }

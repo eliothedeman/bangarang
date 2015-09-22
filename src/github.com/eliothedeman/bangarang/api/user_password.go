@@ -26,45 +26,40 @@ func (u *UserPassword) EndPoint() string {
 }
 
 // Post changes the permissions for this user
-func (up *UserPassword) Post(w http.ResponseWriter, r *http.Request) {
-	u, err := authUser(up.pipeline.GetConfig().Provider(), r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		logrus.Error(err)
-		return
-	}
+func (up *UserPassword) Post(req *Request) {
 
 	// MUST HAS ADMIN
-	if u.Permissions != config.ADMIN {
-		http.Error(w, config.InsufficientPermissions(config.ADMIN, u.Permissions).Error(), http.StatusBadRequest)
+	if req.u.Permissions != config.ADMIN {
+		http.Error(req.w, config.InsufficientPermissions(config.ADMIN, req.u.Permissions).Error(), http.StatusBadRequest)
 		return
 	}
 
 	// get the user we want to update
-	q := r.URL.Query()
+	q := req.r.URL.Query()
 	userName := q.Get("user")
 	if userName == "" {
-		http.Error(w, "user name must be supplied", http.StatusBadRequest)
+		http.Error(req.w, "user name must be supplied", http.StatusBadRequest)
 		return
 	}
 
 	newPass := q.Get("new")
 	if newPass == "" {
-		http.Error(w, "new password must be supplied", http.StatusBadRequest)
+		http.Error(req.w, "new password must be supplied", http.StatusBadRequest)
 		return
 	}
 
-	userToUpdate, err := up.pipeline.GetConfig().Provider().GetUser(userName)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logrus.Error(err)
-		return
-	}
+	err := up.pipeline.UpdateConfig(func(conf *config.AppConfig) error {
+		userToUpdate, err := conf.Provider().GetUser(userName)
+		if err != nil {
+			return err
+		}
 
-	userToUpdate.PasswordHash = config.HashUserPassword(userToUpdate, newPass)
-	err = up.pipeline.GetConfig().Provider().PutUser(userToUpdate)
+		userToUpdate.PasswordHash = config.HashUserPassword(userToUpdate, newPass)
+		return conf.Provider().PutUser(userToUpdate)
+
+	}, req.u)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(req.w, err.Error(), http.StatusInternalServerError)
 		logrus.Error(err)
 		return
 	}

@@ -38,7 +38,10 @@ func TestAddConfig(t *testing.T) {
 	p.Refresh(conf)
 	p.Pass(&event.Event{})
 
-	conf = p.GetConfig()
+	p.ViewConfig(func(ac *config.AppConfig) {
+		conf = ac
+	})
+
 	log.Println(p.policies)
 	conf.Policies["other"] = testPolicy(c, nil, map[string]string{"1": "1"}, nil)
 	p.Refresh(conf)

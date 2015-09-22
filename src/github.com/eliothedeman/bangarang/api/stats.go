@@ -22,15 +22,15 @@ func (e *EventStats) EndPoint() string {
 	return "/api/stats/event"
 }
 
-func (e *EventStats) Get(w http.ResponseWriter, r *http.Request) {
+func (e *EventStats) Get(req *Request) {
 	t := e.pipeline.GetTracker()
 	report := t.GetStats()
 
 	buff, err := json.Marshal(report)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(req.w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Write(buff)
+	req.w.Write(buff)
 }
