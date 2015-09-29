@@ -76,3 +76,21 @@ func BenchmarkMarshalBinary(b *testing.B) {
 		e.MarshalBinary()
 	}
 }
+
+func BenchmarkUnmarshalBinary(b *testing.B) {
+	e := &Event{
+		Host:    "hello",
+		Service: "what's up",
+		Tags: map[string]string{
+			"key": "value",
+		},
+	}
+
+	buff, _ := e.MarshalBinary()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		e.UnmarshalBinary(buff)
+	}
+}

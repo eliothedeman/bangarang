@@ -114,21 +114,21 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 	tmp = sizeOfString(e.Host)
 	buff[offset] = uint8(tmp)
 	offset += 1
-	copy(buff[offset:offset+tmp], unsafeBytes(e.Host))
+	copy(buff[offset:offset+tmp], e.Host)
 	offset += tmp
 
 	// service
 	tmp = sizeOfString(e.Service)
 	buff[offset] = uint8(tmp)
 	offset += 1
-	copy(buff[offset:offset+tmp], unsafeBytes(e.Service))
+	copy(buff[offset:offset+tmp], e.Service)
 	offset += tmp
 
 	// service
 	tmp = sizeOfString(e.SubService)
 	buff[offset] = uint8(tmp)
 	offset += 1
-	copy(buff[offset:offset+tmp], unsafeBytes(e.SubService))
+	copy(buff[offset:offset+tmp], e.SubService)
 	offset += tmp
 
 	// tags
@@ -136,13 +136,13 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 		tmp = sizeOfString(k)
 		buff[offset] = uint8(tmp)
 		offset += 1
-		copy(buff[offset:offset+tmp], unsafeBytes(k))
+		copy(buff[offset:offset+tmp], k)
 		offset += tmp
 
 		tmp = sizeOfString(v)
 		buff[offset] = uint8(tmp)
 		offset += 1
-		copy(buff[offset:offset+tmp], unsafeBytes(v))
+		copy(buff[offset:offset+tmp], v)
 		offset += tmp
 	}
 
