@@ -435,28 +435,49 @@
 					</md-tabs>
 				</div>
 			</md-tab>
-			<md-tab label="provider" md-on-select="r.updateSelected(3)">
+			<md-tab label="provider" md-on-select="r.updateSelected(3)" >
 				<div ng-controller="ProviderController as pc">
-					<md-tabs md-dynamic-height md-center-tabs md-border-bottom>
-						<md-tab label="All" ng-init="fetchProviders()">
+					<md-tabs md-dynamic-height md-center-tabs md-border-bottom md-selected="pc.selected" ng-init="pc.getSelected()">
+						<md-tab label="All" md-on-select="pc.updateSelected(0)" ng-init="pc.fetchProviders()">
 							<md-list>
 								<md-card ng-repeat="(k,v) in providers">
 									<md-card-content>
 										<h4>{{k}}</h4>
-										<json-formatter json=v></json-formatter>
+										<json-formatter class="jsonFormatter" json=v></json-formatter>
 									</md-card-content>
 								</md-card>
 							</md-list>
 						</md-tab>
-						<md-tab label="Add">
-							<md-card>
-								<md-card-content>
-									<md-input-container>
-										<label>Name</label>
-										<input></input>
-									</md-input-container>
-								</md-card-content>
-							</md-card>
+						<md-tab label="Add" md-on-select="pc.updateSelected(1)">
+							<div ng-controller="NewProvider as np">
+								<md-card>
+									<md-card-content>
+										<md-input-container>
+											<label>Name</label>
+											<input ng-model="np.name"></input>
+										</md-input-container>
+										<div layout layout-sm="colunm">
+											<md-select placeholder="Type" ng-model="np.type">
+												<md-option ng-repeat="t in np.type_list" value="{{t.name}}">{{t.title}}</md-option>
+											</md-select>
+										</div>
+										<div ng-repeat="opt in np.getOpts(np.type)">
+											<md-input-container>
+												<label>{{opt.title}}</label>
+												<input ng-model="np.opts[opt.name]">
+											</md-input-container>
+										</div>
+										<br>
+										<md-divider></md-divider>
+										<br>
+										<div layout layout-sm="row">
+											<md-button class="md-raised md-warn" ng-click="np.init()">Cancel</md-button>
+											<md-button class="md-raised" ng-click="np.submitNew()">Submit</md-button>
+										</div>
+
+									</md-card-content>
+								</md-card>
+							</div>
 						</md-tab>
 
 					</md-tabs>
