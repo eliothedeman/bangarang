@@ -368,6 +368,15 @@
 								</md-card>
 							</div>
 						</md-tab>
+						<md-tab label="edit" md-on-select="updateSelected(3)">
+							<md-card>
+								<md-card-content>
+									<md-select ng-model="tmpEditName" label="name">
+										<md-option ng-value="name" ng-repeat="(name, policy) in policies">{{ name }}</md-option>
+									</md-select>
+								</md-card-content>
+							</md-card>
+						</md-tab>
 					</md-tabs>
 				</div>
 			</md-tab>

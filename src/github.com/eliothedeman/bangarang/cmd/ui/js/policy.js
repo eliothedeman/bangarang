@@ -296,6 +296,8 @@ function PolicyController($scope, $http, $cookies) {
 	$scope.policies = null;
 	$scope.removeSure = {};
 	t = $scope;
+	$scope.tmpEdit = {};
+	$scope.tmpEditName = ""
 
 	$scope.selected = 0;
 	$scope.getSelected = function() {
@@ -331,13 +333,32 @@ function PolicyController($scope, $http, $cookies) {
 		});
 	}
 
+	$scope.addPolicy = function(name, data) {
+		$http.post("api/policy/config/" + name, data).then(function() {
+			$scope.fetchPolicies()
+		}, function(resp) {
+			alert(resp.data);
+		})
+	}
+
 	$scope.fetchPolicies = function() {
 		$http.get("api/policy/config/*").success(function(data, status) {
 			$scope.policies = data;
 		});
 	}
+
 	$scope.init = function() {
 		$scope.fetchPolicies();
+		$scope.tmp_edit = {};
+		$scope.tmpEditName = ""
+	}
+
+	$scope.editPolicy = function(name, data) {
+		// remove the old policy
+		$scope.removePolicy(name);
+
+		// send in the new one
+		$scope.addPolicy(name, data);
 	}
 
 	$scope.init();
