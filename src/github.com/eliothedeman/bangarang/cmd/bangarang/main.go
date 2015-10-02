@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	confFile = flag.String("conf", "/etc/bangarang/conf.json", "path main config file")
+	confFile = flag.String("conf", "conf.db", "path main config file")
 	dev      = flag.Bool("dev", false, "puts bangarang in a dev testing mode")
 	version  = flag.Bool("version", false, "display the version of this binary")
 	confType = flag.String("conf-type", "db", `type of configuration used ["db", "json"]`)
