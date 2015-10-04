@@ -16,18 +16,15 @@ import (
 	"github.com/eliothedeman/bangarang/pipeline"
 	_ "github.com/eliothedeman/bangarang/provider/http"
 	_ "github.com/eliothedeman/bangarang/provider/tcp"
+	"github.com/eliothedeman/bangarang/version"
 )
 
 var (
-	confFile = flag.String("conf", "conf.db", "path main config file")
-	dev      = flag.Bool("dev", false, "puts bangarang in a dev testing mode")
-	version  = flag.Bool("version", false, "display the version of this binary")
-	confType = flag.String("conf-type", "db", `type of configuration used ["db", "json"]`)
-	apiPort  = flag.Int("api-port", 8081, "port to serve the http api on")
-)
-
-const (
-	versionNumber = "0.10.4"
+	confFile    = flag.String("conf", "conf.db", "path main config file")
+	dev         = flag.Bool("dev", false, "puts bangarang in a dev testing mode")
+	showVersion = flag.Bool("version", false, "display the version of this binary")
+	confType    = flag.String("conf-type", "db", `type of configuration used ["db", "json"]`)
+	apiPort     = flag.Int("api-port", 8081, "port to serve the http api on")
 )
 
 func init() {
@@ -50,8 +47,8 @@ func main() {
 	flag.Parse()
 
 	// display the current version and exit
-	if *version {
-		fmt.Print(versionNumber)
+	if *showVersion {
+		fmt.Print(version.Current)
 		os.Exit(0)
 	}
 
