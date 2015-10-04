@@ -4,41 +4,41 @@ import "testing"
 
 func TestVersionGreater(t *testing.T) {
 	x := []struct {
-		a, b     *Version
+		a, b     Version
 		expected bool
 	}{
 		{
-			a: &Version{
+			a: Version{
 				Major: 1,
 			},
-			b: &Version{
+			b: Version{
 				Major: 0,
 			},
 			expected: true,
 		},
 		{
-			a: &Version{
+			a: Version{
 				Minor: 1,
 			},
-			b: &Version{
+			b: Version{
 				Minor: 0,
 			},
 			expected: true,
 		},
 		{
-			a: &Version{
+			a: Version{
 				Patch: 1,
 			},
-			b: &Version{
+			b: Version{
 				Patch: 0,
 			},
 			expected: true,
 		},
 		{
-			a: &Version{
+			a: Version{
 				Patch: 1,
 			},
-			b: &Version{
+			b: Version{
 				Major: 33,
 				Patch: 0,
 			},
