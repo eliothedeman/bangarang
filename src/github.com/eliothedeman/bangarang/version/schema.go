@@ -22,6 +22,11 @@ var (
 	}
 )
 
+// LatestSchema returns the newest schema
+func LatestSchema() Schema {
+	return Schemas[len(Schemas)-1]
+}
+
 // givena n old and new schema update the current db
 type Upgrader func(old *bolt.DB) error
 
@@ -32,7 +37,7 @@ type Schema struct {
 	Upgrader Upgrader
 }
 
-func (s *Schema) Newer(x *Schema) bool {
+func (s Schema) Newer(x Schema) bool {
 	return s.Version.Newer(x.Version)
 }
 
@@ -71,7 +76,7 @@ func GetSchemaFromDb(b *bolt.DB) Schema {
 }
 
 // Apply creates all needed buckets and sets the version of the db
-func (s *Schema) Apply(b *bolt.DB) error {
+func (s Schema) Apply(b *bolt.DB) error {
 
 	// make sure all buckets that are needed for the upgrade are in place
 	err := s.createBuckets(b)
@@ -97,7 +102,7 @@ func (s *Schema) Apply(b *bolt.DB) error {
 }
 
 // cleanup uneeded buckets
-func (s *Schema) cleanBuckets(b *bolt.DB) error {
+func (s Schema) cleanBuckets(b *bolt.DB) error {
 
 	isNeeded := func(name string) bool {
 
@@ -142,7 +147,7 @@ func (s *Schema) cleanBuckets(b *bolt.DB) error {
 	})
 }
 
-func (s *Schema) createBuckets(b *bolt.DB) error {
+func (s Schema) createBuckets(b *bolt.DB) error {
 	return b.Update(func(t *bolt.Tx) error {
 		for _, bucket := range s.Buckets {
 			_, err := t.CreateBucketIfNotExists([]byte(bucket))
@@ -154,7 +159,7 @@ func (s *Schema) createBuckets(b *bolt.DB) error {
 	})
 }
 
-func (s *Schema) putAbout(b *bolt.DB) error {
+func (s Schema) putAbout(b *bolt.DB) error {
 	return b.Update(func(t *bolt.Tx) error {
 		b, err := t.CreateBucketIfNotExists(AboutBucket)
 		if err != nil {
