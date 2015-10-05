@@ -9,6 +9,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
+	"github.com/eliothedeman/bangarang/version"
 )
 
 // DBConf provides methods for reading and writing configs from a database
@@ -39,7 +40,10 @@ var (
 func (d *DBConf) initAdminUser() error {
 	adminExists := false
 	err := d.db.Update(func(t *bolt.Tx) error {
-		b := t.Bucket([]byte(userConfigBucketName))
+		b, err := t.CreateBucketIfNotExists([]byte(userConfigBucketName))
+		if err != nil {
+			return err
+		}
 
 		// the admin user is always user_id 0
 		buff := b.Get([]byte("admin"))
@@ -67,24 +71,35 @@ func (d *DBConf) initAdminUser() error {
 	return d.PutUser(u)
 }
 
-func (d *DBConf) initBuckets() {
-	err := d.db.Update(func(tx *bolt.Tx) error {
-		for _, name := range BucketNames {
-			_, err := tx.CreateBucketIfNotExists([]byte(name))
-			if err != nil {
-				return err
-			}
+func (d *DBConf) init() {
 
+	// get the schema, and apply it before moving on
+	s := version.GetSchemaFromDb(d.db)
+
+	// bootstrap
+	if s.Version == version.First {
+		logrus.Info("Bootstrapping config db")
+		err := s.Apply(d.db)
+		if err != nil {
+			logrus.Errorf("Unable to bootstrap config %s", err.Error())
 		}
-		return nil
-	})
-	if err != nil {
-		logrus.Errorf("Unable to init config buckets %s", err)
+
 	}
 
-	err = d.initAdminUser()
+	// if we don't have the correct version, apply the new one
+	if version.LatestSchema().Greater(s) {
+		logrus.Info("Upgrading config db version from %s to %s", s.Version, version.LatestSchema().Version)
+		err := version.LatestSchema().Apply(d.db)
+		if err != nil {
+			logrus.Errorf("Unable to apply schema version %s to config db %s", version.LatestSchema().Version, err.Error())
+		}
+	}
+
+	logrus.Infof("Using db config version %s", s.Version)
+
+	err := d.initAdminUser()
 	if err != nil {
-		logrus.Errorf("Unable to init config buckets %s", err)
+		logrus.Errorf("Unable init admin user: %s", err)
 	}
 }
 
@@ -102,7 +117,7 @@ func (d *DBConf) initDB() error {
 	createIfNotExists(d.fileName)
 	db, err := bolt.Open(d.fileName, 0600, nil)
 	d.db = db
-	d.initBuckets()
+	d.init()
 
 	return err
 }
