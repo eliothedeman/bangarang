@@ -37,8 +37,9 @@ type Schema struct {
 	Upgrader Upgrader
 }
 
-func (s Schema) Newer(x Schema) bool {
-	return s.Version.Newer(x.Version)
+// Greater
+func (s Schema) Greater(x Schema) bool {
+	return s.Version.Greater(x.Version)
 }
 
 func GetSchemaFromDb(b *bolt.DB) Schema {
@@ -67,7 +68,7 @@ func GetSchemaFromDb(b *bolt.DB) Schema {
 		}
 
 		// as soon as we find an older version, this is the one
-		if !s.Version.Newer(v) {
+		if !s.Version.Greater(v) {
 			return s
 		}
 	}

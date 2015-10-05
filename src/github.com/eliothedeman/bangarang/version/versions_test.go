@@ -47,7 +47,7 @@ func TestVersionGreater(t *testing.T) {
 	}
 
 	for _, v := range x {
-		if newer := v.a.Newer(v.b); newer != v.expected {
+		if newer := v.a.Greater(v.b); newer != v.expected {
 			t.Fatalf("Expected %t got %t a: %s, b: %s", v.expected, newer, v.a, v.b)
 		}
 

@@ -87,7 +87,7 @@ func (d *DBConf) init() {
 	}
 
 	// if we don't have the correct version, apply the new one
-	if version.LatestSchema().Newer(s) {
+	if version.LatestSchema().Greater(s) {
 		logrus.Info("Upgrading config db version from %s to %s", s.Version, version.LatestSchema().Version)
 		err := version.LatestSchema().Apply(d.db)
 		if err != nil {

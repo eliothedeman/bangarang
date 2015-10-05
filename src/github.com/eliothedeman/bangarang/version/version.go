@@ -25,6 +25,7 @@ type Version struct {
 	Patch int `json:"patch"`
 }
 
+// VersionFromString parse a string and return the corosponding version
 func VersionFromString(s string) Version {
 	vs := strings.Split(s, ".")
 
@@ -51,8 +52,8 @@ func (v Version) String() string {
 	return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch)
 }
 
-// Newer compares two versions and returns if v > x
-func (v Version) Newer(x Version) bool {
+// Greater compares two versions and returns if v > x
+func (v Version) Greater(x Version) bool {
 	if v.Major > x.Major {
 		return true
 	}
@@ -73,5 +74,4 @@ func (v Version) Newer(x Version) bool {
 	}
 
 	return false
-
 }
