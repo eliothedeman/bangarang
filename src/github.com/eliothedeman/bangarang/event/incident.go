@@ -47,7 +47,7 @@ func (i *Incident) GetEvent() *Event {
 }
 
 func (i *Incident) FormatDescription() string {
-	return fmt.Sprintf("%s on %s is %s. Triggerd by %s", i.Service, i.Host, Status(i.Status), i.Policy)
+	return fmt.Sprintf("%s on %s is %s. Triggered by %s", i.Service, i.Host, Status(i.Status), i.Policy)
 }
 
 func NewIncident(policy string, escalation string, status int, e *Event) *Incident {
