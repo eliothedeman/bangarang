@@ -1,38 +1,4 @@
-// Representation of a policy
-class Policy {
-	constructor(name) {
-		this.name = name
-		this.match = {}
-		this.notMatch = {}
-	}
 
-	data() {
-		return {
-
-		}
-	}
-}
-
-class Condition {
-	constructor(condition, value, modifier) {
-		this.condition = condition
-		this.value = value
-		this.modifier = modifier
-	}
-
-	Modifier() {
-
-	}
-
-	data() {
-		return {
-			this.condition: this.value,
-
-		}
-	}
-
-
-}
 
 function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 	$scope.np = {};
