@@ -1,29 +1,186 @@
+"use strict"
+class Match {
+	constructor(obj) {
+		this.match = obj
+	}
 
+	add(key, val) {
+		this.match[key] = val
+	}
+
+	del(key) {
+		delete this.match[key]
+	}
+
+	data() {
+		return this.match
+	}
+}
+
+function isObject(o) {
+	return typeof o === "object"
+}
+
+function parsePolicy(raw) {
+	var p = new Policy(raw.name)
+	if (isObject(raw.match)) {
+		p.match = new Match(raw.match)
+	}
+
+	if (isObject(raw.not_match)) {
+		p.not_match = new Match(raw.not_match)
+	}
+
+	if (isObject(raw.crit)) {
+		p.crit = parseCondition(raw.crit) 
+	}
+
+	if (isObject(raw.warn)) {
+		p.warn = parseCondition(raw.warn)
+	}
+
+	return p
+}
+
+// Representation of a policy
+class Policy {
+	constructor(name) {
+		this.name = name
+		this.comment = ""
+		this.match = new Match({})
+		this.not_match = new Match({})
+		this.crit = null
+		this.warn = null
+		this.modifiers = [
+			"simple",
+			"std_dev",
+			"derivative",
+			"holt_winters"
+		]
+	}
+
+	url() {
+		return "api/policy/config/" + this.name
+	}
+
+
+	data() {
+		let d = {
+			name: this.name,
+			match: this.match.data(),
+			not_match: this.not_match.data()
+		}
+
+		if (this.crit) {
+			d.crit = this.crit.data()
+		}
+
+		if (this.warn) {
+			d.warn = this.warn.data()
+		}
+
+		return d
+	}
+}
+
+function parseCondition(raw) {
+	var t = function(r) {
+		if (raw.greater != null) {
+			return "greater"
+		}
+
+		if (raw.less != null) {
+			return "less"
+		}
+
+		if (raw.exactly != null) {
+			return "exactly"
+		}
+
+		return "greater"
+	}
+
+	switch(true) {
+		case raw.std_dev:
+			return new StdDev(t(raw), raw[t(raw)], raw.escalation)
+			break
+
+		case raw.derivative:
+			return new Derivative(t(raw), raw[t(raw)], raw.escalation)
+			break
+
+		case raw.holt_winters:
+			return new HoltWinters(t(raw), raw[t(raw)], raw.escalation)
+			break
+
+		default:
+			return new Simple(t(raw), raw[t(raw)], raw.escalation)
+	}
+
+}
+
+class Condition {
+	constructor() {
+		this.type = "greater"
+		this.value = 0.0
+		this.escalation = ""
+		this.window_size = 5
+		this.occurences = 1
+	}
+
+	types() {
+		return [
+			"greater",
+			"less",
+			"exactly"
+		]
+	}
+
+	data() {
+		let d = {
+			escalation: this.escalation,
+			window_size: this.window_size,
+			occurences: this.occurences
+		}
+		d[this.type] = this.value
+		return d
+	}
+}
+
+class Simple extends Condition {
+	data() {
+		let d = super.data()
+		d.simple = true
+		return d
+	}
+}
+
+class HoltWinters extends Condition {
+	data() {
+		let d = super.data()
+		d.holt_winters = true
+		return d
+	}
+}
+
+class Derivative extends Condition {
+	data() {
+		let d = super.data()
+		d.derivative = true
+		return d
+	}
+}
+
+class StdDev extends Condition {
+	data() {
+		let d = super.data()
+		d.std_dev = true
+		return d
+	}
+}
 
 function NewPolicyController($scope, $http, $timeout, $mdDialog) {
-	$scope.np = {};
-	$scope.compOps = ["greater", "less", "exactly"];
-	$scope.specialOps = [
-		{	display: "Simple",
-			name: "simple"
-		},
-		{
-			display: "Derivative",
-			name: "derivative"
-		},
-		{
-			display: "Standard Deviation",
-			name: "std_dev"
-		},
-		{
-			display: "Holt Winters",
-			name: "holt_winters",
-			disabled: true
-		}
-	]
-
-	$scope.cSpec = "simple"
-	$scope.wSpec = "simple"
+	$scope.np = new Policy("")
 
 	$scope.loadEscalationNames = function() {
 		$scope.escalation_names = [];
@@ -38,6 +195,18 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 		}, 650);
 	}
 
+	$scope.addNewMatch = function() {
+		$scope.np.match.add($scope.nmk, $scope.nmv)
+		$scope.nmk = ""
+		$scope.nmv = ""
+	}
+
+	$scope.addNewNotMatch = function() {
+		$scope.np.not_match.add($scope.nnmk, $scope.nnmv)
+		$scope.nnmk = ""
+		$scope.nnmv = ""
+	}
+
 	$scope.showIncompleteDialog = function(message) {
 		$mdDialog.show(
 			$mdDialog.alert()
@@ -46,6 +215,22 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 				.ok("I agree to fix this.")
 		)
 
+	}
+
+	$scope.newCondition = function(type) {
+		switch (type) {
+			case "Standard Deviation":
+				return new StdDev()
+
+			case "Derivative": 
+				return new Derivative()
+
+			case "Holt Winters":
+				return new HoltWinters()
+
+			default:
+				return new Simple()
+		}
 	}
 
 	$scope.estimateMemFootprint = function(s) {
@@ -89,57 +274,6 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 		}
 	}
 
-	$scope.createPolicyStruct = function() {
-		if (!$scope.np.name) {
-			$scope.showIncompleteDialog("Must name the policy before submitting.");
-			return null;
-		}
-
-		var p = {
-			name: $scope.np.name,
-			comment: $scope.np.comment
-		};
-
-		// set up match
-		if ($scope.matchChips.length > 0) {
-			p.match = {};
-			for (var i = 0; i < $scope.matchChips.length; i++) {
-				p.match[$scope.matchChips[i].key] = $scope.matchChips[i].val;
-			}
-		}
-		if ($scope.notMatchChips.length > 0) {
-			p.not_match = {};
-			for (var i = 0; i < $scope.notMatchChips.length; i++) {
-				p.not_match[$scope.notMatchChips[i].key] = $scope.notMatchChips[i].val;
-			}
-		}
-		if ($scope.critOpChips.length > 0 && $scope.cEsc) {
-			p.crit = {
-				occurences: $scope.cOcc,
-				escalation: $scope.cEsc
-			};
-			for (var i = 0; i < $scope.critOpChips.length; i++) {
-				p.crit[$scope.critOpChips[i].key] = $scope.critOpChips[i].val;
-			}
-
-			p.crit[$scope.cSpec] = true;
-			p.crit["window_size"] = $scope.cWinSize;
-		}
-		if ($scope.warnOpChips.length > 0 && $scope.wEsc) {
-			p.warn = {
-				occurences: $scope.wOcc,
-				escalation: $scope.wEsc
-			};
-			for (var i = 0; i < $scope.warnOpChips.length; i++) {
-				p.warn[$scope.warnOpChips[i].key] = $scope.warnOpChips[i].val;
-			}
-			p.warn[$scope.wSpec] = true;
-			p.warn["window_size"] = $scope.wWinSize;
-		}
-
-		return p;
-	}
-
 	$scope.addPolicy = function() {
 		var pol = $scope.createPolicyStruct();
 		if (pol) {
@@ -153,66 +287,10 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 		$scope.reset();
 	}
 
-	$scope.addNewMatch = function() {
-		if ($scope.matchChips == null ) {
-			$scope.matchChips = [];
-		}
-		$scope.matchChips.push({"key": $scope.newMatchKey, "val": $scope.newMatchVal});
-		$scope.newMatchKey = "";
-		$scope.newMatchVal = "";
-	}
-
-	$scope.addNewNotMatch = function() {
-
-		if ($scope.not_matchChips == null) {
-			$scope.not_matchChips = [];
-		}
-		$scope.notMatchChips.push({"key": $scope.newNotMatchKey, "val": $scope.newNotMatchVal});
-		$scope.newNotMatchKey = "";
-		$scope.newNotMatchVal = "";
-	}
-
-	$scope.addNewCritOp = function() {
-		if ($scope.cOpKey && ($scope.cOpVal || $scope.cOpVal === 0) ) {
-			$scope.critOpChips.push({"key": $scope.cOpKey, "val": $scope.cOpVal});
-			$scope.cOpKey = "";
-			$scope.cOpVal = "";
-		}
-	}
-
-	$scope.addNewWarnOp = function() {
-		if ($scope.wOpKey && ($scope.wOpVal || $scope.wOpVal === 0 ) ) {
-			$scope.warnOpChips.push({"key": $scope.wOpKey, "val": $scope.wOpVal});
-			$scope.wOpVal = "";
-			$scope.wOpKey = "";
-		}
-	}
-
-	$scope.init = function() {
-		$scope.cOpVal = "";
-		$scope.cOpKey = "";
-		$scope.wOpVal = "";
-		$scope.wOpKey = "";
-		$scope.cSpec = "simple"
-		$scope.wSpec = "simple"
-		$scope.cWinSize = 100;
-		$scope.wWinSize = 100;
-		$scope.np.name = "";
-		$scope.wOcc = 1;
-		$scope.cOcc = 1;
-		$scope.escalations = [];
-		$scope.np.comment = "";
-	}
-
 	$scope.reset = function() {
-		$scope.init();
-		$scope.matchChips = [];
-		$scope.notMatchChips = [];
-		$scope.critOpChips = [];
-		$scope.warnOpChips = [];
+		$scope.np = new Policy($scope.np.name)
 	}
 
-	$scope.reset();
 }
 angular.module('bangarang').controller("NewPolicyController", NewPolicyController);
 
@@ -238,7 +316,7 @@ function GlobalPolicyController($scope, $http, $cookies, $mdDialog) {
 		}
 	}
 
-	collectPolicy = function() {
+	var collectPolicy = function() {
 		var d = {
 			match: {},
 			not_match: {}
@@ -297,7 +375,7 @@ angular.module('bangarang').controller("GlobalPolicyController", GlobalPolicyCon
 function PolicyController($scope, $http, $cookies) {
 	$scope.policies = null;
 	$scope.removeSure = {};
-	t = $scope;
+	var t = $scope;
 	$scope.tmpEdit = {};
 	$scope.tmpEditName = ""
 
