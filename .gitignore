@@ -1,6 +1,5 @@
-cmd/bangarang/conf.json
-conf.json
 alerts
+src/github.com/eliothedeman/bangarang/cmd/ui/ui
 pkg
 *.deb
 *.db
