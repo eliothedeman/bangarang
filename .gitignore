@@ -1,5 +1,6 @@
 cmd/bangarang/conf.json
 conf.json
+*DS*
 alerts
 pkg
 *.deb

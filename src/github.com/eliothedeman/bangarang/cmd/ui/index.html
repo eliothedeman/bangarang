@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<base href="/" target="_blank" />
 	<title>Bangarang</title>
 	<link rel="stylesheet" type="text/css" href="css/header.css">
 	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
@@ -19,9 +18,11 @@
 	<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.css">
 
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link href="favicon.ico" rel="icon" type="image/x-icon" />
 
 </head>
 <body ng-app="bangarang">
+
 	<script type="text/javascript">
 		angular.module("bangarang", ["ngMaterial", "ngAnimate", "ngCookies", "jsonFormatter", "ngSanitize"])
 		.config(function($httpProvider, $mdThemingProvider, $mdIconProvider, $cookiesProvider) {
@@ -94,7 +95,7 @@
 
 				</md-card-content>
 			</md-card>
-			
+
 		</div>
 
 
@@ -107,7 +108,7 @@
 							<md-card-content>
 								<h2 align="center">Stats</h2>
 								<md-card ng-repeat="(key, value) in stats">
-									<md-card-content style="white-space: nowrap"> 
+									<md-card-content style="white-space: nowrap">
 										<h5 align="center">{{key}}</h5>
 										<p align="center">
 										{{value}}
@@ -260,7 +261,7 @@
 											</md-card>
 											<md-card class="md-whiteframe-z2">
 												<md-card-content>
-													<label>Match</label>
+													<label>Not Match</label>
 													<div layout layout-sm="colunm" >
 														<md-input-container>
 															<label>Key</label>
@@ -272,7 +273,6 @@
 														</md-input-container>
 														<md-button ng-click="addNewNotMatch()">Add</md-button>
 													</div>
-
 													<div layout layout-sm="row">
 														<md-list ng>
 															<md-subheader>Matches</md-subheader>
@@ -280,7 +280,7 @@
 																<div class="md-list-item-text" layout="column">
 																	<h4>Key: {{k}}</h4>
 																	<h4>Value: {{v}}</h4>
-																</div> 
+																</div>
 															</md-list-item>
 														</md-list>
 													</div>
@@ -288,48 +288,71 @@
 											</md-card>
 										</div>
 										<br>
-										<label>Critical</label>
-										<div layout layout-sm="colunm">
-											<md-input-container>
-												<label>Type</label>		
-												<md-select md-on-close="np.crit=newCondition(cType)" ng-model="cType">
-													<md-option ng-value="mod" ng-repeat="mod in np.modifiers">
-														{{mod}}
-													</md-option>
-												</md-select>
-											</md-input-container>
+										<div layout layout-sm="row">
+											<md-card class="md-whiteframe-z2">
+												<md-card-content>
+													<label>Critical</label>
+													<md-input-container>
+														<label>Type</label>
+														<md-select md-on-close="np.crit=cType.factory()" ng-model="cType">
+															<md-option ng-repeat="mod in np.modifiers">
+																{{mod.title}}
+															</md-option>
+														</md-select>
+													</md-input-container>
+													<md-input-container >
+														<label>Occurences</label>
+														<input type="number" min="1" max="99999999" ng-model="np.crit.occurences">
+													</md-input-container>
+													<md-input-container>
+														<label>Window Size</label>
+														<input type="number" min="1" max="100000" ng-model="np.crit.window_size">
+													</md-input-container>
+													<md-input-container>
+														<label>{{cEsc ? cEsc : "Escalation"}}</label>
+														<md-select md-on-open="loadEscalationNames()" ng-model="np.crit.escalation">
+															<md-option ng-value="name" ng-repeat="name in escalation_names">
+																{{name}}
+															</md-option>
+														</md-select>
+													</md-input-container>
+												</md-card-content>
+											</md-card>
+											<md-card class="md-whiteframe-z2">
+											</md-card>
+											<md-card class="md-whiteframe-z2">
+												<md-card-content>
+													<label>Warning</label>
+													<md-input-container>
+														<label>Type</label>
+														<md-select ng-model="np.warn">
+															<md-option ng-repeat="mod in np.modifiers" value=mod.model>
+																{{mod.title}}
+															</md-option>
+														</md-select>
+													</md-input-container>
+													<md-input-container >
+														<label>Occurences</label>
+														<input type="number" min="1" max="99999999" ng-model="np.warn.occurences">
+													</md-input-container>
+													<md-input-container>
+														<label>Window Size</label>
+														<input type="number" min="1" max="100000" ng-model="np.warn.window_size">
+													</md-input-container>
+													<md-input-container>
+														<label>{{cEsc ? cEsc : "Escalation"}}</label>
+														<md-select md-on-open="loadEscalationNames()" ng-model="np.warn.escalation">
+															<md-option ng-value="name" ng-repeat="name in escalation_names">
+																{{name}}
+															</md-option>
+														</md-select>
+													</md-input-container>
+												</md-card-content>
+											</md-card>
+											<md-card class="md-whiteframe-z2">
+											</md-card>
 										</div>
 
-										<div layout layout-sm="colunm">
-											<md-input-container >
-												<label>Occurences</label>
-												<input type="number" min="1" max="99999999" ng-model="cOcc">
-											</md-input-container>
-											<md-input-container>
-												<label>Window Size</label>
-												<input type="number" min="1" max="100000" ng-model="cWinSize">
-											</md-input-container>
-											<md-input-container>
-												<label>{{cEsc ? cEsc : "Escalation"}}</label>
-												<md-select md-on-open="loadEscalationNames()" ng-model="cEsc">
-													<md-option ng-value="name" ng-repeat="name in escalation_names">
-														{{name}}
-													</md-option>
-												</md-select>
-											</md-input-container>
-											<div>
-												<md-radio-group ng-model="cSpec" layout layout-sm="row">
-													<md-radio-button aria-label="nope" ng-repeat="op in specialOps" ng-value="op.name" ng-disabled="op.disabled"> 
-													<span class="radioValue">{{op.display}}</span>
-													</md-radio-button>
-												</md-radio-group>
-											</div>
-										</div>
-										<md-chips ng-model="critOpChips">
-											<md-chip-template>
-												<strong>{{$chip.key}}</strong>: <strong>{{$chip.val}}</strong>
-											</md-chip-template>
-										</md-chips>
 										<br>
 										<md-button class="md-raised" ng-click="addPolicy()">Submit</md-button>
 										<md-button class="md-raised md-warn" ng-click="cancelPolicy()">Cancel</md-button>
@@ -474,16 +497,16 @@
 					</md-card>
 				</div>
 			</md-tab>
-			<md-tab label="admin" md-on-select="r.updateSelected(5)" ng-if="r.permissions=='admin'"> 
+			<md-tab label="admin" md-on-select="r.updateSelected(5)" ng-if="r.permissions=='admin'">
 				<div ng-controller="AdminController as ac" >
 					<div ng-controller="User as u">
 						<md-card ng-repeat="usr in users">
 							<md-card-content>
 								<h3>{{usr.name}}</h4>
-								<h4>UserName: {{usr.user_name}}</h4>	
+								<h4>UserName: {{usr.user_name}}</h4>
 								<p>
 									<md-input-container>
-										<label>Permissions</label>		
+										<label>Permissions</label>
 										<md-select ng-model="usr.permissions" md-on-close="updatePermissions(usr)">
 											<md-option ng-value="opt" ng-repeat="opt in permissions_options">
 												{{opt}}

@@ -32,7 +32,7 @@ function parsePolicy(raw) {
 	}
 
 	if (isObject(raw.crit)) {
-		p.crit = parseCondition(raw.crit) 
+		p.crit = parseCondition(raw.crit)
 	}
 
 	if (isObject(raw.warn)) {
@@ -49,13 +49,31 @@ class Policy {
 		this.comment = ""
 		this.match = new Match({})
 		this.not_match = new Match({})
-		this.crit = null
-		this.warn = null
+		this.crit = new Condition()
+		this.warn = new Condition()
 		this.modifiers = [
-			"simple",
-			"std_dev",
-			"derivative",
-			"holt_winters"
+			{
+				name: "simple",
+				title: "Simple",
+				model: new Simple()
+			},
+			{
+				name: "derivative",
+				title: "Derivative",
+				model: new Derivative()
+			},
+			{
+				name: "std_dev",
+				title: "Standard Deviation",
+				model: new StdDev()
+
+			},
+			{
+				name: "holt_winters",
+				title: "Holt Winters",
+				model: new HoltWinters()
+
+			}
 		]
 	}
 
@@ -148,6 +166,10 @@ class Condition {
 }
 
 class Simple extends Condition {
+	constructor() {
+		super()
+		console.log(this)
+	}
 	data() {
 		let d = super.data()
 		d.simple = true
@@ -156,6 +178,10 @@ class Simple extends Condition {
 }
 
 class HoltWinters extends Condition {
+	constructor() {
+		super()
+	}
+
 	data() {
 		let d = super.data()
 		d.holt_winters = true
@@ -164,6 +190,9 @@ class HoltWinters extends Condition {
 }
 
 class Derivative extends Condition {
+	constructor() {
+		super()
+	}
 	data() {
 		let d = super.data()
 		d.derivative = true
@@ -172,6 +201,9 @@ class Derivative extends Condition {
 }
 
 class StdDev extends Condition {
+	constructor() {
+		super()
+	}
 	data() {
 		let d = super.data()
 		d.std_dev = true
@@ -181,11 +213,16 @@ class StdDev extends Condition {
 
 function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 	$scope.np = new Policy("")
+	$scope.escalation_names = []
 
 	$scope.loadEscalationNames = function() {
 		$scope.escalation_names = [];
 		return $timeout(function() {
 			$http.get("api/escalation/config/*").success(function(data, status) {
+				if (data == "null") {
+					$scope.escalation_names = []
+					return
+				}
 				for (name in data) {
 					$scope.escalation_names.push(name);
 				}
@@ -222,7 +259,7 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 			case "Standard Deviation":
 				return new StdDev()
 
-			case "Derivative": 
+			case "Derivative":
 				return new Derivative()
 
 			case "Holt Winters":
@@ -237,7 +274,7 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 		crit = 0;
 		warn = 0;
 		baseConditionFootprint = function() {
-			operators = 24	
+			operators = 24
 			specials = 4
 			options = 16
 			status = 80
@@ -343,7 +380,7 @@ function GlobalPolicyController($scope, $http, $cookies, $mdDialog) {
 			$http.post("api/policy/config/global", collectPolicy()).success(function() {
 				$scope.reset();
 				$scope.fetchPolicy();
-			}); 
+			});
 		}, function(){
 
 		})

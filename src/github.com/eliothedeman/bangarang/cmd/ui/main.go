@@ -18,6 +18,14 @@ func getContentType(fileName string) string {
 		return "application/json"
 	}
 	switch n[len(n)-1] {
+	case "ico":
+		return "image/png"
+	case "png":
+		return "image/png"
+	case "jgp":
+		return "image/jpeg"
+	case "svg":
+		return "image/svg"
 	case "css":
 		return "text/css"
 	case "html", "htm":
