@@ -240,6 +240,23 @@ class StdDev extends Condition {
 function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 	$scope.np = new Policy("")
 	$scope.escalation_names = []
+	$scope.policies = []
+
+	$scope.fetchPolicies = function() {
+		$http.get("api/policy/config/*").success(function(data, status) {
+			for (key in data) {
+				$scope.policies.push(parsePolicy(data[key]))
+			}
+		});
+	}
+
+	$scope.updateCurrent = function(name) {
+		for (var i = 0; i < $scope.policies.length; i++) {
+			if ($scope.policies[i].name == name) {
+				$scope.np = $scope.policies[i]
+			}
+		}
+	}
 
 	$scope.loadEscalationNames = function() {
 		$scope.escalation_names = [];
@@ -346,13 +363,28 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 		}
 	}
 
+	$scope.updatePolicy = function() {
+		$scope.removePolicy($scope.np.name)
+		var old = $scope.np
+		$scope.addPolicy()
+		$scope.np = old
+	}
+
+	$scope.removePolicy = function(name) {
+		$http.delete("api/policy/config/" + name).then(function() {
+			console.log("removed policy " + name)
+		}, function(resp) {
+			alert(resp.data)
+		})
+
+	}
+
 	$scope.cancelPolicy = function() {
 		$scope.reset();
 	}
 
 	$scope.reset = function() {
 		$scope.np = new Policy("")
-		
 	}
 
 }
