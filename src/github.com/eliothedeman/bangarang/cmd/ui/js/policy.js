@@ -49,32 +49,59 @@ class Policy {
 		this.comment = ""
 		this.match = new Match({})
 		this.not_match = new Match({})
-		this.crit = new Condition()
-		this.warn = new Condition()
+		this.crit = null
+		this.warn = null
 		this.modifiers = [
 			{
 				name: "simple",
 				title: "Simple",
-				model: new Simple()
+				factory: function() {
+					return new Simple()
+				}
 			},
 			{
 				name: "derivative",
 				title: "Derivative",
-				model: new Derivative()
+				factory: function() {
+					return  new Derivative()
+				}
 			},
 			{
 				name: "std_dev",
 				title: "Standard Deviation",
-				model: new StdDev()
+				factory: function() {
+					return new StdDev()
+				}
 
 			},
 			{
 				name: "holt_winters",
 				title: "Holt Winters",
-				model: new HoltWinters()
-
+				factory: function() {
+					return new HoltWinters()
+				}
 			}
 		]
+	}
+
+	getPolicy(type) {
+		for (var i = 0; i < this.modifiers.length; i++) {
+			if (this.modifiers[i].name == type) {
+				return this.modifiers[i].factory()
+			}
+		}
+
+		return new Simple()
+	}
+
+
+	addWarn(type) {
+		console.log(type)
+		this.warn = this.getPolicy(type)
+	}
+
+	addCrit(type) {
+		this.crit = this.getPolicy(type)
 	}
 
 	url() {
@@ -144,15 +171,13 @@ class Condition {
 		this.escalation = ""
 		this.window_size = 5
 		this.occurences = 1
-	}
-
-	types() {
-		return [
+		this.types = [
 			"greater",
 			"less",
 			"exactly"
 		]
 	}
+
 
 	data() {
 		let d = {
@@ -192,6 +217,7 @@ class HoltWinters extends Condition {
 class Derivative extends Condition {
 	constructor() {
 		super()
+		this.window_size = 2
 	}
 	data() {
 		let d = super.data()
@@ -312,9 +338,9 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 	}
 
 	$scope.addPolicy = function() {
-		var pol = $scope.createPolicyStruct();
+		var pol = $scope.np.data();
 		if (pol) {
-			$http.post("api/policy/config/" + pol.name, $scope.createPolicyStruct()).success(function() {
+			$http.post("api/policy/config/" + pol.name, pol).success(function() {
 				$scope.reset()
 			});
 		}
@@ -325,7 +351,8 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 	}
 
 	$scope.reset = function() {
-		$scope.np = new Policy($scope.np.name)
+		$scope.np = new Policy("")
+		
 	}
 
 }

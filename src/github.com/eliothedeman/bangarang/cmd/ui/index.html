@@ -292,64 +292,96 @@
 											<md-card class="md-whiteframe-z2">
 												<md-card-content>
 													<label>Critical</label>
-													<md-input-container>
-														<label>Type</label>
-														<md-select md-on-close="np.crit=cType.factory()" ng-model="cType">
-															<md-option ng-repeat="mod in np.modifiers">
-																{{mod.title}}
-															</md-option>
-														</md-select>
-													</md-input-container>
-													<md-input-container >
-														<label>Occurences</label>
-														<input type="number" min="1" max="99999999" ng-model="np.crit.occurences">
-													</md-input-container>
-													<md-input-container>
-														<label>Window Size</label>
-														<input type="number" min="1" max="100000" ng-model="np.crit.window_size">
-													</md-input-container>
-													<md-input-container>
-														<label>{{cEsc ? cEsc : "Escalation"}}</label>
-														<md-select md-on-open="loadEscalationNames()" ng-model="np.crit.escalation">
-															<md-option ng-value="name" ng-repeat="name in escalation_names">
-																{{name}}
-															</md-option>
-														</md-select>
-													</md-input-container>
+													<div layout layout-sm="row">
+														<div>
+															<md-input-container>
+																<label>Type</label>
+																<md-select md-on-close="np.addCrit(critType)" ng-model="critType">
+																	<md-option ng-repeat="mod in np.modifiers" value={{mod.name}}>
+																		{{mod.title}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-input-container >
+																<label>Occurences</label>
+																<input type="number" min="1" max="99999999" ng-model="np.crit.occurences">
+															</md-input-container>
+															<md-input-container>
+																<label>Window Size</label>
+																<input type="number" min="2" max="100000" ng-model="np.crit.window_size">
+															</md-input-container>
+														</div>
+														<div>
+															<md-input-container>
+																<label>Condition</label>
+																<md-select ng-model="np.crit.type">
+																	<md-option ng-repeat="t in np.crit.types" value="{{t}}">
+																		{{t}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-input-container>
+																<label>Value</label>
+																<input type="number" ng-model="np.crit.value">
+															</md-input-container>
+															<md-input-container>
+																<label>{{np.crit.escalation ? np.crit.escalation : "Escalation"}}</label>
+																<md-select md-on-open="loadEscalationNames()" ng-model="np.crit.escalation">
+																	<md-option value="name" ng-repeat="name in escalation_names">
+																		{{name}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+														</div>
+													</div>
 												</md-card-content>
-											</md-card>
-											<md-card class="md-whiteframe-z2">
 											</md-card>
 											<md-card class="md-whiteframe-z2">
 												<md-card-content>
 													<label>Warning</label>
-													<md-input-container>
-														<label>Type</label>
-														<md-select ng-model="np.warn">
-															<md-option ng-repeat="mod in np.modifiers" value=mod.model>
-																{{mod.title}}
-															</md-option>
-														</md-select>
-													</md-input-container>
-													<md-input-container >
-														<label>Occurences</label>
-														<input type="number" min="1" max="99999999" ng-model="np.warn.occurences">
-													</md-input-container>
-													<md-input-container>
-														<label>Window Size</label>
-														<input type="number" min="1" max="100000" ng-model="np.warn.window_size">
-													</md-input-container>
-													<md-input-container>
-														<label>{{cEsc ? cEsc : "Escalation"}}</label>
-														<md-select md-on-open="loadEscalationNames()" ng-model="np.warn.escalation">
-															<md-option ng-value="name" ng-repeat="name in escalation_names">
-																{{name}}
-															</md-option>
-														</md-select>
-													</md-input-container>
+													<div layout layout-sm="row">
+														<div>
+															<md-input-container>
+																<label>Type</label>
+																<md-select md-on-close="np.addWarn(warnType)" ng-model="warnType">
+																	<md-option ng-repeat="mod in np.modifiers" value={{mod.name}}>
+																		{{mod.title}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-input-container >
+																<label>Occurences</label>
+																<input type="number" min="1" max="99999999" ng-model="np.warn.occurences">
+															</md-input-container>
+															<md-input-container>
+																<label>Window Size</label>
+																<input type="number" min="2" max="100000" ng-model="np.warn.window_size">
+															</md-input-container>
+														</div>
+														<div>
+															<md-input-container>
+																<label>Condition</label>
+																<md-select ng-model="np.warn.type">
+																	<md-option ng-repeat="t in np.warn.types" value="{{t}}">
+																		{{t}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-input-container>
+																<label>Value</label>
+																<input type="number" ng-model="np.warn.value">
+															</md-input-container>
+															<md-input-container>
+																<label>{{np.warn.escalation ? np.warn.escalation : "Escalation"}}</label>
+																<md-select md-on-open="loadEscalationNames()" ng-model="np.warn.escalation">
+																	<md-option value="name" ng-repeat="name in escalation_names">
+																		{{name}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+														</div>
+													</div>
 												</md-card-content>
-											</md-card>
-											<md-card class="md-whiteframe-z2">
 											</md-card>
 										</div>
 
