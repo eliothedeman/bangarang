@@ -26,6 +26,7 @@ function isObject(o) {
 
 function parsePolicy(raw) {
 	var p = new Policy(raw.name)
+	p.comment = raw.comment
 	if (isObject(raw.match)) {
 		p.match = new Match(raw.match)
 	}
@@ -99,7 +100,6 @@ class Policy {
 
 
 	addWarn(type) {
-		console.log(type)
 		this.warn = this.getPolicy(type)
 	}
 
@@ -115,6 +115,7 @@ class Policy {
 	data() {
 		let d = {
 			name: this.name,
+			comment: this.comment,
 			match: this.match.data(),
 			not_match: this.not_match.data()
 		}
@@ -148,23 +149,31 @@ function parseCondition(raw) {
 		return "greater"
 	}
 
+	var cond = null
+
 	switch(true) {
 		case raw.std_dev:
-			return new StdDev(t(raw), raw[t(raw)], raw.escalation)
+			cond = new StdDev()
 			break
 
 		case raw.derivative:
-			return new Derivative(t(raw), raw[t(raw)], raw.escalation)
+			cond = new Derivative()
 			break
 
 		case raw.holt_winters:
-			return new HoltWinters(t(raw), raw[t(raw)], raw.escalation)
+			cond = new HoltWinters()
 			break
 
 		default:
-			return new Simple(t(raw), raw[t(raw)], raw.escalation)
+			cond = new Simple()
 	}
 
+	cond.type = t(raw)
+	cond.value = raw[cond.type]
+	cond.escalation = raw.escalation
+	cond.occurences = raw.occurences
+	cond.window_size = raw.window_size
+	return cond
 }
 
 class Condition {
@@ -256,10 +265,10 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 	}
 
 	$scope.updateCurrent = function(name) {
-		console.log(name)
 		for (var i = 0; i < $scope.policies.length; i++) {
 			if ($scope.policies[i].name == name) {
 				$scope.np = $scope.policies[i]
+				console.log($scope.np)
 			}
 		}
 	}
