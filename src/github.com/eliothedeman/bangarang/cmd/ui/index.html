@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<base href="/" target="_blank" />
 	<title>Bangarang</title>
 	<link rel="stylesheet" type="text/css" href="css/header.css">
 	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
@@ -19,9 +18,11 @@
 	<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.css">
 
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link href="favicon.ico" rel="icon" type="image/x-icon" />
 
 </head>
 <body ng-app="bangarang">
+
 	<script type="text/javascript">
 		angular.module("bangarang", ["ngMaterial", "ngAnimate", "ngCookies", "jsonFormatter", "ngSanitize"])
 		.config(function($httpProvider, $mdThemingProvider, $mdIconProvider, $cookiesProvider) {
@@ -94,7 +95,7 @@
 
 				</md-card-content>
 			</md-card>
-			
+
 		</div>
 
 
@@ -107,7 +108,7 @@
 							<md-card-content>
 								<h2 align="center">Stats</h2>
 								<md-card ng-repeat="(key, value) in stats">
-									<md-card-content style="white-space: nowrap"> 
+									<md-card-content style="white-space: nowrap">
 										<h5 align="center">{{key}}</h5>
 										<p align="center">
 										{{value}}
@@ -223,146 +224,344 @@
 									<md-card-content md-dynamic-height>
 										<md-input-container>
 											<label>Name</label>
-											<input  ng-model="np.name">
+											<input ng-model="np.name">
 										</md-input-container>
 										<md-input-container>
 											<label>Comment</label>
-											<input  ng-model="np.comment">
+											<input ng-model="np.comment">
 										</md-input-container>
-										<label>Match</label>
-										<div layout layout-sm="colunm">
-											<md-input-container>
-												<label>Key</label>
-												<input  ng-model="newMatchKey">
-											</md-input-container>
-											<md-input-container>
-												<label>Value</label>
-												<input  ng-model="newMatchVal">
-											</md-input-container>
-											<md-button ng-click=addNewMatch()>Add</md-button>
+										<div layout layout-sm="row">
+											<md-card class="md-whiteframe-z2">
+												<md-card-content>
+													<label>Match</label>
+													<div layout layout-sm="column" >
+														<md-input-container>
+															<label>Key</label>
+															<input ng-model="nmk">
+														</md-input-container>
+														<md-input-container>
+															<label>Value</label>
+															<input ng-model="nmv">
+														</md-input-container>
+														<md-button ng-click="addNewMatch()">Add</md-button>
+													</div>
+
+													<div layout layout-sm="row">
+														<md-list ng>
+															<md-subheader>Matches</md-subheader>
+															<md-list-item class="md-1-line" ng-repeat="(k, v) in np.match.match">
+																{{k}} -> {{v}}
+																<md-button ng-click="np.match.del(k)">
+																<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
+																<md-divider ng-inset></md-divider>
+															</md-list-item>
+														</md-list>
+													</div>
+												</md-card-content>
+											</md-card>
+											<md-card class="md-whiteframe-z2">
+												<md-card-content>
+													<label>Not Match</label>
+													<div layout layout-sm="colunm" >
+														<md-input-container>
+															<label>Key</label>
+															<input ng-model="nnmk">
+														</md-input-container>
+														<md-input-container>
+															<label>Value</label>
+															<input ng-model="nnmv">
+														</md-input-container>
+														<md-button ng-click="addNewNotMatch()">Add</md-button>
+													</div>
+													<div layout layout-sm="row">
+														<md-list ng>
+															<md-subheader>Matches</md-subheader>
+															<md-list-item class="md-2-line" ng-repeat="(k, v) in np.not_match.match">
+																{{k}} -> {{v}}
+																<md-button ng-click="np.not_match.del(k)">
+																<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
+																<md-divider ng-inset></md-divider>
+															</md-list-item>
+														</md-list>
+													</div>
+												</md-card-content>
+											</md-card>
 										</div>
-										<md-chips ng-model="matchChips">
-											<md-chip-template>
-												Key: <strong>{{$chip.key}}</strong>
-												Val: <strong>{{$chip.val}}</strong>
-											</md-chip-template>
-										</md-chips>
 										<br>
-										<label>Not Match</label>
-										<div layout layout-sm="colunm">
-											<md-input-container>
-												<label>Key</label>
-												<input  ng-model="newNotMatchKey">
-											</md-input-container>
-											<md-input-container>
-												<label>Value</label>
-												<input  ng-model="newNotMatchVal">
-											</md-input-container>
-											<md-button ng-click=addNewNotMatch()>Add</md-button>
-										</div>
-										<md-chips ng-model="notMatchChips">
-											<md-chip-template>
-												Key: <strong>{{$chip.key}}</strong>
-												Val: <strong>{{$chip.val}}</strong>
-											</md-chip-template>
-										</md-chips>
-										<br>
-										<label>Critical</label>
-										<div layout layout-sm="colunm">
-											<md-input-container>
-												<label>{{cOpKey ? cOpKey : "Select One"}}</label>		
-												<md-select ng-model="cOpKey">
-													<md-option ng-value="opt" ng-repeat="opt in compOps">
-														{{opt}}
-													</md-option>
-												</md-select>
-											</md-input-container>
-											<md-input-container>
-												<label>Value</label>
-												<input type="number" ng-model="cOpVal">
-											</md-input-container>
-											<md-button ng-click="addNewCritOp()">Add</md-button>
+										<div layout layout-sm="row">
+											<md-card class="md-whiteframe-z2">
+												<md-card-content>
+													<label>Critical</label>
+													<div layout layout-sm="row">
+														<div>
+															<md-input-container>
+																<label>Type</label>
+																<md-select md-on-close="np.addCrit(critType)" ng-model="critType">
+																	<md-option ng-repeat="mod in np.modifiers" value={{mod.name}}>
+																		{{mod.title}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-input-container >
+																<label>Occurences</label>
+																<input type="number" min="1" max="99999999" ng-model="np.crit.occurences">
+															</md-input-container>
+															<md-input-container>
+																<label>Window Size</label>
+																<input type="number" min="2" max="100000" ng-model="np.crit.window_size">
+															</md-input-container>
+														</div>
+														<div>
+															<md-input-container>
+																<label>Condition</label>
+																<md-select ng-model="np.crit.type">
+																	<md-option ng-repeat="t in np.crit.types" value="{{t}}">
+																		{{t}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-input-container>
+																<label>Value</label>
+																<input type="number" ng-model="np.crit.value">
+															</md-input-container>
+															<md-input-container>
+																<label>{{np.crit.escalation ? np.crit.escalation : "Escalation"}}</label>
+																<md-select md-on-open="loadEscalationNames()" ng-model="np.crit.escalation">
+																	<md-option value="name" ng-repeat="name in escalation_names">
+																		{{name}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+														</div>
+													</div>
+												</md-card-content>
+											</md-card>
+											<md-card class="md-whiteframe-z2">
+												<md-card-content>
+													<label>Warning</label>
+													<div layout layout-sm="row">
+														<div>
+															<md-input-container>
+																<label>Type</label>
+																<md-select md-on-close="np.addWarn(warnType)" ng-model="warnType">
+																	<md-option ng-repeat="mod in np.modifiers" value={{mod.name}}>
+																		{{mod.title}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-input-container >
+																<label>Occurences</label>
+																<input type="number" min="1" max="99999999" ng-model="np.warn.occurences">
+															</md-input-container>
+															<md-input-container>
+																<label>Window Size</label>
+																<input type="number" min="2" max="100000" ng-model="np.warn.window_size">
+															</md-input-container>
+														</div>
+														<div>
+															<md-input-container>
+																<label>Condition</label>
+																<md-select ng-model="np.warn.type">
+																	<md-option ng-repeat="t in np.warn.types" value="{{t}}">
+																		{{t}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-input-container>
+																<label>Value</label>
+																<input type="number" ng-model="np.warn.value">
+															</md-input-container>
+															<md-input-container>
+																<label>{{np.warn.escalation ? np.warn.escalation : "Escalation"}}</label>
+																<md-select md-on-open="loadEscalationNames()" ng-model="np.warn.escalation">
+																	<md-option value="name" ng-repeat="name in escalation_names">
+																		{{name}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+														</div>
+													</div>
+												</md-card-content>
+											</md-card>
 										</div>
 
-										<div layout layout-sm="colunm">
-											<md-input-container >
-												<label>Occurences</label>
-												<input type="number" min="1" max="99999999" ng-model="cOcc">
-											</md-input-container>
-											<md-input-container>
-												<label>Window Size</label>
-												<input type="number" min="1" max="100000" ng-model="cWinSize">
-											</md-input-container>
-											<md-input-container>
-												<label>{{cEsc ? cEsc : "Escalation"}}</label>
-												<md-select md-on-open="loadEscalationNames()" ng-model="cEsc">
-													<md-option ng-value="name" ng-repeat="name in escalation_names">
-														{{name}}
-													</md-option>
-												</md-select>
-											</md-input-container>
-											<div>
-												<md-radio-group ng-model="cSpec" layout layout-sm="row">
-													<md-radio-button aria-label="nope" ng-repeat="op in specialOps" ng-value="op.name" ng-disabled="op.disabled"> 
-													<span class="radioValue">{{op.display}}</span>
-													</md-radio-button>
-												</md-radio-group>
-											</div>
-										</div>
-										<md-chips ng-model="critOpChips">
-											<md-chip-template>
-												<strong>{{$chip.key}}</strong>: <strong>{{$chip.val}}</strong>
-											</md-chip-template>
-										</md-chips>
-										<br>
-										<label>Warning</label>
-										<div layout layout-sm="colunm">
-											<md-input-container>
-												<label>{{wOpKey ? wOpKey : "Select One"}}</label>		
-												<md-select ng-model="wOpKey">
-													<md-option ng-value="opt" ng-repeat="opt in compOps">
-														{{opt}}
-													</md-option>
-												</md-select>
-											</md-input-container>
-											<md-input-container>
-												<label>Value</label>
-												<input type="number" ng-model="wOpVal">
-											</md-input-container>
-											<md-button ng-click="addNewWarnOp()">Add</md-button>
-										</div>
-										<div layout layout-sm="colunm">
-											<md-input-container >
-												<label>Occurences</label>
-												<input type="number" min="1" max="99999999" ng-model="wOcc">
-											</md-input-container>
-											<md-input-container>
-												<label>Window Size</label>
-												<input type="number" min="1" max="100000" ng-model="wWinSize">
-											</md-input-container>
-											<md-input-container>
-												<label>{{wEsc ? wEsc : "Escalation"}}</label>
-												<md-select md-on-open="loadEscalationNames()" ng-model="wEsc">
-													<md-option ng-value="name" ng-repeat="name in escalation_names">
-														{{name}}
-													</md-option>
-												</md-select>
-											</md-input-container>
-											<div>
-												<md-radio-group ng-model="wSpec" layout layout-sm="row">
-													<md-radio-button aria-label="nope" ng-repeat="op in specialOps" ng-value="op.name" ng-disabled="op.disabled"> 
-													<span class="radioValue">{{op.display}}</span>
-													</md-radio-button>
-												</md-radio-group>
-											</div>
-										</div>
-										<md-chips ng-model="warnOpChips">
-											<md-chip-template>
-												<strong>{{$chip.key}}</strong>: <strong>{{$chip.val}}</strong>
-											</md-chip-template>
-										</md-chips>
 										<br>
 										<md-button class="md-raised" ng-click="addPolicy()">Submit</md-button>
+										<md-button class="md-raised md-warn" ng-click="cancelPolicy()">Cancel</md-button>
+									</md-card-content>
+								</md-card>
+							</div>
+						</md-tab>
+						<md-tab label="edit" md-on-select="updateSelected(3)">
+							<div ng-controller="NewPolicyController as npc">
+								<md-card md-dynamic-height>
+									<md-card-content md-dynamic-height>
+										<md-input-container>
+											<label>Name</label>
+											<md-select ng-model="tmpPolName" md-on-close="updateCurrent(tmpPolName)" md-on-open="fetchPolicies()">
+											  <md-option ng-value="p.name" ng-repeat="p in policies">{{p.name}}</md-option>
+											</md-select>
+										</md-input-container>
+										<md-input-container>
+											<label>Comment</label>
+											<input ng-model="np.comment">
+										</md-input-container>
+										<div layout layout-sm="row">
+											<md-card class="md-whiteframe-z2">
+												<md-card-content>
+													<label>Match</label>
+													<div layout layout-sm="column" >
+														<md-input-container>
+															<label>Key</label>
+															<input ng-model="nmk">
+														</md-input-container>
+														<md-input-container>
+															<label>Value</label>
+															<input ng-model="nmv">
+														</md-input-container>
+														<md-button ng-click="addNewMatch()">Add</md-button>
+													</div>
+
+													<div layout layout-sm="row">
+														<md-list ng>
+															<md-subheader>Matches</md-subheader>
+															<md-list-item class="md-1-line" ng-repeat="(k, v) in np.match.match">
+																	{{k}} -> {{v}}
+																	<md-button ng-click="np.match.del(k)">
+																	<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
+																<md-divider ng-inset></md-divider>
+															</md-list-item>
+														</md-list>
+													</div>
+												</md-card-content>
+											</md-card>
+											<md-card class="md-whiteframe-z2">
+												<md-card-content>
+													<label>Not Match</label>
+													<div layout layout-sm="colunm" >
+														<md-input-container>
+															<label>Key</label>
+															<input ng-model="nnmk">
+														</md-input-container>
+														<md-input-container>
+															<label>Value</label>
+															<input ng-model="nnmv">
+														</md-input-container>
+														<md-button ng-click="addNewNotMatch()">Add</md-button>
+													</div>
+													<div layout layout-sm="row">
+														<md-list ng>
+															<md-subheader>Matches</md-subheader>
+															<md-list-item class="md-2-line" ng-repeat="(k, v) in np.not_match.match">
+																{{k}} -> {{v}}
+																<md-button ng-click="np.not_match.del(k)">
+																<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
+															</md-list-item>
+														</md-list>
+													</div>
+												</md-card-content>
+											</md-card>
+										</div>
+										<br>
+										<div layout layout-sm="row">
+											<md-card class="md-whiteframe-z2">
+												<md-card-content>
+													<label>Critical</label>
+													<div layout layout-sm="row">
+														<div>
+															<md-input-container>
+																<label>Type</label>
+																<md-select md-on-close="np.addCrit(critType)" ng-model="critType">
+																	<md-option ng-repeat="mod in np.modifiers" value={{mod.name}}>
+																		{{mod.title}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-input-container >
+																<label>Occurences</label>
+																<input type="number" min="1" max="99999999" ng-model="np.crit.occurences">
+															</md-input-container>
+															<md-input-container>
+																<label>Window Size</label>
+																<input type="number" min="2" max="100000" ng-model="np.crit.window_size">
+															</md-input-container>
+														</div>
+														<div>
+															<md-input-container>
+																<label>Condition</label>
+																<md-select ng-model="np.crit.type">
+																	<md-option ng-repeat="t in np.crit.types" value="{{t}}">
+																		{{t}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-input-container>
+																<label>Value</label>
+																<input type="number" ng-model="np.crit.value">
+															</md-input-container>
+															<md-input-container>
+																<label>{{np.crit.escalation ? np.crit.escalation : "Escalation"}}</label>
+																<md-select md-on-open="loadEscalationNames()" ng-model="np.crit.escalation">
+																	<md-option value="name" ng-repeat="name in escalation_names">
+																		{{name}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+														</div>
+													</div>
+												</md-card-content>
+											</md-card>
+											<md-card class="md-whiteframe-z2">
+												<md-card-content>
+													<label>Warning</label>
+													<div layout layout-sm="row">
+														<div>
+															<md-input-container>
+																<label>Type</label>
+																<md-select md-on-close="np.addWarn(warnType)" ng-model="warnType">
+																	<md-option ng-repeat="mod in np.modifiers" value={{mod.name}}>
+																		{{mod.title}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-input-container >
+																<label>Occurences</label>
+																<input type="number" min="1" max="99999999" ng-model="np.warn.occurences">
+															</md-input-container>
+															<md-input-container>
+																<label>Window Size</label>
+																<input type="number" min="2" max="100000" ng-model="np.warn.window_size">
+															</md-input-container>
+														</div>
+														<div>
+															<md-input-container>
+																<label>Condition</label>
+																<md-select ng-model="np.warn.type">
+																	<md-option ng-repeat="t in np.warn.types" value="{{t}}">
+																		{{t}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-input-container>
+																<label>Value</label>
+																<input type="number" ng-model="np.warn.value">
+															</md-input-container>
+															<md-input-container>
+																<label>{{np.warn.escalation ? np.warn.escalation : "Escalation"}}</label>
+																<md-select md-on-open="loadEscalationNames()" ng-model="np.warn.escalation">
+																	<md-option value="name" ng-repeat="name in escalation_names">
+																		{{name}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+														</div>
+													</div>
+												</md-card-content>
+											</md-card>
+										</div>
+
+										<br>
+										<md-button class="md-raised" ng-click="updatePolicy()">Submit</md-button>
 										<md-button class="md-raised md-warn" ng-click="cancelPolicy()">Cancel</md-button>
 									</md-card-content>
 								</md-card>
@@ -496,16 +695,16 @@
 					</md-card>
 				</div>
 			</md-tab>
-			<md-tab label="admin" md-on-select="r.updateSelected(5)" ng-if="r.permissions=='admin'"> 
+			<md-tab label="admin" md-on-select="r.updateSelected(5)" ng-if="r.permissions=='admin'">
 				<div ng-controller="AdminController as ac" >
 					<div ng-controller="User as u">
 						<md-card ng-repeat="usr in users">
 							<md-card-content>
 								<h3>{{usr.name}}</h4>
-								<h4>UserName: {{usr.user_name}}</h4>	
+								<h4>UserName: {{usr.user_name}}</h4>
 								<p>
 									<md-input-container>
-										<label>Permissions</label>		
+										<label>Permissions</label>
 										<md-select ng-model="usr.permissions" md-on-close="updatePermissions(usr)">
 											<md-option ng-value="opt" ng-repeat="opt in permissions_options">
 												{{opt}}

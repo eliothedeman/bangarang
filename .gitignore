@@ -1,4 +1,4 @@
-alerts
+*DS*
 src/github.com/eliothedeman/bangarang/cmd/ui/ui
 pkg
 *.deb
