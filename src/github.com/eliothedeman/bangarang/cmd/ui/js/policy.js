@@ -18,7 +18,10 @@ class Match {
 }
 
 function isObject(o) {
-	return typeof o === "object"
+	if (o == null) {
+		return false
+	}
+	return typeof o == "object"
 }
 
 function parsePolicy(raw) {
@@ -193,7 +196,6 @@ class Condition {
 class Simple extends Condition {
 	constructor() {
 		super()
-		console.log(this)
 	}
 	data() {
 		let d = super.data()
@@ -244,13 +246,17 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 
 	$scope.fetchPolicies = function() {
 		$http.get("api/policy/config/*").success(function(data, status) {
-			for (key in data) {
-				$scope.policies.push(parsePolicy(data[key]))
+			if (typeof(data) == "object") {
+				$scope.policies = []
+				for (var key in data) {
+					$scope.policies.push(parsePolicy(data[key]))
+				}
 			}
 		});
 	}
 
 	$scope.updateCurrent = function(name) {
+		console.log(name)
 		for (var i = 0; i < $scope.policies.length; i++) {
 			if ($scope.policies[i].name == name) {
 				$scope.np = $scope.policies[i]
@@ -364,10 +370,11 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 	}
 
 	$scope.updatePolicy = function() {
+		var name = $scope.np.name
 		$scope.removePolicy($scope.np.name)
-		var old = $scope.np
 		$scope.addPolicy()
-		$scope.np = old
+		$scope.fetchPolicies()
+		$scope.updateCurrent(name)
 	}
 
 	$scope.removePolicy = function(name) {
