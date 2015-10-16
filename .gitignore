@@ -3,6 +3,8 @@ src/github.com/eliothedeman/bangarang/cmd/ui/ui
 pkg
 *.deb
 *.db
+*.out
+*.test
 bin
 *sublime*
 *bindata.go*

@@ -2,8 +2,12 @@ package event
 
 import (
 	"encoding/binary"
+	"fmt"
+	"math"
+	"reflect"
 	"strings"
 	"sync"
+	"unsafe"
 )
 
 const (
@@ -28,16 +32,177 @@ type Event struct {
 	mut        sync.Mutex
 }
 
-func (e *Event) MarshalBinary() ([]byte, error) {
-	buff := make([]byte, e.Msgsize()+8)
-	tmp, err := e.MarshalJSON()
-	if err != nil {
-		return nil, err
+func (e *Event) UnmarshalBinary(buff []byte) error {
+	if len(buff) != int(binary.BigEndian.Uint64(buff[:8])) {
+		return fmt.Errorf("Unmarshal Binary: Malformed binary blob. Expected length of %d got %d", buff[0], len(buff))
 	}
-	copy(buff[8:], tmp)
 
-	binary.PutUvarint(buff[:8], uint64(len(tmp)))
-	return buff[:8+len(tmp)], nil
+	// load the metric's bits as a uint64
+	i := binary.BigEndian.Uint64(buff[8:16])
+	e.Metric = math.Float64frombits(i)
+
+	// host
+	offset := 16
+	l := int(buff[offset])
+	offset += 1
+	e.Host = string(buff[offset : offset+l])
+	offset += l
+
+	// service
+	l = int(buff[offset])
+	offset += 1
+	e.Service = string(buff[offset : offset+l])
+	offset += l
+
+	// sub_service
+	l = int(buff[offset])
+	offset += 1
+	e.SubService = string(buff[offset : offset+l])
+	offset += l
+
+	// tags
+	e.Tags = map[string]string{}
+	for offset < len(buff) {
+
+		// key
+		l = int(buff[offset])
+		offset += 1
+		key := string(buff[offset : offset+l])
+		offset += l
+
+		l = int(buff[offset])
+		offset += 1
+		value := string(buff[offset : offset+l])
+		offset += l
+
+		e.Tags[key] = value
+	}
+
+	return nil
+}
+
+// MarshalBinary creates the binary representation of an event
+// Size header 8 bytes
+// Metric 8 bytes
+// Host Size 1 byte
+// Host (max 256 bytes)
+// Service Size 1 byte
+// Service (max 256 bytes)
+// SubService Size 1 byte
+// SubService (max 256 bytes)
+//
+// Tags: key size 1 byte
+// Tags: key (max 256 bytes)
+// Tags: value size 1 byte
+// Tags: value (max 256 bytes)
+// repeat
+func (e *Event) MarshalBinary() ([]byte, error) {
+	size := e.binSize()
+	buff := make([]byte, size)
+	offset := 0
+	tmp := 0
+
+	// size
+	binary.BigEndian.PutUint64(buff[:8], uint64(size))
+	offset += 8
+
+	// metric
+	binary.BigEndian.PutUint64(buff[offset:offset+8], math.Float64bits(e.Metric))
+	offset += 8
+
+	// host
+	tmp = sizeOfString(e.Host)
+	buff[offset] = uint8(tmp)
+	offset += 1
+	copy(buff[offset:offset+tmp], e.Host)
+	offset += tmp
+
+	// service
+	tmp = sizeOfString(e.Service)
+	buff[offset] = uint8(tmp)
+	offset += 1
+	copy(buff[offset:offset+tmp], e.Service)
+	offset += tmp
+
+	// service
+	tmp = sizeOfString(e.SubService)
+	buff[offset] = uint8(tmp)
+	offset += 1
+	copy(buff[offset:offset+tmp], e.SubService)
+	offset += tmp
+
+	// tags
+	for k, v := range e.Tags {
+		tmp = sizeOfString(k)
+		buff[offset] = uint8(tmp)
+		offset += 1
+		copy(buff[offset:offset+tmp], k)
+		offset += tmp
+
+		tmp = sizeOfString(v)
+		buff[offset] = uint8(tmp)
+		offset += 1
+		copy(buff[offset:offset+tmp], v)
+		offset += tmp
+	}
+
+	return buff, nil
+}
+
+// binSize returns the size of an event once encoded as binary
+func (e *Event) binSize() int {
+
+	// start with the size of the "size" header + size of metric
+	size := 16
+
+	// all non-fixed sizes also have an 1 byte size field
+
+	// get the size of all the strings
+	size += sizeOfString(e.Host)
+	size += 1
+
+	size += sizeOfString(e.Service)
+	size += 1
+
+	size += sizeOfString(e.SubService)
+	size += 1
+
+	// get the size of the tags
+	size += sizeOfMap(e.Tags)
+
+	return size
+}
+
+func sizeOfString(s string) int {
+	size := len(s)
+	if size > 256 {
+		return 256
+	}
+
+	return size
+}
+
+func unsafeBytes(s string) []byte {
+	return *(*[]byte)(unsafe.Pointer(&reflect.SliceHeader{
+		Len:  len(s),
+		Cap:  len(s),
+		Data: (*(*reflect.StringHeader)(unsafe.Pointer(&s))).Data,
+	}))
+}
+
+// return the size of all the string in the map
+func sizeOfMap(m map[string]string) int {
+	// key/val headers
+	size := len(m) * 2
+	for k, v := range m {
+
+		// size of key
+		size += sizeOfString(k)
+
+		// size of value
+		size += sizeOfString(v)
+	}
+	return size
 }
 
 func (e *Event) Wait() {

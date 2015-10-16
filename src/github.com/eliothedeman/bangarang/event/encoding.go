@@ -3,15 +3,18 @@ package event
 const (
 	ENCODING_TYPE_JSON    = "json"
 	ENCODING_TYPE_MSGPACK = "msgp"
+	ENCODING_TYPE_BIN     = "bin"
 )
 
 var (
 	EncoderFactories = map[string]EncoderFactory{
 		ENCODING_TYPE_JSON:    NewJsonEncoder,
+		ENCODING_TYPE_BIN:     NewBinEncoder,
 		ENCODING_TYPE_MSGPACK: NewMsgPackEncoder,
 	}
 	DecoderFactories = map[string]DecoderFactory{
 		ENCODING_TYPE_JSON:    NewJsonDecoder,
+		ENCODING_TYPE_BIN:     NewBinDecoder,
 		ENCODING_TYPE_MSGPACK: NewMsgPackDecoder,
 	}
 )

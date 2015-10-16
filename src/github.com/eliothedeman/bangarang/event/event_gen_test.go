@@ -1,4 +1,4 @@
-package event 
+package event
 
 // NOTE: THIS FILE WAS PRODUCED BY THE
 // MSGP CODE GENERATION TOOL (github.com/tinylib/msgp)
@@ -6,8 +6,9 @@ package event
 
 import (
 	"bytes"
-	"github.com/tinylib/msgp/msgp"
 	"testing"
+
+	"github.com/tinylib/msgp/msgp"
 )
 
 func TestEventMarshalUnmarshal(t *testing.T) {
@@ -35,9 +36,10 @@ func TestEventMarshalUnmarshal(t *testing.T) {
 
 func BenchmarkEventMarshalMsg(b *testing.B) {
 	v := Event{}
+	v.Tags = map[string]string{"key": "value"}
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i:=0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		v.MarshalMsg(nil)
 	}
 }
@@ -49,7 +51,7 @@ func BenchmarkEventAppendMsg(b *testing.B) {
 	b.SetBytes(int64(len(bts)))
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i:=0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		bts, _ = v.MarshalMsg(bts[0:0])
 	}
 }
@@ -60,7 +62,7 @@ func BenchmarkEventUnmarshal(b *testing.B) {
 	b.ReportAllocs()
 	b.SetBytes(int64(len(bts)))
 	b.ResetTimer()
-	for i:=0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		_, err := v.UnmarshalMsg(bts)
 		if err != nil {
 			b.Fatal(err)
@@ -94,13 +96,13 @@ func TestEventEncodeDecode(t *testing.T) {
 
 func BenchmarkEventEncode(b *testing.B) {
 	v := Event{}
-	var buf bytes.Buffer 
+	var buf bytes.Buffer
 	msgp.Encode(&buf, &v)
 	b.SetBytes(int64(buf.Len()))
 	en := msgp.NewWriter(msgp.Nowhere)
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i:=0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		v.EncodeMsg(en)
 	}
 	en.Flush()
@@ -115,11 +117,10 @@ func BenchmarkEventDecode(b *testing.B) {
 	dc := msgp.NewReader(rd)
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i:=0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		err := v.DecodeMsg(dc)
-		if  err != nil {
+		if err != nil {
 			b.Fatal(err)
 		}
 	}
 }
-
