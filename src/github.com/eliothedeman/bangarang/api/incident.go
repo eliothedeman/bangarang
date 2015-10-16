@@ -28,7 +28,7 @@ func NewIncident(p *pipeline.Pipeline) *Incident {
 }
 
 func (i *Incident) EndPoint() string {
-	return "/api/incident/{id:.+}"
+	return "/api/incident/{id}"
 }
 
 // return any incidnet that is greater than this value
@@ -104,12 +104,12 @@ func (i *Incident) Delete(req *Request) {
 	}
 }
 
-func (i *Incident) Get(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("content-type", "application/json")
-	vars := mux.Vars(r)
+func (i *Incident) Get(req *Request) {
+	req.w.Header().Add("content-type", "application/json")
+	vars := mux.Vars(req.r)
 	id, ok := vars["id"]
 	if !ok {
-		http.Error(w, "Must append incident id", http.StatusBadRequest)
+		http.Error(req.w, "Must append incident id", http.StatusBadRequest)
 		return
 	}
 	index := i.pipeline.GetIndex()
@@ -121,10 +121,10 @@ func (i *Incident) Get(w http.ResponseWriter, r *http.Request) {
 		buff, err := json.Marshal(makeKV(all))
 		if err != nil {
 			logrus.Error(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(req.w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Write(buff)
+		req.w.Write(buff)
 		return
 	}
 
@@ -133,9 +133,9 @@ func (i *Incident) Get(w http.ResponseWriter, r *http.Request) {
 	buff, err := json.Marshal(in)
 	if err != nil {
 		logrus.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(req.w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Write(buff)
+	req.w.Write(buff)
 }

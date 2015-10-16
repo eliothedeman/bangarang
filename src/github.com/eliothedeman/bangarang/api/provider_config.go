@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -42,7 +41,7 @@ func (c *ProviderConfig) Get(req *Request) {
 
 		// if the provider is "*" fetch all configs
 		if id == "*" {
-			buff, err := json.Marshal(confs)
+			buff, err := cfg.EventProviders.MarshalJSON()
 			if err != nil {
 				logrus.Error(err)
 				http.Error(req.w, err.Error(), http.StatusInternalServerError)
