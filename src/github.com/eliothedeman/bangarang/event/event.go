@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"reflect"
-	"strings"
 	"sync"
 	"unsafe"
 )
@@ -22,14 +21,11 @@ const (
 // Event represents a metric as it passes through the pipeline.
 // It holds meta data about the metric, as well as methods to trace the event as it is processed
 type Event struct {
-	Host       string            `json:"host" msg:"host"`
-	Service    string            `json:"service" msg:"service"`
-	SubService string            `json:"sub_service" msg:"sub_service"`
-	Metric     float64           `json:"metric" msg:"metric"`
-	Tags       map[string]string `json:"tags" msg:"tags"`
-	indexName  string
-	wait       sync.WaitGroup
-	mut        sync.Mutex
+	Metric    float64           `json:"metric" msg:"metric"`
+	Tags      map[string]string `json:"tags" msg:"tags"`
+	indexName string
+	wait      sync.WaitGroup
+	mut       sync.Mutex
 }
 
 func (e *Event) UnmarshalBinary(buff []byte) error {
@@ -40,25 +36,8 @@ func (e *Event) UnmarshalBinary(buff []byte) error {
 	// load the metric's bits as a uint64
 	i := binary.BigEndian.Uint64(buff[8:16])
 	e.Metric = math.Float64frombits(i)
-
-	// host
 	offset := 16
-	l := int(buff[offset])
-	offset += 1
-	e.Host = string(buff[offset : offset+l])
-	offset += l
-
-	// service
-	l = int(buff[offset])
-	offset += 1
-	e.Service = string(buff[offset : offset+l])
-	offset += l
-
-	// sub_service
-	l = int(buff[offset])
-	offset += 1
-	e.SubService = string(buff[offset : offset+l])
-	offset += l
+	l := 0
 
 	// tags
 	e.Tags = map[string]string{}
@@ -110,27 +89,6 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 	binary.BigEndian.PutUint64(buff[offset:offset+8], math.Float64bits(e.Metric))
 	offset += 8
 
-	// host
-	tmp = sizeOfString(e.Host)
-	buff[offset] = uint8(tmp)
-	offset += 1
-	copy(buff[offset:offset+tmp], e.Host)
-	offset += tmp
-
-	// service
-	tmp = sizeOfString(e.Service)
-	buff[offset] = uint8(tmp)
-	offset += 1
-	copy(buff[offset:offset+tmp], e.Service)
-	offset += tmp
-
-	// service
-	tmp = sizeOfString(e.SubService)
-	buff[offset] = uint8(tmp)
-	offset += 1
-	copy(buff[offset:offset+tmp], e.SubService)
-	offset += tmp
-
 	// tags
 	for k, v := range e.Tags {
 		tmp = sizeOfString(k)
@@ -156,16 +114,6 @@ func (e *Event) binSize() int {
 	size := 16
 
 	// all non-fixed sizes also have an 1 byte size field
-
-	// get the size of all the strings
-	size += sizeOfString(e.Host)
-	size += 1
-
-	size += sizeOfString(e.Service)
-	size += 1
-
-	size += sizeOfString(e.SubService)
-	size += 1
 
 	// get the size of the tags
 	size += sizeOfMap(e.Tags)
@@ -235,18 +183,6 @@ func NewEvent() *Event {
 
 // Get any value on an event as a string
 func (e *Event) Get(key string) string {
-
-	// attempt to find the string values of the event
-	switch strings.ToLower(key) {
-	case "host":
-		return e.Host
-	case "service":
-		return e.Service
-	case "sub_service":
-		return e.SubService
-	}
-
-	// if we make it to this point, assume we are looking for a tag
 	if val, ok := e.Tags[key]; ok {
 		return val
 	}
