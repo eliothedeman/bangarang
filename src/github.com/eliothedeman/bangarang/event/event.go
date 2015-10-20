@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"sort"
 	"sync"
+	"time"
 	"unsafe"
 )
 
@@ -15,14 +17,62 @@ const (
 	CRITICAL
 )
 
+// KeyVal is a key value pair, used in matching to tags on events
+type KeyVal struct {
+	Key, Value string
+}
+
+// TagSet is a collection of key/val pairs that will always give the same order of the tags
+type TagSet []KeyVal
+
+type by func(k1, k2 KeyVal) bool
+
+type tagSetSorter struct {
+	ts TagSet
+	by by
+}
+
+func (t *tagSetSorter) Len() int {
+	return len(t.ts)
+}
+
+func (t *tagSetSorter) Less(i, j int) bool {
+	return t.by(t.ts[i], t.ts[j])
+}
+
+func (t *tagSetSorter) Swap(i, j int) {
+	t.ts[i], t.ts[j] = t.ts[j], t.ts[i]
+}
+
+func (t TagSet) SortByKey() {
+	tss := &tagSetSorter{
+		ts: t,
+		by: func(k1, k2 KeyVal) bool {
+			return k1.Key < k2.Key
+		},
+	}
+	sort.Sort(tss)
+}
+
+func (t TagSet) SortByValue() {
+	tss := &tagSetSorter{
+		ts: t,
+		by: func(k1, k2 KeyVal) bool {
+			return k1.Value < k2.Value
+		},
+	}
+	sort.Sort(tss)
+}
+
 //go:generate ffjson $GOFILE
 //go:generate msgp $GOFILE
 
 // Event represents a metric as it passes through the pipeline.
 // It holds meta data about the metric, as well as methods to trace the event as it is processed
 type Event struct {
-	Metric    float64           `json:"metric" msg:"metric"`
-	Tags      map[string]string `json:"tags" msg:"tags"`
+	Metric    float64   `json:"metric" msg:"metric"`
+	Tags      []KeyVal  `json:"tags" msg:"tags"`
+	Time      time.Time `json:"time" msg: "time"`
 	indexName string
 	wait      sync.WaitGroup
 	mut       sync.Mutex
@@ -37,10 +87,15 @@ func (e *Event) UnmarshalBinary(buff []byte) error {
 	i := binary.BigEndian.Uint64(buff[8:16])
 	e.Metric = math.Float64frombits(i)
 	offset := 16
+
+	i = binary.BigEndian.Uint64(buff[16:24])
+	e.Time = time.Unix(int64(i), 0)
+
 	l := 0
 
 	// tags
-	e.Tags = map[string]string{}
+	e.Tags = TagSet{}
+	i := 0
 	for offset < len(buff) {
 
 		// key
@@ -63,12 +118,10 @@ func (e *Event) UnmarshalBinary(buff []byte) error {
 // MarshalBinary creates the binary representation of an event
 // Size header 8 bytes
 // Metric 8 bytes
-// Host Size 1 byte
-// Host (max 256 bytes)
-// Service Size 1 byte
-// Service (max 256 bytes)
-// SubService Size 1 byte
-// SubService (max 256 bytes)
+// Time seconds 8 bytes
+// Time nanoseconds  8 bytes
+//
+// TagSetSize 1 byte (max 256 key->val pairs)
 //
 // Tags: key size 1 byte
 // Tags: key (max 256 bytes)
@@ -88,6 +141,18 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 	// metric
 	binary.BigEndian.PutUint64(buff[offset:offset+8], math.Float64bits(e.Metric))
 	offset += 8
+
+	// time
+	// seconds
+	binary.BigEndian.PutUint64(buff[offset:offset+8], uint64(e.Time.Unix()))
+	offset += 8
+
+	// nano seconds
+	binary.BigEndian.PutUint64(buff[offset:offset+8], uint64(e.Time.Nanosecond()))
+	offset += 8
+
+	buff[offset] = uint8(len(e.Tags))
+	offset += 1
 
 	// tags
 	for k, v := range e.Tags {
@@ -110,10 +175,8 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 // binSize returns the size of an event once encoded as binary
 func (e *Event) binSize() int {
 
-	// start with the size of the "size" header + size of metric
-	size := 16
-
-	// all non-fixed sizes also have an 1 byte size field
+	// start with the size of the "size" header + size of metric + size of time
+	size := 32
 
 	// get the size of the tags
 	size += sizeOfMap(e.Tags)
@@ -140,8 +203,10 @@ func unsafeBytes(s string) []byte {
 
 // return the size of all the string in the map
 func sizeOfMap(m map[string]string) int {
+	// tagset header
+	size := 1
 	// key/val headers
-	size := len(m) * 2
+	size += len(m) * 2
 	for k, v := range m {
 
 		// size of key
