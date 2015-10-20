@@ -420,6 +420,7 @@ function GlobalPolicyController($scope, $http, $cookies, $mdDialog) {
 	}
 
 	$scope.populateChips = function() {
+		var k = 0;
 		for (k in $scope.g.match) {
 			$scope.matchChips.push({key:k, val:$scope.g.match[k]})
 		}
