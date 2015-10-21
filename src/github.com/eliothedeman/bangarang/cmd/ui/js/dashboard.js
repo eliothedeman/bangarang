@@ -131,7 +131,7 @@ function DashboardController($scope, $cookies, $http, $mdDialog) {
 	}
 
 	$scope.formatDescription = function(incident) {
-		return incident.service + (incident.sub_service ? "." + incident.sub_service : " ") + " on " + incident.host + " is " + incident.metric.toFixed(2) + " at " + new Date(incident.time * 1000).format("h:M:sTT mmmm-dd-yyyy") + " triggerd by " + incident.policy; 
+		return incident.service + (incident.sub_service ? "." + incident.sub_service : " ") + " on " + incident.host + " is " + incident.metric.toFixed(2) + " at " + new Date(incident.time * 1000).format("h:M:sTT mmmm-dd-yyyy") + " triggered by " + incident.policy; 
 	}
 
 	var codes = {
