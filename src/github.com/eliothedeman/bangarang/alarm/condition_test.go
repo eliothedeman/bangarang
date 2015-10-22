@@ -23,9 +23,12 @@ func newTestCondition(g, l, e float64) *Condition {
 
 func newTestEvent(h, s string, m float64) *event.Event {
 	e := &event.Event{
-		Host:    h,
-		Service: s,
-		Metric:  m,
+		Tags: event.TagSet{
+			{"host", h},
+			{"service", s},
+		},
+
+		Metric: m,
 	}
 	return e
 }
@@ -36,8 +39,8 @@ func TestAggregation(t *testing.T) {
 		WindowLength: 110,
 	}
 
-	c.init(map[string]string{
-		"host": `\w+\.(?P<deployment>\w+)\.\w+`,
+	c.init(event.TagSet{
+		{"host", `\w+\.(?P<deployment>\w+)\.\w+`},
 	})
 
 	for i := 0; i < 110; i++ {
@@ -63,8 +66,8 @@ func TestAggCloseout(t *testing.T) {
 		WindowLength: 1,
 	}
 
-	c.init(map[string]string{
-		"host": `\w+\.(?P<deployment>\w+)\.\w+`,
+	c.init(event.TagSet{
+		{"host", `\w+\.(?P<deployment>\w+)\.\w+`},
 	})
 
 	for i := 0; i < 110; i++ {
@@ -104,79 +107,4 @@ func TestConditionTrackEvent(t *testing.T) {
 		t.Fail()
 	}
 
-}
-
-func TestGroupingGenName(t *testing.T) {
-	t.Skip()
-	g := compileGrouper(DEFAULT_GROUP_BY)
-
-	e := newTestEvent("this", "is", 1)
-
-	last := g.genIndexName(e)
-
-	// insure this name is always consistant
-	for i := 0; i < 100; i++ {
-		if last != g.genIndexName(e) {
-			t.Fail()
-		}
-	}
-}
-
-func TestGroupByHostName(t *testing.T) {
-	t.Skip()
-	g := compileGrouper(map[string]string{
-		"host": `\w+\.(?P<boom>\w+)\.\w+`,
-	})
-
-	e := newTestEvent("my.test.com", "is-fun", 1)
-	expected := ":test"
-
-	if g.genIndexName(e) != expected {
-		t.Error("expected:", expected, "got:", g.genIndexName(e))
-	}
-}
-
-func BenchmarkGroupByOne(b *testing.B) {
-	g := compileGrouper(map[string]string{
-		"host": `\w+\.(?P<boom>\w+)\.\w+`,
-	})
-
-	e := newTestEvent("my.test.com", "is-fun", 1)
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		g.genIndexName(e)
-	}
-}
-
-func BenchmarkGroupByTwo(b *testing.B) {
-	g := compileGrouper(map[string]string{
-		"host":    `\w+\.(?P<boom>\w+)\.\w+`,
-		"service": `.*`,
-	})
-
-	e := newTestEvent("my.test.com", "is-fun", 1)
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		g.genIndexName(e)
-	}
-}
-
-func BenchmarkGroupByThree(b *testing.B) {
-	g := compileGrouper(map[string]string{
-		"host":        `\w+\.(?P<boom>\w+)\.\w+`,
-		"service":     `.*`,
-		"sub_service": `.*`,
-	})
-
-	e := newTestEvent("my.test.com", "is-fun", 1)
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		g.genIndexName(e)
-	}
 }

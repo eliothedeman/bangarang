@@ -2,7 +2,6 @@ package alarm
 
 import (
 	"math"
-	"regexp"
 	"sync"
 	"time"
 
@@ -31,7 +30,6 @@ type Condition struct {
 	WindowSize    int          `json:"window_size"`
 	Aggregation   *Aggregation `json:"agregation"`
 	trackFunc     TrackFunc
-	groupBy       grouper
 	checks        []satisfier
 	eventTrackers map[string]*eventTracker
 	sync.Mutex
@@ -45,19 +43,6 @@ type Aggregation struct {
 
 type aggregator struct {
 	nextCloseout time.Time
-}
-
-type matcher struct {
-	name  string
-	match *regexp.Regexp
-}
-
-type grouper []*matcher
-
-// generate an index name by using group-by statements
-func (g grouper) genIndexName(e *event.Event) string {
-	return e.IndexName()
-
 }
 
 type eventTracker struct {
@@ -92,10 +77,10 @@ func (c *Condition) newTracker() *eventTracker {
 
 func (c *Condition) DoOnTracker(e *event.Event, dot func(*eventTracker)) {
 	// c.Lock()
-	et, ok := c.eventTrackers[c.groupBy.genIndexName(e)]
+	et, ok := c.eventTrackers[e.IndexName()]
 	if !ok {
 		et = c.newTracker()
-		c.eventTrackers[c.groupBy.genIndexName(e)] = et
+		c.eventTrackers[e.IndexName()] = et
 	}
 	dot(et)
 	// c.Unlock()
@@ -105,10 +90,10 @@ func (c *Condition) getTracker(e *event.Event) *eventTracker {
 	if c.eventTrackers == nil {
 		c.eventTrackers = make(map[string]*eventTracker)
 	}
-	et, ok := c.eventTrackers[c.groupBy.genIndexName(e)]
+	et, ok := c.eventTrackers[e.IndexName()]
 	if !ok {
 		et = c.newTracker()
-		c.eventTrackers[c.groupBy.genIndexName(e)] = et
+		c.eventTrackers[e.IndexName()] = et
 	}
 
 	return et
@@ -335,14 +320,6 @@ func (c *Condition) wrapAggregation(s satisfier) satisfier {
 	}
 }
 
-func compileGrouper(gb map[string]string) grouper {
-	g := grouper{}
-	for k, v := range gb {
-		g = append(g, &matcher{name: k, match: regexp.MustCompile(v)})
-	}
-	return g
-}
-
 func getTrackingFunc(c *Condition) TrackFunc {
 	if c.Aggregation != nil {
 		return AggregationTrack
@@ -352,8 +329,7 @@ func getTrackingFunc(c *Condition) TrackFunc {
 }
 
 // init compiles checks and sanatizes the conditon before returning itself
-func (c *Condition) init(groupBy map[string]string) {
-	c.groupBy = compileGrouper(groupBy)
+func (c *Condition) init(groupBy event.TagSet) {
 	c.checks = c.compileChecks()
 	c.eventTrackers = make(map[string]*eventTracker)
 

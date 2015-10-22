@@ -9,6 +9,12 @@ import (
 //go:generate ffjson $GOFILE
 //go:generate msgp $GOFILE
 
+type IncidentFormatter func(*Incident) string
+
+func DefaultIncidentFormatter(i *Incident) string {
+	return fmt.Sprintf("%s on %s is %s. Triggered by %s", i.Tags.Get("service"), i.Tags.Get("host"), Status(i.Status), i.Policy)
+}
+
 // An incident is created whenever an event changes to a state that is not event.OK
 type Incident struct {
 	EventName   []byte `json:"event" msg:"event_name"`
@@ -35,7 +41,7 @@ func (i *Incident) GetResolve() chan *Incident {
 func (i *Incident) IndexName() []byte {
 	if len(i.indexName) == 0 {
 		n := md5.New()
-		n.Write([]byte(i.Policy + i.Escalation + i.Host + i.Service + i.SubService))
+		n.Write([]byte(i.Policy + i.Event.Tags.String()))
 		i.indexName = []byte(fmt.Sprintf("%x", n.Sum(nil)))
 	}
 
@@ -47,7 +53,7 @@ func (i *Incident) GetEvent() *Event {
 }
 
 func (i *Incident) FormatDescription() string {
-	return fmt.Sprintf("%s on %s is %s. Triggered by %s", i.Service, i.Host, Status(i.Status), i.Policy)
+	return DefaultIncidentFormatter(i)
 }
 
 func NewIncident(policy string, escalation string, status int, e *Event) *Incident {
@@ -60,9 +66,6 @@ func NewIncident(policy string, escalation string, status int, e *Event) *Incide
 		Escalation: escalation,
 	}
 
-	in.Service = e.Service
-	in.Host = e.Host
-	in.SubService = e.SubService
 	in.Tags = e.Tags
 	in.Metric = e.Metric
 	in.Description = in.FormatDescription()

@@ -19,11 +19,72 @@ const (
 
 // KeyVal is a key value pair, used in matching to tags on events
 type KeyVal struct {
-	Key, Value string
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // TagSet is a collection of key/val pairs that will always give the same order of the tags
 type TagSet []KeyVal
+
+func (t TagSet) ForEach(f func(k, v string)) {
+	for _, tag := range t {
+		f(tag.Key, tag.Value)
+	}
+}
+
+// Get returns the value of a key in linear time. An empty string if it wasn't found
+func (t TagSet) Get(key string) string {
+	for _, tag := range t {
+		if tag.Key == key {
+			return tag.Value
+		}
+	}
+	return ""
+}
+
+func (t TagSet) MarshalBinary(buff []byte) error {
+	tmp := 0
+	offset := 0
+	for _, v := range t {
+		tmp = sizeOfString(v.Key)
+		buff[offset] = uint8(tmp)
+		offset += 1
+		copy(buff[offset:offset+tmp], v.Key)
+		offset += tmp
+
+		tmp = sizeOfString(v.Value)
+		buff[offset] = uint8(tmp)
+		offset += 1
+		copy(buff[offset:offset+tmp], v.Value)
+		offset += tmp
+	}
+
+	return nil
+}
+
+func (t TagSet) String() string {
+	t.SortByKey()
+	buff := make([]byte, t.binSize())
+	t.MarshalBinary(buff)
+	return string(buff)
+}
+
+func (t TagSet) binSize() int {
+	// tagset header
+	size := 1
+	// key/val headers
+	size += len(t) * 2
+	for _, tag := range t {
+
+		// size of key
+		size += sizeOfString(tag.Key)
+
+		// size of value
+		size += sizeOfString(tag.Value)
+	}
+	return size
+
+}
 
 type by func(k1, k2 KeyVal) bool
 
@@ -71,7 +132,7 @@ func (t TagSet) SortByValue() {
 // It holds meta data about the metric, as well as methods to trace the event as it is processed
 type Event struct {
 	Metric    float64   `json:"metric" msg:"metric"`
-	Tags      []KeyVal  `json:"tags" msg:"tags"`
+	Tags      TagSet    `json:"tags" msg:"tags"`
 	Time      time.Time `json:"time" msg: "time"`
 	indexName string
 	wait      sync.WaitGroup
@@ -86,30 +147,39 @@ func (e *Event) UnmarshalBinary(buff []byte) error {
 	// load the metric's bits as a uint64
 	i := binary.BigEndian.Uint64(buff[8:16])
 	e.Metric = math.Float64frombits(i)
-	offset := 16
 
+	// load the time
+	// seconds
 	i = binary.BigEndian.Uint64(buff[16:24])
-	e.Time = time.Unix(int64(i), 0)
+
+	// nanoseconds
+	x := binary.BigEndian.Uint64(buff[24:32])
+	e.Time = time.Unix(int64(i), int64(x))
 
 	l := 0
+	offset := 32
 
 	// tags
-	e.Tags = TagSet{}
-	i := 0
+	e.Tags = make(TagSet, int(buff[offset]))
+	offset += 1
+	i = 0
+	kv := KeyVal{}
 	for offset < len(buff) {
 
 		// key
 		l = int(buff[offset])
 		offset += 1
-		key := string(buff[offset : offset+l])
+		kv.Key = string(buff[offset : offset+l])
 		offset += l
 
 		l = int(buff[offset])
 		offset += 1
-		value := string(buff[offset : offset+l])
+		kv.Value = string(buff[offset : offset+l])
 		offset += l
 
-		e.Tags[key] = value
+		e.Tags[i] = kv
+		i += 1
+
 	}
 
 	return nil
@@ -155,17 +225,17 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 	offset += 1
 
 	// tags
-	for k, v := range e.Tags {
-		tmp = sizeOfString(k)
+	for _, v := range e.Tags {
+		tmp = sizeOfString(v.Key)
 		buff[offset] = uint8(tmp)
 		offset += 1
-		copy(buff[offset:offset+tmp], k)
+		copy(buff[offset:offset+tmp], v.Key)
 		offset += tmp
 
-		tmp = sizeOfString(v)
+		tmp = sizeOfString(v.Value)
 		buff[offset] = uint8(tmp)
 		offset += 1
-		copy(buff[offset:offset+tmp], v)
+		copy(buff[offset:offset+tmp], v.Value)
 		offset += tmp
 	}
 
@@ -179,7 +249,7 @@ func (e *Event) binSize() int {
 	size := 32
 
 	// get the size of the tags
-	size += sizeOfMap(e.Tags)
+	size += e.Tags.binSize()
 
 	return size
 }
@@ -248,15 +318,14 @@ func NewEvent() *Event {
 
 // Get any value on an event as a string
 func (e *Event) Get(key string) string {
-	if val, ok := e.Tags[key]; ok {
-		return val
+	if e.Tags == nil {
+		return ""
 	}
-
-	return ""
+	return e.Tags.Get(key)
 }
 
 func (e *Event) IndexName() string {
-	return e.Host + e.Service + e.SubService
+	return e.Tags.String()
 }
 
 func Status(code int) string {

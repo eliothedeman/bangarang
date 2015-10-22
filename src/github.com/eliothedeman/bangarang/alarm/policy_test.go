@@ -25,7 +25,7 @@ func TestPolicyRegexParsing(t *testing.T) {
 		t.Error(err)
 	}
 
-	if p.Match["host"] != `test\.hello` {
+	if p.Match.Get("host") != `test\.hello` {
 		t.Error("regex not properly parsed")
 	}
 
@@ -34,12 +34,14 @@ func TestPolicyRegexParsing(t *testing.T) {
 func TestMatchOr(t *testing.T) {
 	p := &Policy{}
 	e := &event.Event{}
-	e.Tags = map[string]string{
-		"test_tag": "unknown",
+	e.Tags = event.TagSet{
+		{"test_tag", "unknown"},
 	}
 
-	p.Match = map[string]string{
-		"test_tag": "unknown|shadow|telarg",
+	p.Match = event.TagSet{
+		{
+			"test_tag", "unknown|shadow",
+		},
 	}
 	p.Compile()
 
@@ -52,12 +54,16 @@ func TestMatchOr(t *testing.T) {
 func TestMatchTags(t *testing.T) {
 	p := &Policy{}
 	e := &event.Event{}
-	e.Tags = map[string]string{
-		"test_tag": "0",
+	e.Tags = event.TagSet{
+		{
+			"test_tag", "0",
+		},
 	}
 
-	p.Match = map[string]string{
-		"test_tag": "[0-9]+",
+	p.Match = event.TagSet{
+		{
+			"test_tag", "[0-9]+",
+		},
 	}
 	p.Compile()
 
@@ -69,13 +75,15 @@ func TestMatchTags(t *testing.T) {
 func TestMatchTagsExtra(t *testing.T) {
 	p := &Policy{}
 	e := &event.Event{}
-	e.Tags = map[string]string{
-		"test_tag":  "0",
-		"extra_tag": "w234",
+	e.Tags = event.TagSet{
+		{"test_tag", "0"},
+		{"extra_tag", "w234"},
 	}
 
-	p.Match = map[string]string{
-		"test_tag": "[0-9]+",
+	p.Match = event.TagSet{
+		{
+			"test_tag", "[0-9]+",
+		},
 	}
 	p.Compile()
 
@@ -86,11 +94,12 @@ func TestMatchTagsExtra(t *testing.T) {
 
 func TestMatchStructFiled(t *testing.T) {
 	p := &Policy{}
-	e := &event.Event{}
-	e.Host = "my_host"
+	e := newTestEvent("my_host", "", 0)
 
-	p.Match = map[string]string{
-		"host": "my.*",
+	p.Match = event.TagSet{
+		{
+			"host", "my.*",
+		},
 	}
 	p.Compile()
 
@@ -98,7 +107,7 @@ func TestMatchStructFiled(t *testing.T) {
 		t.Fail()
 	}
 
-	e.Host = ""
+	e.Tags = append(e.Tags, event.KeyVal{"host", ""})
 	if p.CheckMatch(e) {
 		t.Fail()
 	}

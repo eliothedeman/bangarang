@@ -15,23 +15,23 @@ func init() {
 }
 
 var (
-	DEFAULT_GROUP_BY = map[string]string{
-		"host":        "^(.*)$",
-		"service":     "^(.*)$",
-		"sub_service": "^(.*)$",
+	DEFAULT_GROUP_BY = event.TagSet{
+		{"host", "^(.*)$"},
+		{"service", "^(.*)$"},
+		{"sub_service", "^(.*)$"},
 	}
 )
 
 type Policy struct {
-	Match       map[string]string `json:"match"`
-	NotMatch    map[string]string `json:"not_match"`
-	GroupBy     map[string]string `json:"group_by"`
-	Crit        *Condition        `json:"crit"`
-	Warn        *Condition        `json:"warn"`
-	Name        string            `json:"name"`
-	Comment     string            `json:"comment"`
-	r_match     map[string]*regexp.Regexp
-	r_not_match map[string]*regexp.Regexp
+	Match       event.TagSet `json:"match"`
+	NotMatch    event.TagSet `json:"not_match"`
+	GroupBy     event.TagSet `json:"group_by"`
+	Crit        *Condition   `json:"crit"`
+	Warn        *Condition   `json:"warn"`
+	Name        string       `json:"name"`
+	Comment     string       `json:"comment"`
+	r_match     Matcher
+	r_not_match Matcher
 	stop        chan struct{}
 	in          chan *pack
 	resolve     chan *event.Incident
@@ -54,11 +54,7 @@ func (p *Policy) start() {
 				}
 
 				if c != nil {
-					e := &event.Event{}
-					e.Host = toResolve.Host
-					e.Service = toResolve.Service
-					e.SubService = toResolve.SubService
-					t := c.getTracker(e)
+					t := c.getTracker(&toResolve.Event)
 					t.refresh()
 				}
 			case <-p.stop:
@@ -145,6 +141,31 @@ func (p *Policy) Matches(e *event.Event) bool {
 	return p.CheckMatch(e) && p.CheckNotMatch(e)
 }
 
+type Matcher []struct {
+	Key   string
+	Value *regexp.Regexp
+}
+
+func (m Matcher) Matches(kv event.KeyVal) bool {
+	matches := false
+	m.ForEach(func(k string, v *regexp.Regexp) {
+		if kv.Key == k {
+			if v.MatchString(kv.Value) {
+				matches = true
+				return
+			}
+		}
+	})
+
+	return matches
+}
+
+func (m Matcher) ForEach(f func(k string, v *regexp.Regexp)) {
+	for _, t := range m {
+		f(t.Key, t.Value)
+	}
+}
+
 // compile the regex patterns for this policy
 func (p *Policy) Compile() {
 	logrus.Infof("Compiling regex maches for %s", p.Name)
@@ -154,52 +175,45 @@ func (p *Policy) Compile() {
 	p.start()
 
 	if p.r_match == nil {
-		p.r_match = make(map[string]*regexp.Regexp)
+		p.r_match = make(Matcher, len(p.Match))
 	}
 
 	if p.r_not_match == nil {
-		p.r_not_match = make(map[string]*regexp.Regexp)
+		p.r_not_match = make(Matcher, len(p.NotMatch))
 	}
 
-	// if we don't have at least three componants of the group by, establish them from the defaults
-	if len(p.GroupBy) < 3 {
-
-		if len(p.GroupBy) == 0 {
-			p.GroupBy = DEFAULT_GROUP_BY
-
-		} else {
-
-			tmp := map[string]string{}
-			for k, v := range DEFAULT_GROUP_BY {
-				tmp[k] = v
-			}
-
-			for k, v := range p.GroupBy {
-				tmp[k] = v
-			}
-
-			p.GroupBy = tmp
-		}
-	}
-
-	for k, v := range p.Match {
-
+	i := 0
+	p.Match.ForEach(func(k, v string) {
 		m, err := regexp.Compile(v)
 		if err != nil {
 			logrus.Errorf("Unable to compile match for %s: %s", k, err.Error())
 		} else {
-			p.r_match[k] = m
+			p.r_match[i] = struct {
+				Key   string
+				Value *regexp.Regexp
+			}{
+				Key:   k,
+				Value: m,
+			}
 		}
-	}
+		i += 1
+	})
 
-	for k, v := range p.NotMatch {
+	p.NotMatch.ForEach(func(k, v string) {
 		m, err := regexp.Compile(v)
 		if err != nil {
 			logrus.Errorf("Unable to compile not_match for %s: %s", k, err.Error())
 		} else {
-			p.r_not_match[k] = m
+			p.r_not_match[i] = struct {
+				Key   string
+				Value *regexp.Regexp
+			}{
+				Key:   k,
+				Value: m,
+			}
 		}
-	}
+		i += 1
+	})
 
 	if p.Crit != nil {
 		logrus.Infof("Initializing crit for %s", p.Name)
@@ -252,19 +266,20 @@ func (p *Policy) ActionWarn(e *event.Event) (bool, int) {
 }
 
 func (p *Policy) CheckNotMatch(e *event.Event) bool {
-	for k, m := range p.r_not_match {
-		if m.MatchString(e.Get(k)) {
+
+	for _, t := range e.Tags {
+		if p.r_not_match.Matches(t) {
 			return false
 		}
 	}
+
 	return true
 }
 
 // check if any of p's matches are satisfied by the event
 func (p *Policy) CheckMatch(e *event.Event) bool {
-	for k, m := range p.r_match {
-		// if the element does not match the regex pattern, the event does not fully match
-		if !m.MatchString(e.Get(k)) {
+	for _, t := range e.Tags {
+		if !p.r_match.Matches(t) {
 			return false
 		}
 	}

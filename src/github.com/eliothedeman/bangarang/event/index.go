@@ -1,6 +1,7 @@
 package event
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"sync/atomic"
@@ -92,7 +93,7 @@ func (i *Index) UpdateIncidentCounter(count int64) {
 func (i *Index) PutIncident(in *Incident) {
 	err := i.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(INCIDENT_BUCKET_NAME)
-		buff, err := in.MarshalMsg(nil)
+		buff, err := json.Marshal(in)
 		if err != nil {
 			return err
 		}
@@ -112,7 +113,7 @@ func (i *Index) ListIncidents() []*Incident {
 		x := 0
 		return b.ForEach(func(k, v []byte) error {
 			y := &Incident{}
-			_, err := y.UnmarshalMsg(v)
+			err := json.Unmarshal(v, y)
 			if err != nil {
 				return err
 			}
@@ -139,7 +140,7 @@ func (i *Index) GetIncident(id []byte) *Incident {
 			return fmt.Errorf("Unable to find incident with id %s", string(id))
 		}
 
-		_, err := in.UnmarshalMsg(buff)
+		err := json.Unmarshal(buff, in)
 		return err
 	})
 

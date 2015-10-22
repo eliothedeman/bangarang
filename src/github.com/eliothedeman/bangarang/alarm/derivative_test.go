@@ -43,14 +43,18 @@ func TestDerivativeWindow(t *testing.T) {
 			},
 			e: []*event.Event{
 				&event.Event{
-					Host:    "machine.test.com",
-					Service: "test.service",
-					Metric:  0,
+					Tags: event.TagSet{
+						{"host", "machine.test.com"},
+						{"service", "test.service"},
+					},
+					Metric: 0,
 				},
 				&event.Event{
-					Host:    "machine.test.com",
-					Service: "test.service",
-					Metric:  1000,
+					Tags: event.TagSet{
+						{"host", "machine.test.com"},
+						{"service", "test.service"},
+					},
+					Metric: 1000,
 				},
 			},
 			want: []bool{false, false},
@@ -65,14 +69,18 @@ func TestDerivativeWindow(t *testing.T) {
 			},
 			e: []*event.Event{
 				&event.Event{
-					Host:    "machine.test.com",
-					Service: "test.service",
-					Metric:  0,
+					Tags: event.TagSet{
+						{"host", "machine.test.com"},
+						{"service", "test.service"},
+					},
+					Metric: 0,
 				},
 				&event.Event{
-					Host:    "machine.test.com",
-					Service: "test.service",
-					Metric:  1000,
+					Tags: event.TagSet{
+						{"host", "machine.test.com"},
+						{"service", "test.service"},
+					},
+					Metric: 1000,
 				},
 			},
 			want: []bool{false, true},

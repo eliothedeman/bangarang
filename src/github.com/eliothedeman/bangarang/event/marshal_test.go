@@ -3,11 +3,7 @@ package event
 import "testing"
 
 func TestMarshalBinary(t *testing.T) {
-	e := &Event{
-		Host:    "hello",
-		Service: "what's up",
-		Metric:  3.0005,
-	}
+	e := newTestEvent("localhost", "what's up", 3.0005)
 	buff, err := e.MarshalBinary()
 	if err != nil {
 		t.Fatal(err)
@@ -19,14 +15,8 @@ func TestMarshalBinary(t *testing.T) {
 }
 
 func TestUnmarshal(t *testing.T) {
-	e := &Event{
-		Host:    "machine01.deployment.company.com",
-		Service: "load",
-		Metric:  2.001,
-		Tags: map[string]string{
-			"key": "value",
-		},
-	}
+	e := newTestEvent("machine01.deployment.company.com", "load", 2.001)
+	e.Tags = append(e.Tags, KeyVal{Key: "hello", Value: "world"})
 
 	buff, _ := e.MarshalBinary()
 
@@ -38,37 +28,23 @@ func TestUnmarshal(t *testing.T) {
 
 	if e.Metric != n.Metric {
 		t.Fatalf("wanted: %v got %v", e.Metric, n.Metric)
-
 	}
 
-	if e.Host != n.Host {
-		t.Fatalf("wanted: %v got %v", e.Host, n.Host)
+	if e.Time.UnixNano() != n.Time.UnixNano() {
+		t.Fatalf("wanted: %v got %v", e.Time, n.Time)
 	}
 
-	if e.Service != n.Service {
-		t.Fatalf("wanted: %v got %v", e.Service, n.Service)
-	}
-
-	if e.SubService != n.SubService {
-		t.Fatalf("wanted: %v got %v", e.SubService, n.SubService)
-	}
-
-	for k, v := range e.Tags {
-		if n.Tags[k] != v {
-			t.Fatalf("wanted: %v got %v", v, n.Tags[k])
+	for _, v := range e.Tags {
+		if n.Tags.Get(v.Key) != v.Value {
+			t.Fatalf("wanted: %v got %v", v.Value, n.Tags.Get(v.Key))
 		}
 	}
 
 }
 
 func BenchmarkMarshalBinary(b *testing.B) {
-	e := &Event{
-		Host:    "hello",
-		Service: "what's up",
-		Tags: map[string]string{
-			"key": "value",
-		},
-	}
+	e := newTestEvent("machine01.deployment.company.com", "load", 2.001)
+	e.Tags = append(e.Tags, KeyVal{Key: "hello", Value: "world"})
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -78,13 +54,8 @@ func BenchmarkMarshalBinary(b *testing.B) {
 }
 
 func BenchmarkUnmarshalBinary(b *testing.B) {
-	e := &Event{
-		Host:    "hello",
-		Service: "what's up",
-		Tags: map[string]string{
-			"key": "value",
-		},
-	}
+	e := newTestEvent("machine01.deployment.company.com", "load", 2.001)
+	e.Tags = append(e.Tags, KeyVal{Key: "hello", Value: "world"})
 
 	buff, _ := e.MarshalBinary()
 

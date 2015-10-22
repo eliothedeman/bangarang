@@ -1,28 +1,17 @@
 package event
 
-import (
-	"bytes"
-
-	"github.com/pquerna/ffjson/ffjson"
-)
+import "encoding/json"
 
 type JsonEncoder struct {
-	enc  *ffjson.Encoder
-	buff *bytes.Buffer
 }
 
 func NewJsonEncoder() Encoder {
-	je := &JsonEncoder{
-		buff: bytes.NewBuffer(make([]byte, 1024*200)),
-	}
-	je.enc = ffjson.NewEncoder(je.buff)
+	je := &JsonEncoder{}
 	return je
 }
 
 func (j *JsonEncoder) Encode(e *Event) ([]byte, error) {
-	j.buff.Reset()
-	err := j.enc.EncodeFast(e)
-	return j.buff.Bytes(), err
+	return json.Marshal(e)
 }
 
 func NewJsonDecoder() Decoder {
@@ -33,6 +22,5 @@ type JsonDecoder struct {
 }
 
 func (j *JsonDecoder) Decode(raw []byte, e *Event) error {
-	err := ffjson.UnmarshalFast(raw, e)
-	return err
+	return json.Unmarshal(raw, e)
 }
