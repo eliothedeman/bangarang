@@ -327,7 +327,7 @@
 															<md-input-container>
 																<label>{{np.crit.escalation ? np.crit.escalation : "Escalation"}}</label>
 																<md-select md-on-open="loadEscalationNames()" ng-model="np.crit.escalation">
-																	<md-option value="name" ng-repeat="name in escalation_names">
+																	<md-option value="{{name}}" ng-repeat="name in escalation_names">
 																		{{name}}
 																	</md-option>
 																</md-select>
@@ -374,7 +374,7 @@
 															<md-input-container>
 																<label>{{np.warn.escalation ? np.warn.escalation : "Escalation"}}</label>
 																<md-select md-on-open="loadEscalationNames()" ng-model="np.warn.escalation">
-																	<md-option value="name" ng-repeat="name in escalation_names">
+																	<md-option value="{{name}}" ng-repeat="name in escalation_names">
 																		{{name}}
 																	</md-option>
 																</md-select>
@@ -471,8 +471,7 @@
 														<div>
 															<md-input-container>
 																<label>Type</label>
-																<md-select md-on-close="np.addCrit(critType)" ng-model="critType">
-																	<md-option ng-repeat="mod in np.modifiers" value={{mod.name}}>
+																<md-select md-on-close="np.addCrit(critType)" ng-model="critType">																	<md-option ng-repeat="mod in np.modifiers" value={{mod.name}}>
 																		{{mod.title}}
 																	</md-option>
 																</md-select>
@@ -501,8 +500,8 @@
 															</md-input-container>
 															<md-input-container>
 																<label>{{np.crit.escalation ? np.crit.escalation : "Escalation"}}</label>
-																<md-select md-on-open="loadEscalationNames()" ng-model="np.crit.escalation">
-																	<md-option value="name" ng-repeat="name in escalation_names">
+																<md-select md-on-open="loadEscalationNames()" ng-model="np.crit.escalation" placeholder="{{np.crit.escalation}}">
+																	<md-option value="{{name}}" ng-repeat="name in escalation_names">
 																		{{name}}
 																	</md-option>
 																</md-select>
@@ -548,8 +547,8 @@
 															</md-input-container>
 															<md-input-container>
 																<label>{{np.warn.escalation ? np.warn.escalation : "Escalation"}}</label>
-																<md-select md-on-open="loadEscalationNames()" ng-model="np.warn.escalation">
-																	<md-option value="name" ng-repeat="name in escalation_names">
+																<md-select md-on-open="loadEscalationNames()" ng-model="np.warn.escalation" placeholder="{{np.warn.escalation}}">
+																	<md-option value="{{name}}" ng-repeat="name in escalation_names">
 																		{{name}}
 																	</md-option>
 																</md-select>
