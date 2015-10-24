@@ -12,6 +12,10 @@ var (
 	EMPTY_SUB_SERVICE = ""
 )
 
+const (
+	INTERNAL_TAG_NAME = ""
+)
+
 // Provides stat tracking for events
 type Tracker struct {
 	inChan            chan *event.Event
@@ -20,10 +24,8 @@ type Tracker struct {
 	total             *counter
 	totalIncidents    counter
 	incidentResolvers map[string]chan *event.Incident
-	hosts             map[string]*counter
-	hostTimes         map[string]time.Time
-	services          map[string]*counter
-	subServices       map[string]*counter
+	tagCounters       map[string]map[string]*counter
+	tagTimers         map[string]map[string]time.Time
 }
 
 func (t *Tracker) Started() bool {
@@ -41,10 +43,8 @@ func NewTracker() *Tracker {
 		queryChan:         make(chan QueryFunc),
 		total:             &counter{},
 		incidentResolvers: make(map[string]chan *event.Incident),
-		hosts:             make(map[string]*counter),
-		hostTimes:         make(map[string]time.Time),
-		services:          make(map[string]*counter),
-		subServices:       make(map[string]*counter),
+		tagCounters:       make(map[string]map[string]*counter),
+		tagTimers:         make(map[string]map[string]time.Time),
 	}
 
 	return t
@@ -52,19 +52,15 @@ func NewTracker() *Tracker {
 
 // holds information about the current state of an event tracker
 type TrackerReport struct {
-	Total          uint64            `json:"total_events"`
-	ByHost         map[string]uint64 `json:"by_host"`
-	LastSeenByHost map[string]int64  `json:"last_seen_by_host"`
-	ByService      map[string]uint64 `json:"by_service"`
-	BySubService   map[string]uint64 `json:"by_sub_service"`
+	Total         uint64                       `json:"total_events"`
+	CountByTag    map[string]map[string]uint64 `json:"count_by_tag"`
+	LastSeenByTag map[string]map[string]int64  `json:"last_seen_by_tag"`
 }
 
 func NewReport() *TrackerReport {
 	return &TrackerReport{
-		ByHost:         make(map[string]uint64),
-		ByService:      make(map[string]uint64),
-		BySubService:   make(map[string]uint64),
-		LastSeenByHost: make(map[string]int64),
+		CountByTag:    make(map[string]map[string]uint64),
+		LastSeenByTag: make(map[string]map[string]int64),
 	}
 }
 
@@ -96,65 +92,74 @@ func (t *Tracker) GetStats() *TrackerReport {
 	r := NewReport()
 	t.Query(func(t *Tracker) {
 		r.Total = t.total.get()
-		for k, v := range t.hosts {
-			r.ByHost[k] = v.get()
+
+		for tag, data := range t.tagCounters {
+			tmp := make(map[string]uint64, len(data))
+			for k, v := range data {
+				tmp[k] = v.get()
+			}
+			r.CountByTag[tag] = tmp
 		}
-		for k, v := range t.services {
-			r.ByService[k] = v.get()
+
+		for tag, data := range t.tagTimers {
+			tmp := make(map[string]int64, len(data))
+			for k, v := range data {
+				tmp[k] = v.Unix()
+			}
+			r.LastSeenByTag[tag] = tmp
 		}
-		for k, v := range t.subServices {
-			r.BySubService[k] = v.get()
-		}
-		for k, v := range t.hostTimes {
-			r.LastSeenByHost[k] = v.Unix()
-		}
+
 	})
 
 	return r
 }
 
-func (t *Tracker) GetServices() []string {
-	var services []string
+func (t *Tracker) GetTag(tag string) []string {
+	var tags []string
 	t.query(func(t *Tracker) {
-		services = make([]string, len(t.services))
+		tmp, ok := t.tagCounters[tag]
+
+		// stop short if we have never seen this tag before
+		if !ok {
+			tags = []string{}
+			return
+		}
+
+		// get them tags
+		tags = make([]string, len(tmp))
 		x := 0
-		for k, _ := range t.services {
-			services[x] = k
+		for k, _ := range tmp {
+			tags[x] = k
 			x += 1
 		}
 	})
 
-	return services
+	return tags
 }
 
-// GetHosts returns all of the host names we have seen thus far
-func (t *Tracker) GetHosts() []string {
-	var hosts []string
-	t.Query(func(t *Tracker) {
-		hosts = make([]string, len(t.hostTimes))
-		x := 0
-		for k, _ := range t.hostTimes {
-			hosts[x] = k
-			x += 1
+func (t *Tracker) RemoveTag(tag, key string) {
+	t.query(func(t *Tracker) {
+
+		// remove counters
+		if tmp, ok := t.tagCounters[tag]; ok {
+			delete(tmp, key)
+		}
+
+		// remove timers
+		if tmp, ok := t.tagTimers[tag]; ok {
+			delete(tmp, key)
+
 		}
 	})
-
-	return hosts
 }
 
-func (t *Tracker) RemoveHost(host string) {
-	t.query(func(t *Tracker) {
-		delete(t.hosts, host)
-		delete(t.hostTimes, host)
-	})
-}
-
-// return a map of hostnames to the last time we have heard from them
-func (t *Tracker) HostTimes() map[string]time.Time {
+func (t *Tracker) TagTimes(tag string) map[string]time.Time {
 	m := make(map[string]time.Time)
 	t.Query(func(t *Tracker) {
-		for k, v := range t.hostTimes {
-			m[k] = v
+		if timers, ok := t.tagTimers[tag]; ok {
+			for k, v := range timers {
+				m[k] = v
+			}
 		}
 	})
 
@@ -199,44 +204,45 @@ func (t *Tracker) query(f QueryFunc) {
 	f(t)
 }
 
-func (t *Tracker) trackEvent(e *event.Event) {
-	// e.Id = t.total.get()
+func (t *Tracker) updateTimes(e *event.Event) {
+	now := time.Now()
+	e.Tags.ForEach(func(k, v string) {
+		tmp, ok := t.tagTimers[k]
+		if !ok {
+			tmp = make(map[string]time.Time)
+			t.tagTimers[k] = tmp
+		}
 
-	// don't track keep alives
-	if e.Service == KEEP_ALIVE_SERVICE_NAME {
+		tmp[v] = now
+	})
+}
+
+func (t *Tracker) updateCounts(e *event.Event) {
+	e.Tags.ForEach(func(k, v string) {
+		tmp, ok := t.tagCounters[k]
+		if !ok {
+			tmp = make(map[string]*counter)
+			t.tagCounters[k] = tmp
+		}
+
+		c, ok := tmp[v]
+		if !ok {
+			c = &counter{}
+			tmp[v] = c
+		}
+		c.inc()
+	})
+}
+
+func (t *Tracker) trackEvent(e *event.Event) {
+	// don't track internal events
+	if len(e.Get(INTERNAL_TAG_NAME)) != 0 {
 		return
 	}
 	t.total.inc()
 
-	// update the last time we have seen this host
-	t.hostTimes[e.Host] = time.Now()
-
-	// increment host counter
-	host, ok := t.hosts[e.Host]
-	if !ok {
-		host = &counter{}
-		t.hosts[e.Host] = host
-	}
-	host.inc()
-
-	// increment service counter
-	service, ok := t.services[e.Service]
-	if !ok {
-		service = &counter{}
-		t.services[e.Service] = service
-	}
-	service.inc()
-
-	// if the event has a sub_service, increment the sub_service counter
-	if e.SubService != EMPTY_SUB_SERVICE {
-		subService, ok := t.subServices[e.SubService]
-		if !ok {
-			subService = &counter{}
-			t.subServices[e.SubService] = subService
-		}
-
-		subService.inc()
-	}
+	t.updateCounts(e)
+	t.updateTimes(e)
 }
 
 type counter struct {

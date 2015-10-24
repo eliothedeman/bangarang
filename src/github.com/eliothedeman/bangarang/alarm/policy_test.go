@@ -10,9 +10,9 @@ import (
 const (
 	test_policy_with_regex = `
 	{
-		"match": {
-			"host": "test\\.hello"
-		}
+		"match": [
+			{"key":"host", "value": "test\\.hello"}
+		]
 	}
 `
 )
@@ -72,46 +72,6 @@ func TestMatchTags(t *testing.T) {
 	}
 }
 
-func TestMatchTagsExtra(t *testing.T) {
-	p := &Policy{}
-	e := &event.Event{}
-	e.Tags = event.TagSet{
-		{"test_tag", "0"},
-		{"extra_tag", "w234"},
-	}
-
-	p.Match = event.TagSet{
-		{
-			"test_tag", "[0-9]+",
-		},
-	}
-	p.Compile()
-
-	if !p.CheckMatch(e) {
-		t.Fail()
-	}
-}
-
-func TestMatchStructFiled(t *testing.T) {
-	p := &Policy{}
-	e := newTestEvent("my_host", "", 0)
-
-	p.Match = event.TagSet{
-		{
-			"host", "my.*",
-		},
-	}
-	p.Compile()
-
-	if !p.CheckMatch(e) {
-		t.Fail()
-	}
-
-	e.Tags = append(e.Tags, event.KeyVal{"host", ""})
-	if p.CheckMatch(e) {
-		t.Fail()
-	}
-}
 func test_f(f float64) *float64 {
 	return &f
 }

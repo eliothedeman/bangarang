@@ -223,7 +223,7 @@ func (p *Pipeline) checkExpired() {
 		time.Sleep(p.keepAliveCheckTime)
 
 		// get keepalive events for all known hosts
-		events = createKeepAliveEvents(p.tracker.HostTimes())
+		events = createKeepAliveEvents(p.tracker.TagTimes("host"))
 
 		// process every event as if it was an incomming event
 		for _, e := range events {
@@ -234,18 +234,7 @@ func (p *Pipeline) checkExpired() {
 
 // create keep alive events for each hostname -> time pair
 func createKeepAliveEvents(times map[string]time.Time) []*event.Event {
-	n := time.Now()
 	events := make([]*event.Event, len(times))
-	x := 0
-	for host, t := range times {
-		e := event.NewEvent()
-		e.Host = host
-		e.Metric = n.Sub(t).Seconds()
-		e.Service = KEEP_ALIVE_SERVICE_NAME
-
-		events[x] = e
-		x += 1
-	}
 
 	return events
 }

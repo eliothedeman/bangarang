@@ -42,6 +42,10 @@ func (t TagSet) Get(key string) string {
 	return ""
 }
 
+func (t TagSet) Set(key, val string) {
+	t = append(t, KeyVal{Key: key, Value: val})
+}
+
 func (t TagSet) MarshalBinary(buff []byte) error {
 	tmp := 0
 	offset := 0

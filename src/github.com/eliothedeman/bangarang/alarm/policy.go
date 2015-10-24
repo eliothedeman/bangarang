@@ -141,9 +141,29 @@ func (p *Policy) Matches(e *event.Event) bool {
 	return p.CheckMatch(e) && p.CheckNotMatch(e)
 }
 
-type Matcher []struct {
+type Matcher []MatchSet
+
+type MatchSet struct {
 	Key   string
 	Value *regexp.Regexp
+}
+
+func MatcherFromTagSet(t event.TagSet) (Matcher, error) {
+	m := make(Matcher, len(t))
+	i := 0
+	var verr error
+	t.ForEach(func(k, v string) {
+		match, err := regexp.Compile(v)
+		if err != nil {
+			verr = err
+		} else {
+			m[i] = MatchSet{
+				Key:   k,
+				Value: match,
+			}
+		}
+	})
+	return m, verr
 }
 
 func (m Matcher) Matches(kv event.KeyVal) bool {
@@ -188,10 +208,7 @@ func (p *Policy) Compile() {
 		if err != nil {
 			logrus.Errorf("Unable to compile match for %s: %s", k, err.Error())
 		} else {
-			p.r_match[i] = struct {
-				Key   string
-				Value *regexp.Regexp
-			}{
+			p.r_match[i] = MatchSet{
 				Key:   k,
 				Value: m,
 			}
@@ -204,10 +221,7 @@ func (p *Policy) Compile() {
 		if err != nil {
 			logrus.Errorf("Unable to compile not_match for %s: %s", k, err.Error())
 		} else {
-			p.r_not_match[i] = struct {
-				Key   string
-				Value *regexp.Regexp
-			}{
+			p.r_not_match[i] = MatchSet{
 				Key:   k,
 				Value: m,
 			}

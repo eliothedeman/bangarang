@@ -41,7 +41,8 @@ func testPipeline(p map[string]*alarm.Policy) (*Pipeline, *test.TestAlert) {
 	return pipe, ta
 }
 
-func testPolicy(crit, warn *alarm.Condition, match, notMatch map[string]string) *alarm.Policy {
+func testPolicy(crit, warn *alarm.Condition, match, notMatch event.TagSet) *alarm.Policy {
+
 	p := &alarm.Policy{
 		Warn:     warn,
 		Crit:     crit,
@@ -70,12 +71,12 @@ func test_f(f float64) *float64 {
 func TestKeepAlive(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	c := testCondition(test_f(0), nil, nil, 1)
-	pipe := testPolicy(c, nil, map[string]string{"service": "KeepAlive"}, nil)
+	pipe := testPolicy(c, nil, event.TagSet{{Key: "service", Value: "KeepAlive"}}, nil)
 	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := event.NewEvent()
-	e.Host = "one one"
-	e.Service = "exit"
+	e.Tags.Set("host", "one one")
+	e.Tags.Set("service", "exit")
 	e.Metric = -1
 
 	p.Pass(e)
