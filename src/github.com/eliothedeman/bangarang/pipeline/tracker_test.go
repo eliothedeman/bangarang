@@ -38,5 +38,4 @@ func TestTrackerTrackEvent(t *testing.T) {
 	if !isInSlice(e.Service, x.GetServices()) {
 		t.Fail()
 	}
-
 }

@@ -51,7 +51,58 @@ func TestMatchOr(t *testing.T) {
 
 }
 
-func TestMatchTags(t *testing.T) {
+func TestMatchTagsMulti(t *testing.T) {
+	p := &Policy{}
+	e := &event.Event{}
+	e.Tags = event.TagSet{
+		{
+			"test_tag", "0",
+		},
+		{
+			"other_tag", "what is this ice?",
+		},
+	}
+
+	p.Match = event.TagSet{
+		{
+			"test_tag", "[0-9]+",
+		},
+		{
+			"other_tag", "ice",
+		},
+	}
+	p.Compile()
+
+	if !p.CheckMatch(e) {
+		t.Fail()
+	}
+}
+
+func TestMatchTagsMultiNotMatch(t *testing.T) {
+	p := &Policy{}
+	e := &event.Event{}
+	e.Tags = event.TagSet{
+		{
+			"test_tag", "0",
+		},
+	}
+
+	p.Match = event.TagSet{
+		{
+			"test_tag", "[0-9]+",
+		},
+		{
+			"other_tag", "ice",
+		},
+	}
+	p.Compile()
+
+	if p.CheckMatch(e) {
+		t.Fail()
+	}
+}
+
+func TestMatchTagsSingle(t *testing.T) {
 	p := &Policy{}
 	e := &event.Event{}
 	e.Tags = event.TagSet{

@@ -166,18 +166,28 @@ func MatcherFromTagSet(t event.TagSet) (Matcher, error) {
 	return m, verr
 }
 
-func (m Matcher) Matches(kv event.KeyVal) bool {
-	matches := false
+// MatchesOne returns true if the matcher matches at least one item in the TagSet
+func (m Matcher) MatchesOne(t event.TagSet) (matches bool) {
 	m.ForEach(func(k string, v *regexp.Regexp) {
-		if kv.Key == k {
-			if v.MatchString(kv.Value) {
-				matches = true
-				return
-			}
+		if v.MatchString(t.Get(k)) {
+			matches = true
+			return
 		}
 	})
 
-	return matches
+	return
+}
+
+// MatchesAll returns true if the TagSet satisfies the entire matcher
+func (m *Matcher) MatchesAll(t event.TagSet) (matches bool) {
+	matches = true
+	m.ForEach(func(k string, v *regexp.Regexp) {
+		if !v.MatchString(t.Get(k)) {
+			matches = false
+		}
+	})
+	return
+
 }
 
 func (m Matcher) ForEach(f func(k string, v *regexp.Regexp)) {
@@ -279,23 +289,12 @@ func (p *Policy) ActionWarn(e *event.Event) (bool, int) {
 	return false, status
 }
 
+// CheckNotMatch returns true if any of the not_match's are satisfied by the TagSet
 func (p *Policy) CheckNotMatch(e *event.Event) bool {
-
-	for _, t := range e.Tags {
-		if p.r_not_match.Matches(t) {
-			return false
-		}
-	}
-
-	return true
+	return p.r_not_match.MatchesOne(e.Tags)
 }
 
-// check if any of p's matches are satisfied by the event
+// CheckMatch returns true if all of match's are satisfied by the event's TagSet
 func (p *Policy) CheckMatch(e *event.Event) bool {
-	for _, t := range e.Tags {
-		if !p.r_match.Matches(t) {
-			return false
-		}
-	}
-	return true
+	return p.r_match.MatchesAll(e.Tags)
 }
