@@ -96,7 +96,7 @@ func TestSendSingle(t *testing.T) {
 		t.Fatal(err)
 	}
 	sizeBuff := make([]byte, 8)
-	binary.PutUvarint(sizeBuff, uint64(len(buff)))
+	binary.LittleEndian.PutUint64(sizeBuff, uint64(len(buff)))
 	n, err := conn.Write(sizeBuff)
 	if err != nil {
 		t.Fatal(err)
@@ -155,7 +155,7 @@ func TestMany(t *testing.T) {
 				t.Fatal(err)
 			}
 			sizeBuff := make([]byte, 8)
-			binary.PutUvarint(sizeBuff, uint64(len(buff)))
+			binary.LittleEndian.PutUint64(sizeBuff, uint64(len(buff)))
 			n, err := conn.Write(sizeBuff)
 			if err != nil {
 				t.Fatal(err)
