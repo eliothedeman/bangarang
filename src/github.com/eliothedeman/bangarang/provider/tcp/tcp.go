@@ -99,6 +99,10 @@ func readFull(conn *net.TCPConn, buff []byte) error {
 		if n == 0 {
 			slp = slp * 2
 			time.Sleep(slp)
+		} else {
+
+			// reset the sleep timer
+			slp = time.Millisecond
 		}
 		off += n
 	}
