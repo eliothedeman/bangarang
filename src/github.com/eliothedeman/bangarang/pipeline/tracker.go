@@ -114,6 +114,18 @@ func (t *Tracker) GetStats() *TrackerReport {
 	return r
 }
 
+// ListTags
+func (t *Tracker) ListTags() []string {
+	var tags []string
+	t.query(func(t *Tracker) {
+		tags := make([]string, 0, len(t.tagTimers))
+		for k, _ := range t.tagTimers {
+			tags = append(tags, k)
+		}
+	})
+	return tags
+}
+
 func (t *Tracker) GetTag(tag string) []string {
 	var tags []string
 	t.query(func(t *Tracker) {

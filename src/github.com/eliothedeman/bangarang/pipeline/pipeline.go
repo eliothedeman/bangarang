@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	KEEP_ALIVE_SERVICE_NAME = "KeepAlive"
+	KEEP_ALIVE_INTERNAL_TAG = "KeepAlive"
 )
 
 // Pipeline
@@ -213,29 +213,46 @@ func (p *Pipeline) pause() {
 	}
 }
 
+// GetTracker returns the pipeline's tracker
 func (p *Pipeline) GetTracker() *Tracker {
 	return p.tracker
 }
 
+// checkExpired checks for keep alive
 func (p *Pipeline) checkExpired() {
 	var events []*event.Event
 	for {
 		time.Sleep(p.keepAliveCheckTime)
+		tags := p.tracker.ListTags()
 
-		// get keepalive events for all known hosts
-		events = createKeepAliveEvents(p.tracker.TagTimes("host"))
+		for _, tag := range tags {
 
-		// process every event as if it was an incomming event
-		for _, e := range events {
-			p.Pass(e)
+			// create keep alives for all known tags
+			events = createKeepAliveEvents(p.tracker.TagTimes(tag), tag)
+			// process every event as if it was an incomming event
+			for _, e := range events {
+				p.Pass(e)
+			}
+
 		}
 	}
 }
 
 // create keep alive events for each hostname -> time pair
-func createKeepAliveEvents(times map[string]time.Time) []*event.Event {
+func createKeepAliveEvents(times map[string]time.Time, tag string) []*event.Event {
 	events := make([]*event.Event, len(times))
+	i := 0
+	now := time.Now()
 
+	// fill out events
+	for k, v := range times {
+		e := event.NewEvent()
+		e.Tags.Set(tag, k)
+		e.Tags.Set(INTERNAL_TAG_NAME, KEEP_ALIVE_INTERNAL_TAG)
+		e.Metric = now.Sub(v).Seconds()
+		events[i] = e
+		i++
+	}
 	return events
 }
 

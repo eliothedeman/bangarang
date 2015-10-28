@@ -97,12 +97,12 @@ func TestKeepAlive(t *testing.T) {
 
 func TestMatchPolicy(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
-	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	pipe := testPolicy(c, nil, event.TagSet{{Key: "host", Value: "test"}}, nil)
 	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := event.NewEvent()
-	e.Host = "test"
-	e.Service = "test"
+	e.Tags.Set("host", "test")
+	e.Tags.Set("service", "test")
 	e.Metric = 1.0
 
 	p.Process(e)
@@ -121,12 +121,12 @@ func TestMatchPolicy(t *testing.T) {
 
 func TestOccurences(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 2)
-	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	pipe := testPolicy(c, nil, event.TagSet{{Key: "host", Value: "test"}}, nil)
 	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := event.NewEvent()
-	e.Host = "test"
-	e.Service = "test"
+	e.Tags.Set("host", "test")
+	e.Tags.Set("service", "test")
 	e.Metric = 1.0
 
 	p.Pass(e)
@@ -138,8 +138,8 @@ func TestOccurences(t *testing.T) {
 		}
 	})
 	e = event.NewEvent()
-	e.Host = "test"
-	e.Service = "test"
+	e.Tags.Set("host", "test")
+	e.Tags.Set("service", "test")
 	e.Metric = 1.0
 
 	p.Pass(e)
@@ -163,7 +163,7 @@ func genEventSlice(size int) []*event.Event {
 
 func BenchmarkProcessOk(b *testing.B) {
 	c := testCondition(test_f(10), nil, nil, 0)
-	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	pipe := testPolicy(c, nil, event.TagSet{{Key: "host", Value: "test"}}, nil)
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := genEventSlice(b.N)
@@ -180,7 +180,7 @@ func BenchmarkProcessOk(b *testing.B) {
 
 func BenchmarkProcess2CPU(b *testing.B) {
 	c := testCondition(test_f(10), nil, nil, 0)
-	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	pipe := testPolicy(c, nil, event.TagSet{{Key: "host", Value: "test"}}, nil)
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := genEventSlice(b.N)
@@ -207,7 +207,7 @@ func BenchmarkProcess2CPU(b *testing.B) {
 
 func BenchmarkProcess4CPU(b *testing.B) {
 	c := testCondition(test_f(10), nil, nil, 0)
-	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	pipe := testPolicy(c, nil, event.TagSet{{Key: "host", Value: "test"}}, nil)
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := genEventSlice(b.N)
@@ -240,20 +240,20 @@ func BenchmarkProcess4CPU(b *testing.B) {
 
 func BenchmarkIndex(b *testing.B) {
 	c := testCondition(test_f(0), nil, nil, 0)
-	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	pipe := testPolicy(c, nil, event.TagSet{{Key: "host", Value: "test"}}, nil)
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 
 	e := event.NewEvent()
+	e.Tags.Set("host", "test")
+	e.Tags.Set("service", "test")
 
-	e.Host = "test"
-	e.Service = "test"
 	e.Metric = -1.0
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		e.Service = fmt.Sprintf("%d", i%1000)
+		e.Tags.Set("service", fmt.Sprintf("%d", i%1000))
 		p.Process(e)
 	}
 
@@ -262,12 +262,12 @@ func BenchmarkIndex(b *testing.B) {
 
 func TestProcess(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 0)
-	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	pipe := testPolicy(c, nil, event.TagSet{{Key: "host", Value: "test"}}, nil)
 	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := event.NewEvent()
-	e.Host = "test"
-	e.Service = "test"
+	e.Tags.Set("host", "test")
+	e.Tags.Set("service", "test")
 	e.Metric = 1.0
 
 	p.Process(e)
@@ -278,8 +278,8 @@ func TestProcess(t *testing.T) {
 	}
 
 	e = event.NewEvent()
-	e.Host = "test"
-	e.Service = "test"
+	e.Tags.Set("host", "test")
+	e.Tags.Set("service", "test")
 	e.Metric = -1.0
 
 	p.Process(e)
@@ -292,7 +292,7 @@ func TestProcess(t *testing.T) {
 
 func TestProcessDedupe(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 0)
-	pipe := testPolicy(c, nil, map[string]string{"host": "test"}, nil)
+	pipe := testPolicy(c, nil, event.TagSet{{Key: "host", Value: "test"}}, nil)
 	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 
@@ -300,8 +300,8 @@ func TestProcessDedupe(t *testing.T) {
 
 	for i := 0; i < len(events); i++ {
 		e := event.NewEvent()
-		e.Host = "test"
-		e.Service = "test"
+		e.Tags.Set("host", "test")
+		e.Tags.Set("service", "test")
 		e.Metric = 1.0
 		events[i] = e
 	}

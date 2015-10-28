@@ -11,11 +11,13 @@ import (
 
 func genEvents(hosts, services []string, next chan *event.Event) {
 	gen := func() *event.Event {
-		return &event.Event{
-			Host:    hosts[rand.Intn(len(hosts)-1)],
-			Service: services[rand.Intn(len(services)-1)],
-			Metric:  rand.Float64() * 100,
+		e := &event.Event{
+			Metric: rand.Float64() * 100,
+			Time:   time.Now(),
 		}
+		e.Tags.Set("host", hosts[rand.Intn(len(hosts)-1)])
+		e.Tags.Set("service", services[rand.Intn(len(services)-1)])
+		return e
 	}
 
 	go func() {
@@ -46,5 +48,4 @@ func main() {
 			}
 		}
 	}
-
 }

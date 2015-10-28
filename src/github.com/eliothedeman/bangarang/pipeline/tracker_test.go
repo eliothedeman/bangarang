@@ -25,17 +25,17 @@ func isInSlice(key string, s []string) bool {
 
 func TestTrackerTrackEvent(t *testing.T) {
 	e := &event.Event{}
-	e.Host = "test"
-	e.Service = "service"
-	e.SubService = "sub"
+	e.Tags.Set("host", "test")
+	e.Tags.Set("service", "test")
+	e.Tags.Set("sub_service", "test")
 	x := NewTracker()
 	go x.Start()
 	x.TrackEvent(e)
 
-	if !isInSlice(e.Host, x.GetHosts()) {
+	if !isInSlice(e.Get("host"), x.GetTag("host")) {
 		t.Fail()
 	}
-	if !isInSlice(e.Service, x.GetServices()) {
+	if !isInSlice(e.Get("service"), x.GetTag("service")) {
 		t.Fail()
 	}
 }
