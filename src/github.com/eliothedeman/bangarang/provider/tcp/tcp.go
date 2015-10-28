@@ -88,10 +88,21 @@ func (t *TCPProvider) Start(p event.Passer) {
 
 func readFull(conn *net.TCPConn, buff []byte) error {
 	off := 0
+	slp := time.Millisecond
 	for off < len(buff) {
 		n, err := conn.Read(buff[off:])
 		if err != nil {
 			return err
+		}
+
+		// exponentially back off if we don't have anything
+		if n == 0 {
+			slp = slp * 2
+			time.Sleep(slp)
+		} else {
+
+			// reset the sleep timer
+			slp = time.Millisecond
 		}
 		off += n
 	}
@@ -102,7 +113,6 @@ func (t *TCPProvider) consume(conn *net.TCPConn, p event.Passer) {
 	buff := make([]byte, 1024*200)
 	var size_buff = make([]byte, 8)
 	var nextEventSize uint64
-	var n int
 	var err error
 
 	// write the start of the handshake so the client can verify this is a bangarang client
@@ -110,7 +120,7 @@ func (t *TCPProvider) consume(conn *net.TCPConn, p event.Passer) {
 	for {
 
 		// read the size of the next event
-		n, err = conn.Read(size_buff)
+		err = readFull(conn, size_buff)
 		if err != nil {
 
 			if err == io.EOF {
@@ -120,13 +130,8 @@ func (t *TCPProvider) consume(conn *net.TCPConn, p event.Passer) {
 				return
 			}
 		} else {
-			if n != 8 {
-				logrus.Errorf("tcp-provider: Expecting 8byte 64bit unsigned int. Only got %d bytes", n)
-				conn.Close()
-				return
-			}
 
-			nextEventSize, _ = binary.Uvarint(size_buff)
+			nextEventSize = binary.LittleEndian.Uint64(size_buff)
 
 			// read the next event
 			err = readFull(conn, buff[:nextEventSize])

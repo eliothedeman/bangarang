@@ -10,7 +10,7 @@ var (
 	Current = Version{
 		Major: 0,
 		Minor: 10,
-		Patch: 8,
+		Patch: 10,
 	}
 
 	First = Version{
