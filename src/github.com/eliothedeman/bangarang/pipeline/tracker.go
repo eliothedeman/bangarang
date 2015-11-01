@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"log"
 	"sync/atomic"
 	"time"
 
@@ -117,7 +118,7 @@ func (t *Tracker) GetStats() *TrackerReport {
 // ListTags
 func (t *Tracker) ListTags() []string {
 	var tags []string
-	t.query(func(t *Tracker) {
+	t.Query(func(t *Tracker) {
 		tags := make([]string, 0, len(t.tagTimers))
 		for k, _ := range t.tagTimers {
 			tags = append(tags, k)
@@ -128,7 +129,7 @@ func (t *Tracker) ListTags() []string {
 
 func (t *Tracker) GetTag(tag string) []string {
 	var tags []string
-	t.query(func(t *Tracker) {
+	t.Query(func(t *Tracker) {
 		tmp, ok := t.tagCounters[tag]
 
 		// stop short if we have never seen this tag before
@@ -150,7 +151,7 @@ func (t *Tracker) GetTag(tag string) []string {
 }
 
 func (t *Tracker) RemoveTag(tag, key string) {
-	t.query(func(t *Tracker) {
+	t.QueryAsync(func(t *Tracker) {
 
 		// remove counters
 		if tmp, ok := t.tagCounters[tag]; ok {
@@ -202,7 +203,7 @@ func (t *Tracker) TrackEvent(e *event.Event) {
 	t.inChan <- e
 }
 
-// Perform a QueryFunc on the tracker syncronously
+// Query exicutes the given QueryFunc ayncronously
 func (t *Tracker) Query(f QueryFunc) {
 	done := make(chan struct{})
 	t.queryChan <- func(t *Tracker) {
@@ -210,6 +211,11 @@ func (t *Tracker) Query(f QueryFunc) {
 		done <- struct{}{}
 	}
 	<-done
+}
+
+// QueryAsync exicutes the given QueryFunc asyncronously
+func (t *Tracker) QueryAsync(f QueryFunc) {
+	t.queryChan <- f
 }
 
 func (t *Tracker) query(f QueryFunc) {
@@ -230,7 +236,10 @@ func (t *Tracker) updateTimes(e *event.Event) {
 }
 
 func (t *Tracker) updateCounts(e *event.Event) {
+	log.Println(e.Tags)
+
 	e.Tags.ForEach(func(k, v string) {
+		println(k, v)
 		tmp, ok := t.tagCounters[k]
 		if !ok {
 			tmp = make(map[string]*counter)
@@ -247,6 +256,9 @@ func (t *Tracker) updateCounts(e *event.Event) {
 }
 
 func (t *Tracker) trackEvent(e *event.Event) {
+	// signal that this event has been tracked
+	defer e.WaitDec()
+
 	// don't track internal events
 	if len(e.Get(INTERNAL_TAG_NAME)) != 0 {
 		return
@@ -255,6 +267,7 @@ func (t *Tracker) trackEvent(e *event.Event) {
 
 	t.updateCounts(e)
 	t.updateTimes(e)
+
 }
 
 type counter struct {

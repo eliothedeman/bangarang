@@ -16,7 +16,7 @@ func TestMarshalBinary(t *testing.T) {
 
 func TestUnmarshal(t *testing.T) {
 	e := newTestEvent("machine01.deployment.company.com", "load", 2.001)
-	e.Tags = append(e.Tags, KeyVal{Key: "hello", Value: "world"})
+	e.Tags.Set("hello", "world")
 
 	buff, _ := e.MarshalBinary()
 
@@ -33,18 +33,18 @@ func TestUnmarshal(t *testing.T) {
 	if e.Time.UnixNano() != n.Time.UnixNano() {
 		t.Fatalf("wanted: %v got %v", e.Time, n.Time)
 	}
-
-	for _, v := range e.Tags {
-		if n.Tags.Get(v.Key) != v.Value {
-			t.Fatalf("wanted: %v got %v", v.Value, n.Tags.Get(v.Key))
+	e.Tags.ForEach(func(k, v string) {
+		if n.Tags.Get(k) != v {
+			t.Fatalf("wanted: %v got %v", v, n.Tags.Get(k))
 		}
-	}
+
+	})
 
 }
 
 func BenchmarkMarshalBinary(b *testing.B) {
 	e := newTestEvent("machine01.deployment.company.com", "load", 2.001)
-	e.Tags = append(e.Tags, KeyVal{Key: "hello", Value: "world"})
+	e.Tags.Set("hello", "world")
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -55,7 +55,7 @@ func BenchmarkMarshalBinary(b *testing.B) {
 
 func BenchmarkUnmarshalBinary(b *testing.B) {
 	e := newTestEvent("machine01.deployment.company.com", "load", 2.001)
-	e.Tags = append(e.Tags, KeyVal{Key: "hello", Value: "world"})
+	e.Tags.Set("hello", "world")
 
 	buff, _ := e.MarshalBinary()
 

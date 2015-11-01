@@ -221,20 +221,19 @@ func (p *Pipeline) GetTracker() *Tracker {
 // checkExpired checks for keep alive
 func (p *Pipeline) checkExpired() {
 	var events []*event.Event
-	for {
-		time.Sleep(p.keepAliveCheckTime)
-		tags := p.tracker.ListTags()
+	tags := p.tracker.ListTags()
 
-		for _, tag := range tags {
+	for _, tag := range tags {
+		println(tag)
 
-			// create keep alives for all known tags
-			events = createKeepAliveEvents(p.tracker.TagTimes(tag), tag)
-			// process every event as if it was an incomming event
-			for _, e := range events {
-				p.Pass(e)
-			}
-
+		// create keep alives for all known tags
+		events = createKeepAliveEvents(p.tracker.TagTimes(tag), tag)
+		// process every event as if it was an incomming event
+		for _, e := range events {
+			p.Pass(e)
+			e.Wait()
 		}
+
 	}
 }
 
@@ -252,6 +251,7 @@ func createKeepAliveEvents(times map[string]time.Time, tag string) []*event.Even
 		e.Metric = now.Sub(v).Seconds()
 		events[i] = e
 		i++
+		logrus.Infof("Adding %s", k)
 	}
 	return events
 }
@@ -350,6 +350,9 @@ func (p *Pipeline) Process(e *event.Event) {
 			return
 		}
 	}
+
+	// make sure we can know that the event has been tracked
+	e.WaitInc()
 
 	// track stas for this event
 	p.tracker.TrackEvent(e)

@@ -26,15 +26,20 @@ type KeyVal struct {
 // TagSet is a collection of key/val pairs that will always give the same order of the tags
 type TagSet []KeyVal
 
-func (t TagSet) ForEach(f func(k, v string)) {
-	for _, tag := range t {
+func NewTagset(size int) *TagSet {
+	ts := make(TagSet, 0, size)
+	return &ts
+}
+
+func (t *TagSet) ForEach(f func(k, v string)) {
+	for _, tag := range *t {
 		f(tag.Key, tag.Value)
 	}
 }
 
 // Get returns the value of a key in linear time. An empty string if it wasn't found
-func (t TagSet) Get(key string) string {
-	for _, tag := range t {
+func (t *TagSet) Get(key string) string {
+	for _, tag := range *t {
 		if tag.Key == key {
 			return tag.Value
 		}
@@ -42,14 +47,14 @@ func (t TagSet) Get(key string) string {
 	return ""
 }
 
-func (t TagSet) Set(key, val string) {
-	t = append(t, KeyVal{Key: key, Value: val})
+func (t *TagSet) Set(key, val string) {
+	*t = append(*t, KeyVal{Key: key, Value: val})
 }
 
-func (t TagSet) MarshalBinary(buff []byte) error {
+func (t *TagSet) MarshalBinary(buff []byte) error {
 	tmp := 0
 	offset := 0
-	for _, v := range t {
+	for _, v := range *t {
 		tmp = sizeOfString(v.Key)
 		buff[offset] = uint8(tmp)
 		offset += 1
@@ -66,19 +71,19 @@ func (t TagSet) MarshalBinary(buff []byte) error {
 	return nil
 }
 
-func (t TagSet) String() string {
+func (t *TagSet) String() string {
 	t.SortByKey()
 	buff := make([]byte, t.binSize())
 	t.MarshalBinary(buff)
 	return string(buff)
 }
 
-func (t TagSet) binSize() int {
+func (t *TagSet) binSize() int {
 	// tagset header
 	size := 1
 	// key/val headers
-	size += len(t) * 2
-	for _, tag := range t {
+	size += len(*t) * 2
+	for _, tag := range *t {
 
 		// size of key
 		size += sizeOfString(tag.Key)
@@ -93,23 +98,25 @@ func (t TagSet) binSize() int {
 type by func(k1, k2 KeyVal) bool
 
 type tagSetSorter struct {
-	ts TagSet
+	ts *TagSet
 	by by
 }
 
 func (t *tagSetSorter) Len() int {
-	return len(t.ts)
+	return len(*t.ts)
 }
 
 func (t *tagSetSorter) Less(i, j int) bool {
-	return t.by(t.ts[i], t.ts[j])
+	ts := *t.ts
+	return t.by(ts[i], ts[j])
 }
 
 func (t *tagSetSorter) Swap(i, j int) {
-	t.ts[i], t.ts[j] = t.ts[j], t.ts[i]
+	ts := *t.ts
+	ts[i], ts[j] = ts[j], ts[i]
 }
 
-func (t TagSet) SortByKey() {
+func (t *TagSet) SortByKey() {
 	tss := &tagSetSorter{
 		ts: t,
 		by: func(k1, k2 KeyVal) bool {
@@ -119,7 +126,7 @@ func (t TagSet) SortByKey() {
 	sort.Sort(tss)
 }
 
-func (t TagSet) SortByValue() {
+func (t *TagSet) SortByValue() {
 	tss := &tagSetSorter{
 		ts: t,
 		by: func(k1, k2 KeyVal) bool {
@@ -129,14 +136,11 @@ func (t TagSet) SortByValue() {
 	sort.Sort(tss)
 }
 
-//go:generate ffjson $GOFILE
-//go:generate msgp $GOFILE
-
 // Event represents a metric as it passes through the pipeline.
 // It holds meta data about the metric, as well as methods to trace the event as it is processed
 type Event struct {
 	Metric    float64   `json:"metric" msg:"metric"`
-	Tags      TagSet    `json:"tags" msg:"tags"`
+	Tags      *TagSet   `json:"tags" msg:"tags"`
 	Time      time.Time `json:"time" msg: "time"`
 	indexName string
 	wait      sync.WaitGroup
@@ -164,24 +168,25 @@ func (e *Event) UnmarshalBinary(buff []byte) error {
 	offset := 32
 
 	// tags
-	e.Tags = make(TagSet, int(buff[offset]))
+	e.Tags = NewTagset(int(buff[offset]))
 	offset += 1
 	i = 0
-	kv := KeyVal{}
+	var key, val string
 	for offset < len(buff) {
 
 		// key
 		l = int(buff[offset])
 		offset += 1
-		kv.Key = string(buff[offset : offset+l])
+		key = string(buff[offset : offset+l])
 		offset += l
 
 		l = int(buff[offset])
 		offset += 1
-		kv.Value = string(buff[offset : offset+l])
+		val = string(buff[offset : offset+l])
 		offset += l
 
-		e.Tags[i] = kv
+		e.Tags.Set(key, val)
+
 		i += 1
 
 	}
@@ -225,23 +230,24 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 	binary.BigEndian.PutUint64(buff[offset:offset+8], uint64(e.Time.Nanosecond()))
 	offset += 8
 
-	buff[offset] = uint8(len(e.Tags))
+	buff[offset] = uint8(len(*e.Tags))
 	offset += 1
 
 	// tags
-	for _, v := range e.Tags {
-		tmp = sizeOfString(v.Key)
+	e.Tags.ForEach(func(k, v string) {
+		tmp = sizeOfString(k)
 		buff[offset] = uint8(tmp)
 		offset += 1
-		copy(buff[offset:offset+tmp], v.Key)
+		copy(buff[offset:offset+tmp], k)
 		offset += tmp
 
-		tmp = sizeOfString(v.Value)
+		tmp = sizeOfString(v)
 		buff[offset] = uint8(tmp)
 		offset += 1
-		copy(buff[offset:offset+tmp], v.Value)
+		copy(buff[offset:offset+tmp], v)
 		offset += tmp
-	}
+
+	})
 
 	return buff, nil
 }
@@ -316,7 +322,9 @@ type Passer interface {
 }
 
 func NewEvent() *Event {
-	e := &Event{}
+	e := &Event{
+		Tags: &TagSet{},
+	}
 	return e
 }
 

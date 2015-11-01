@@ -21,7 +21,7 @@ func newTestIndex() *Index {
 
 func newTestEvent(h, s string, m float64) *Event {
 	return &Event{
-		Tags: TagSet{
+		Tags: &TagSet{
 			{
 				Key:   "host",
 				Value: h,

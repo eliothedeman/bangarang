@@ -71,7 +71,7 @@ func test_f(f float64) *float64 {
 func TestKeepAlive(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	c := testCondition(test_f(0), nil, nil, 1)
-	pipe := testPolicy(c, nil, event.TagSet{{Key: "service", Value: "KeepAlive"}}, nil)
+	pipe := testPolicy(c, nil, event.TagSet{{Key: INTERNAL_TAG_NAME, Value: "KeepAlive"}}, nil)
 	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := event.NewEvent()
@@ -84,8 +84,17 @@ func TestKeepAlive(t *testing.T) {
 
 	p.keepAliveAge = time.Millisecond * 15
 	p.keepAliveCheckTime = time.Millisecond * 50
-	go p.checkExpired()
-	time.Sleep(100 * time.Millisecond)
+	s := make(chan struct{})
+	go func() {
+		p.checkExpired()
+		s <- struct{}{}
+
+	}()
+
+	// wait
+	<-s
+
+	log.Println(p.GetTracker().ListTags())
 
 	ta.Do(func(ta *test.TestAlert) {
 		if len(ta.Events) != 1 {
