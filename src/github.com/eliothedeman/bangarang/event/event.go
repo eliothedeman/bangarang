@@ -2,6 +2,7 @@ package event
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
@@ -32,6 +33,9 @@ func NewTagset(size int) *TagSet {
 }
 
 func (t *TagSet) ForEach(f func(k, v string)) {
+	if t == nil {
+		return
+	}
 	for _, tag := range *t {
 		f(tag.Key, tag.Value)
 	}
@@ -39,6 +43,9 @@ func (t *TagSet) ForEach(f func(k, v string)) {
 
 // Get returns the value of a key in linear time. An empty string if it wasn't found
 func (t *TagSet) Get(key string) string {
+	if t == nil {
+		return ""
+	}
 	for _, tag := range *t {
 		if tag.Key == key {
 			return tag.Value
@@ -48,10 +55,16 @@ func (t *TagSet) Get(key string) string {
 }
 
 func (t *TagSet) Set(key, val string) {
+	if t == nil {
+		return
+	}
 	*t = append(*t, KeyVal{Key: key, Value: val})
 }
 
 func (t *TagSet) MarshalBinary(buff []byte) error {
+	if t == nil {
+		errors.New("attempted to encode a nil tagset")
+	}
 	tmp := 0
 	offset := 0
 	for _, v := range *t {
@@ -72,6 +85,9 @@ func (t *TagSet) MarshalBinary(buff []byte) error {
 }
 
 func (t *TagSet) String() string {
+	if t == nil {
+		return ""
+	}
 	t.SortByKey()
 	buff := make([]byte, t.binSize())
 	t.MarshalBinary(buff)
@@ -79,6 +95,9 @@ func (t *TagSet) String() string {
 }
 
 func (t *TagSet) binSize() int {
+	if t == nil {
+		return 0
+	}
 	// tagset header
 	size := 1
 	// key/val headers

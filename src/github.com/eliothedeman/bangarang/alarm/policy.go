@@ -15,7 +15,7 @@ func init() {
 }
 
 var (
-	DEFAULT_GROUP_BY = event.TagSet{
+	DEFAULT_GROUP_BY = &event.TagSet{
 		{"host", "^(.*)$"},
 		{"service", "^(.*)$"},
 		{"sub_service", "^(.*)$"},
@@ -23,13 +23,13 @@ var (
 )
 
 type Policy struct {
-	Match       event.TagSet `json:"match"`
-	NotMatch    event.TagSet `json:"not_match"`
-	GroupBy     event.TagSet `json:"group_by"`
-	Crit        *Condition   `json:"crit"`
-	Warn        *Condition   `json:"warn"`
-	Name        string       `json:"name"`
-	Comment     string       `json:"comment"`
+	Match       *event.TagSet `json:"match"`
+	NotMatch    *event.TagSet `json:"not_match"`
+	GroupBy     *event.TagSet `json:"group_by"`
+	Crit        *Condition    `json:"crit"`
+	Warn        *Condition    `json:"warn"`
+	Name        string        `json:"name"`
+	Comment     string        `json:"comment"`
 	r_match     Matcher
 	r_not_match Matcher
 	stop        chan struct{}
@@ -87,6 +87,7 @@ func (p *Policy) start() {
 
 				// process the event if it matches the policy
 				if p.Matches(in.e) {
+					log.Println(in.e)
 					// process the request
 
 					// check critical
@@ -138,7 +139,7 @@ func (p *Policy) Stop() {
 
 // check to see if an event satisfies the policy
 func (p *Policy) Matches(e *event.Event) bool {
-	return p.CheckMatch(e) && p.CheckNotMatch(e)
+	return p.CheckMatch(e) && !p.CheckNotMatch(e)
 }
 
 type Matcher []MatchSet
@@ -148,8 +149,8 @@ type MatchSet struct {
 	Value *regexp.Regexp
 }
 
-func MatcherFromTagSet(t event.TagSet) (Matcher, error) {
-	m := make(Matcher, len(t))
+func MatcherFromTagSet(t *event.TagSet) (Matcher, error) {
+	m := make(Matcher, len(*t))
 	i := 0
 	var verr error
 	t.ForEach(func(k, v string) {
@@ -167,7 +168,7 @@ func MatcherFromTagSet(t event.TagSet) (Matcher, error) {
 }
 
 // MatchesOne returns true if the matcher matches at least one item in the TagSet
-func (m Matcher) MatchesOne(t event.TagSet) (matches bool) {
+func (m Matcher) MatchesOne(t *event.TagSet) (matches bool) {
 	m.ForEach(func(k string, v *regexp.Regexp) {
 		if v.MatchString(t.Get(k)) {
 			matches = true
@@ -179,10 +180,11 @@ func (m Matcher) MatchesOne(t event.TagSet) (matches bool) {
 }
 
 // MatchesAll returns true if the TagSet satisfies the entire matcher
-func (m *Matcher) MatchesAll(t event.TagSet) (matches bool) {
+func (m *Matcher) MatchesAll(t *event.TagSet) (matches bool) {
 	matches = true
 	m.ForEach(func(k string, v *regexp.Regexp) {
 		if !v.MatchString(t.Get(k)) {
+			log.Println(k, v.String(), t.String())
 			matches = false
 		}
 	})
@@ -205,11 +207,23 @@ func (p *Policy) Compile() {
 	p.start()
 
 	if p.r_match == nil {
-		p.r_match = make(Matcher, len(p.Match))
+
+		// handle the nil case
+		if p.Match != nil {
+			p.r_match = make(Matcher, len(*p.Match))
+
+		} else {
+			p.r_match = make(Matcher, 0)
+		}
 	}
 
 	if p.r_not_match == nil {
-		p.r_not_match = make(Matcher, len(p.NotMatch))
+		if p.NotMatch != nil {
+			p.r_not_match = make(Matcher, len(*p.NotMatch))
+
+		} else {
+			p.r_not_match = make(Matcher, 0)
+		}
 	}
 
 	i := 0

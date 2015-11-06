@@ -224,16 +224,14 @@ func (p *Pipeline) checkExpired() {
 	tags := p.tracker.ListTags()
 
 	for _, tag := range tags {
-		println(tag)
 
 		// create keep alives for all known tags
 		events = createKeepAliveEvents(p.tracker.TagTimes(tag), tag)
+
 		// process every event as if it was an incomming event
 		for _, e := range events {
 			p.Pass(e)
-			e.Wait()
 		}
-
 	}
 }
 
@@ -251,7 +249,6 @@ func createKeepAliveEvents(times map[string]time.Time, tag string) []*event.Even
 		e.Metric = now.Sub(v).Seconds()
 		events[i] = e
 		i++
-		logrus.Infof("Adding %s", k)
 	}
 	return events
 }

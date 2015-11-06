@@ -329,7 +329,7 @@ func getTrackingFunc(c *Condition) TrackFunc {
 }
 
 // init compiles checks and sanatizes the conditon before returning itself
-func (c *Condition) init(groupBy event.TagSet) {
+func (c *Condition) init(groupBy *event.TagSet) {
 	c.checks = c.compileChecks()
 	c.eventTrackers = make(map[string]*eventTracker)
 

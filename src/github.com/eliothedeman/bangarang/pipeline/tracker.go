@@ -1,7 +1,6 @@
 package pipeline
 
 import (
-	"log"
 	"sync/atomic"
 	"time"
 
@@ -14,7 +13,7 @@ var (
 )
 
 const (
-	INTERNAL_TAG_NAME = ""
+	INTERNAL_TAG_NAME = "INTERNAL"
 )
 
 // Provides stat tracking for events
@@ -119,7 +118,7 @@ func (t *Tracker) GetStats() *TrackerReport {
 func (t *Tracker) ListTags() []string {
 	var tags []string
 	t.Query(func(t *Tracker) {
-		tags := make([]string, 0, len(t.tagTimers))
+		tags = make([]string, 0, len(t.tagTimers))
 		for k, _ := range t.tagTimers {
 			tags = append(tags, k)
 		}
@@ -236,10 +235,8 @@ func (t *Tracker) updateTimes(e *event.Event) {
 }
 
 func (t *Tracker) updateCounts(e *event.Event) {
-	log.Println(e.Tags)
 
 	e.Tags.ForEach(func(k, v string) {
-		println(k, v)
 		tmp, ok := t.tagCounters[k]
 		if !ok {
 			tmp = make(map[string]*counter)

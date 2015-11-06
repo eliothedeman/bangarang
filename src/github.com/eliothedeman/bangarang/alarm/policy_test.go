@@ -34,11 +34,11 @@ func TestPolicyRegexParsing(t *testing.T) {
 func TestMatchOr(t *testing.T) {
 	p := &Policy{}
 	e := &event.Event{}
-	e.Tags = event.TagSet{
+	e.Tags = &event.TagSet{
 		{"test_tag", "unknown"},
 	}
 
-	p.Match = event.TagSet{
+	p.Match = &event.TagSet{
 		{
 			"test_tag", "unknown|shadow",
 		},
@@ -54,7 +54,7 @@ func TestMatchOr(t *testing.T) {
 func TestMatchTagsMulti(t *testing.T) {
 	p := &Policy{}
 	e := &event.Event{}
-	e.Tags = event.TagSet{
+	e.Tags = &event.TagSet{
 		{
 			"test_tag", "0",
 		},
@@ -63,7 +63,7 @@ func TestMatchTagsMulti(t *testing.T) {
 		},
 	}
 
-	p.Match = event.TagSet{
+	p.Match = &event.TagSet{
 		{
 			"test_tag", "[0-9]+",
 		},
@@ -81,13 +81,13 @@ func TestMatchTagsMulti(t *testing.T) {
 func TestMatchTagsMultiNotMatch(t *testing.T) {
 	p := &Policy{}
 	e := &event.Event{}
-	e.Tags = event.TagSet{
+	e.Tags = &event.TagSet{
 		{
 			"test_tag", "0",
 		},
 	}
 
-	p.Match = event.TagSet{
+	p.Match = &event.TagSet{
 		{
 			"test_tag", "[0-9]+",
 		},
@@ -105,13 +105,13 @@ func TestMatchTagsMultiNotMatch(t *testing.T) {
 func TestMatchTagsSingle(t *testing.T) {
 	p := &Policy{}
 	e := &event.Event{}
-	e.Tags = event.TagSet{
+	e.Tags = &event.TagSet{
 		{
 			"test_tag", "0",
 		},
 	}
 
-	p.Match = event.TagSet{
+	p.Match = &event.TagSet{
 		{
 			"test_tag", "[0-9]+",
 		},

@@ -14,7 +14,7 @@ import (
 
 func TestPausePipeline(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
-	pipe := testPolicy(c, nil, event.TagSet{{Key: "service", Value: "KeepAlive"}}, nil)
+	pipe := testPolicy(c, nil, &event.TagSet{{Key: "service", Value: "KeepAlive"}}, nil)
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 	p.Pause()
@@ -26,13 +26,13 @@ func TestPausePipeline(t *testing.T) {
 
 func TestAddConfig(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
-	pipe := testPolicy(c, nil, event.TagSet{{Key: "service", Value: "KeepAlive"}}, nil)
+	pipe := testPolicy(c, nil, &event.TagSet{{Key: "service", Value: "KeepAlive"}}, nil)
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 	p.Process(&event.Event{})
 
 	conf := &config.AppConfig{}
-	conf.Policies = map[string]*alarm.Policy{"new": testPolicy(c, nil, event.TagSet{{Key: "2", Value: "2"}}, nil)}
+	conf.Policies = map[string]*alarm.Policy{"new": testPolicy(c, nil, &event.TagSet{{Key: "2", Value: "2"}}, nil)}
 
 	log.Println(p.policies)
 	p.Refresh(conf)
@@ -43,7 +43,7 @@ func TestAddConfig(t *testing.T) {
 	})
 
 	log.Println(p.policies)
-	conf.Policies["other"] = testPolicy(c, nil, event.TagSet{{Key: "1", Value: "1"}}, nil)
+	conf.Policies["other"] = testPolicy(c, nil, &event.TagSet{{Key: "1", Value: "1"}}, nil)
 	p.Refresh(conf)
 	log.Println(p.policies)
 	for i := 0; i < 100; i++ {
@@ -56,7 +56,7 @@ func TestAddConfig(t *testing.T) {
 func TestPausePipelineCache(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	c := testCondition(test_f(0), nil, nil, 1)
-	pipe := testPolicy(c, nil, event.TagSet{{Key: "service", Value: "wwoo"}}, nil)
+	pipe := testPolicy(c, nil, &event.TagSet{{Key: "service", Value: "wwoo"}}, nil)
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 	p.Start()

@@ -22,14 +22,10 @@ func newTestCondition(g, l, e float64) *Condition {
 }
 
 func newTestEvent(h, s string, m float64) *event.Event {
-	e := &event.Event{
-		Tags: event.TagSet{
-			{"host", h},
-			{"service", s},
-		},
-
-		Metric: m,
-	}
+	e := event.NewEvent()
+	e.Tags.Set("host", h)
+	e.Tags.Set("service", s)
+	e.Metric = m
 	return e
 }
 
@@ -39,7 +35,7 @@ func TestAggregation(t *testing.T) {
 		WindowLength: 110,
 	}
 
-	c.init(event.TagSet{
+	c.init(&event.TagSet{
 		{"host", `\w+\.(?P<deployment>\w+)\.\w+`},
 	})
 
@@ -66,7 +62,7 @@ func TestAggCloseout(t *testing.T) {
 		WindowLength: 1,
 	}
 
-	c.init(event.TagSet{
+	c.init(&event.TagSet{
 		{"host", `\w+\.(?P<deployment>\w+)\.\w+`},
 	})
 

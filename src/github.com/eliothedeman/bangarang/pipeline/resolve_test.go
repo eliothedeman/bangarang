@@ -9,7 +9,7 @@ import (
 
 func TestResolve(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
-	pipe := testPolicy(c, nil, event.TagSet{{Key: "host", Value: "test"}}, nil)
+	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
 	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 
