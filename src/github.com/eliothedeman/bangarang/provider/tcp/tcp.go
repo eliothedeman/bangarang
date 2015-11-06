@@ -109,11 +109,32 @@ func readFull(conn *net.TCPConn, buff []byte) error {
 	return nil
 }
 
+// consume a tcp connection's events and pass them on to the next step in the pipeline
 func (t *TCPProvider) consume(conn *net.TCPConn, p event.Passer) {
 	buff := make([]byte, 1024*200)
 	var size_buff = make([]byte, 8)
 	var nextEventSize uint64
 	var err error
+	logContext := func() {
+		// log out context
+		logrus.Errorf("Panic Context... size_buff: %x nextEventSize: %d buff: %x", size_buff, nextEventSize, buff)
+
+	}
+
+	// recover from a panaic while dealing with the tcp connection
+	defer func() {
+		if r := recover(); r != nil {
+			err := conn.Close()
+			if err != nil {
+				logrus.Error(err)
+			}
+
+			logrus.Error("Recoverd from panic while reading tcp connection: ", r)
+			logContext()
+
+		}
+
+	}()
 
 	// write the start of the handshake so the client can verify this is a bangarang client
 	conn.Write([]byte(START_HANDSHAKE))
@@ -133,6 +154,14 @@ func (t *TCPProvider) consume(conn *net.TCPConn, p event.Passer) {
 
 			nextEventSize = binary.LittleEndian.Uint64(size_buff)
 
+			// make sure the nextEventSize is not larger than the buffer we are going to read into
+			if int(nextEventSize) > len(buff) {
+				logrus.Errorf("Incorrect size parsed for next event %d", nextEventSize)
+				logContext()
+				conn.Close()
+				return
+			}
+
 			// read the next event
 			err = readFull(conn, buff[:nextEventSize])
 			if err != nil {
@@ -143,9 +172,9 @@ func (t *TCPProvider) consume(conn *net.TCPConn, p event.Passer) {
 			e := &event.Event{}
 
 			err = t.pool.Decode(buff[:nextEventSize], e)
-
 			if err != nil {
-				logrus.Error(err, string(buff[:nextEventSize]))
+				logrus.Errorf("Unable to parse event %s", err.Error())
+				conn.Close()
 			} else {
 				p.Pass(e)
 			}
