@@ -3,7 +3,6 @@ package alarm
 import (
 	"log"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -184,7 +183,6 @@ func (m *Matcher) MatchesAll(t *event.TagSet) (matches bool) {
 	matches = true
 	m.ForEach(func(k string, v *regexp.Regexp) {
 		if !v.MatchString(t.Get(k)) {
-			log.Println(k, v.String(), t.String())
 			matches = false
 		}
 	})
@@ -262,15 +260,6 @@ func (p *Policy) Compile() {
 		logrus.Infof("Initializing warn for %s", p.Name)
 		p.Warn.init(p.GroupBy)
 	}
-}
-
-func formatFileName(n string) string {
-	s := strings.Split(n, "_")
-	a := ""
-	for _, k := range s {
-		a = a + strings.Title(k)
-	}
-	return a
 }
 
 // return the action to take for a given event

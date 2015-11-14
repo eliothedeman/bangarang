@@ -221,17 +221,14 @@ func (p *Pipeline) GetTracker() *Tracker {
 // checkExpired checks for keep alive
 func (p *Pipeline) checkExpired() {
 	var events []*event.Event
-	tags := p.tracker.ListTags()
 
-	for _, tag := range tags {
+	// TODO track every tag in the future
+	events = createKeepAliveEvents(p.tracker.TagTimes("host"), "host")
 
-		// create keep alives for all known tags
-		events = createKeepAliveEvents(p.tracker.TagTimes(tag), tag)
-
-		// process every event as if it was an incomming event
-		for _, e := range events {
-			p.Pass(e)
-		}
+	// process every event as if it was an incomming event
+	for _, e := range events {
+		println(e)
+		p.Pass(e)
 	}
 }
 

@@ -76,13 +76,12 @@ func TestKeepAlive(t *testing.T) {
 	defer p.index.Delete()
 	e := event.NewEvent()
 	e.Tags.Set("host", "one one")
-	e.Tags.Set("service", "exit")
 	e.Metric = -1
 
 	p.Pass(e)
 	e.Wait()
 	// sleep long enough for the keep alives to trip
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	p.keepAliveAge = time.Millisecond * 15
 	p.keepAliveCheckTime = time.Millisecond * 50
@@ -95,6 +94,7 @@ func TestKeepAlive(t *testing.T) {
 
 	// wait
 	<-s
+	time.Sleep(100 * time.Millisecond)
 
 	ta.Do(func(ta *test.TestAlert) {
 		if len(ta.Events) != 1 {
