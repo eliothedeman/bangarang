@@ -54,6 +54,9 @@ var (
 					// delete the policies
 					app["policies"] = map[string]interface{}{}
 
+					// delete the global policy
+					app["global_policy"] = map[string]interface{}{}
+
 					// add it back to the old snapshot
 					oldSnap["app"] = app
 
@@ -181,7 +184,6 @@ func (s Schema) Apply(b *bolt.DB) error {
 	}
 
 	// run the upgrader
-	logrus.Infof("Running database upgrader for %s", s.Version)
 	err = s.Upgrader(b)
 	if err != nil {
 		return err

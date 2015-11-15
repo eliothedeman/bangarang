@@ -6,9 +6,6 @@ import (
 	"time"
 )
 
-//go:generate ffjson $GOFILE
-//go:generate msgp $GOFILE
-
 type IncidentFormatter func(*Incident) string
 
 func DefaultIncidentFormatter(i *Incident) string {
