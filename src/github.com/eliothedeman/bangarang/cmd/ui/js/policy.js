@@ -457,7 +457,10 @@ function GlobalPolicyController($scope, $http, $cookies, $mdDialog) {
 			console.log("New global policy submission was unsuccessful")
 
 		})
+	}
 
+	$scope.cancel = function() {
+		$scope.fetchPolicy()
 	}
 
 	$scope.fetchPolicy = function() {
