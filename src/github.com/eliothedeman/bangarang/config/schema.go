@@ -3,6 +3,8 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"reflect"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
@@ -11,20 +13,6 @@ import (
 var (
 	AboutBucket = []byte("about")
 	Schemas     = []Schema{
-		{
-			Version: Version{
-				0, 10, 4,
-			},
-			Buckets: []string{
-				"app",
-				"user",
-			},
-
-			// A no-op. This is the first schemad version
-			Upgrader: func(old *bolt.DB) error {
-				return nil
-			},
-		},
 		{
 			Version: Version{
 				0, 12, 0,
@@ -48,11 +36,26 @@ var (
 
 					app, ok := oldSnap["app"].(map[string]interface{})
 					if !ok {
-						return nil, fmt.Errorf("Unable to upgrade snapshot. Now 'app' section found.")
+						return nil, fmt.Errorf("Unable to upgrade snapshot. No 'app' section found.")
 					}
 
-					// delete the policies
-					app["policies"] = map[string]interface{}{}
+					// walk through the policies, and remove the match/not_match fields
+					raw_pols, ok := app["policies"]
+					if ok {
+						pols, ok := raw_pols.(map[string]interface{})
+						if ok {
+							for k, v := range pols {
+
+								logrus.Debugf("Removing old match/not_match from %s", k)
+								v.(map[string]interface{})["match"] = []struct{}{}
+								v.(map[string]interface{})["not_match"] = []struct{}{}
+								v.(map[string]interface{})["group_by"] = []struct{}{}
+							}
+						} else {
+							log.Println(reflect.TypeOf(raw_pols).String())
+						}
+
+					}
 
 					// delete the global policy
 					app["global_policy"] = map[string]interface{}{}
@@ -82,7 +85,7 @@ var (
 					}, 0, b.Stats().KeyN)
 
 					b.ForEach(func(k, v []byte) error {
-						logrus.Infof("Starting snapshot upgrade on: %s", string(k))
+						logrus.Debugf("Starting snapshot upgrade on: %s", string(k))
 						upgraded, err := upgradeRawSnapshot(v)
 						if err != nil {
 							logrus.Errorf("Unable to upgrade snapshot: %s %s", string(k), err.Error())
@@ -106,7 +109,7 @@ var (
 							logrus.Errorf("Unable to write upgraded snapshot to database %s %s", string(snap.key), err.Error())
 						}
 
-						logrus.Infof("Finished snapshot upgrade on: %s", string(snap.key))
+						logrus.Debugf("Finished snapshot upgrade on: %s", string(snap.key))
 					}
 
 					return nil
@@ -117,12 +120,26 @@ var (
 
 			},
 		},
+		{
+			Version: Version{
+				0, 10, 4,
+			},
+			Buckets: []string{
+				"app",
+				"user",
+			},
+
+			// A no-op. This is the first schemad version
+			Upgrader: func(old *bolt.DB) error {
+				return nil
+			},
+		},
 	}
 )
 
 // LatestSchema returns the newest schema
 func LatestSchema() Schema {
-	return Schemas[len(Schemas)-1]
+	return Schemas[0]
 }
 
 // givena n old and new schema update the current db
@@ -150,7 +167,7 @@ func GetSchemaFromDb(b *bolt.DB) Schema {
 			return nil
 		}
 
-		v = VersionFromString(string(b.Get([]byte("about"))))
+		v = VersionFromString(string(b.Get([]byte("version"))))
 		return nil
 	})
 	if err != nil {
@@ -161,7 +178,7 @@ func GetSchemaFromDb(b *bolt.DB) Schema {
 	for _, s := range Schemas {
 
 		// best case, exact match
-		if s.Version == v {
+		if s.Version.String() == v.String() {
 			return s
 		}
 

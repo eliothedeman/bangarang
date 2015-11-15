@@ -54,18 +54,25 @@ func (c *Collection) UnmarshalRaw() error {
 		Name string `json:"name"`
 	}{}
 	c.Coll = make(map[string][]Alarm)
+	var err error
 	for k, v := range c.raw {
 		c.Coll[k] = make([]Alarm, 0)
 		for _, raw := range v {
 			name.Name = ""
 			name.Type = ""
-			json.Unmarshal(raw, name)
+			err = json.Unmarshal(raw, name)
+			if err != nil {
+				return err
+			}
 
 			fact := GetFactory(name.Type)
 			newAlarm := fact()
 			conf := newAlarm.ConfigStruct()
-			json.Unmarshal(raw, conf)
-			err := newAlarm.Init(conf)
+			err = json.Unmarshal(raw, conf)
+			if err != nil {
+				return err
+			}
+			err = newAlarm.Init(conf)
 			if err != nil {
 				return err
 			}

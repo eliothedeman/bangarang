@@ -85,12 +85,13 @@ func (d *DBConf) init() {
 
 	}
 
-	// if we don't have the correct version, apply the new one
-	if LatestSchema().Greater(s) {
-		logrus.Info("Upgrading config db version from %s to %s", s.Version, LatestSchema().Version)
+	for LatestSchema().Greater(GetSchemaFromDb(d.db)) {
+		logrus.Infof("Upgrading config db version from %s to %s", s.Version, LatestSchema().Version)
 		err := LatestSchema().Apply(d.db)
 		if err != nil {
 			logrus.Errorf("Unable to apply schema version %s to config db %s", LatestSchema().Version, err.Error())
+		} else {
+			s = LatestSchema()
 		}
 	}
 
@@ -279,7 +280,6 @@ func (d *DBConf) getVersion(version string) (*AppConfig, error) {
 	}
 
 	err = d.decode(buff, s)
-
 	if err != nil {
 		return nil, err
 	}
