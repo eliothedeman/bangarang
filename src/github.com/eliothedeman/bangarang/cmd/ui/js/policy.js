@@ -1,19 +1,31 @@
 "use strict"
 class Match {
-	constructor(obj) {
-		this.match = obj
+	constructor(m) {
+		this.matches = m
 	}
 
 	add(key, val) {
-		this.match[key] = val
+		console.log("Adding new match key: " + key + " val: " + val)
+
+		this.matches.push({key:key, value:val})
 	}
 
 	del(key) {
-		delete this.match[key]
+		console.log("Removing match with key: " + key)
+
+		// go though every "match" pair and look for the key
+		for (var i = this.matches.length - 1; i >= 0; i--) {
+			// if the key is found, remove it
+			if (this.matches[i].key == key) {
+
+				console.log("Found match with key: " + key)
+				this.matches.splice(i, 1);
+			}
+		};
 	}
 
 	data() {
-		return this.match
+		return this.matches;
 	}
 }
 
@@ -51,8 +63,8 @@ class Policy {
 	constructor(name) {
 		this.name = name
 		this.comment = ""
-		this.match = new Match({})
-		this.not_match = new Match({})
+		this.match = new Match([])
+		this.not_match = new Match([])
 		this.crit = null
 		this.warn = null
 		this.modifiers = [
@@ -371,7 +383,10 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 
 	$scope.addPolicy = function() {
 		var pol = $scope.np.data();
+
 		if (pol) {
+			console.log("Submitting new policy")
+			console.log(pol)
 			$http.post("api/policy/config/" + pol.name, pol).success(function() {
 				$scope.reset()
 			});
@@ -407,41 +422,18 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 angular.module('bangarang').controller("NewPolicyController", NewPolicyController);
 
 function GlobalPolicyController($scope, $http, $cookies, $mdDialog) {
+	$scope.np = new Policy("")
+
 	$scope.addNewMatch = function() {
-		$scope.matchChips.push({key: $scope.newMatchKey, val: $scope.newMatchVal})
-		$scope.newMatchKey = "";
-		$scope.newMatchVal = "";
+		$scope.np.match.add($scope.nmk, $scope.nmv)
+		$scope.nmk = ""
+		$scope.nmv = ""
 	}
 
 	$scope.addNewNotMatch = function() {
-		$scope.notMatchChips.push({key: $scope.newNotMatchKey, val: $scope.newNotMatchVal})
-		$scope.newNotMatchKey = "";
-		$scope.newNotMatchVal = "";
-	}
-
-	$scope.populateChips = function() {
-		var k = 0;
-		for (k in $scope.g.match) {
-			$scope.matchChips.push({key:k, val:$scope.g.match[k]})
-		}
-		for (k in $scope.g.not_match) {
-			$scope.notMatchChips.push({key:k, val:$scope.g.not_match[k]})
-		}
-	}
-
-	var collectPolicy = function() {
-		var d = {
-			match: {},
-			not_match: {}
-		};
-		for (var i = $scope.matchChips.length - 1; i >= 0; i--) {
-			d.match[$scope.matchChips[i].key] = $scope.matchChips[i].val
-		};
-		for (var i = $scope.notMatchChips.length - 1; i >= 0; i--) {
-			d.not_match[$scope.notMatchChips[i].key] = $scope.notMatchChips[i].val
-		};
-
-		return d;
+		$scope.np.not_match.add($scope.nnmk, $scope.nnmv)
+		$scope.nnmk = ""
+		$scope.nnmv = ""
 	}
 
 	$scope.submit = function() {
@@ -453,11 +445,16 @@ function GlobalPolicyController($scope, $http, $cookies, $mdDialog) {
 			.cancel("No")
 
 		$mdDialog.show(c).then(function() {
-			$http.post("api/policy/config/global", collectPolicy()).success(function() {
-				$scope.reset();
+
+			console.log("Submitting new global policy");
+			console.log($scope.np.data());
+			$http.post("api/policy/config/global", $scope.np.data()).success(function() {
+				console.log("New global policy successfully submitted")
 				$scope.fetchPolicy();
 			});
 		}, function(){
+
+			console.log("New global policy submission was unsuccessful")
 
 		})
 
@@ -465,19 +462,11 @@ function GlobalPolicyController($scope, $http, $cookies, $mdDialog) {
 
 	$scope.fetchPolicy = function() {
 		$http.get("api/policy/config/global").success(function(data){
-			$scope.g = data;
-			$scope.populateChips();
+			$scope.np = parsePolicy(data)
 		})
 	}
 
 	$scope.reset = function() {
-		$scope.g = {};
-		$scope.matchChips = [];
-		$scope.notMatchChips = [];
-		$scope.newMatchKey = "";
-		$scope.newMatchVal = "";
-		$scope.newNotMatchKey = "";
-		$scope.newNotMatchVal = "";
 	}
 
 	$scope.reset();
@@ -486,7 +475,7 @@ function GlobalPolicyController($scope, $http, $cookies, $mdDialog) {
 angular.module('bangarang').controller("GlobalPolicyController", GlobalPolicyController);
 
 function PolicyController($scope, $http, $cookies) {
-	$scope.policies = null;
+	$scope.policies = [];
 	$scope.removeSure = {};
 	var t = $scope;
 	$scope.tmpEdit = {};
@@ -536,7 +525,11 @@ function PolicyController($scope, $http, $cookies) {
 
 	$scope.fetchPolicies = function() {
 		$http.get("api/policy/config/*").success(function(data, status) {
-			$scope.policies = data;
+			if (data) {
+				if (data != "null") {
+					$scope.policies = data;
+				}
+			}
 		});
 	}
 

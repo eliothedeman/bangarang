@@ -1,8 +1,12 @@
 function EscalationController($scope, $http, $cookies, $mdDialog) {
-	$scope.escalations = null;
+	$scope.escalations = [];
 	$scope.fetchEscalations = function() {
 		$http.get("api/escalation/config/*").success(function(data, status) {
-			$scope.escalations = data;
+			if (data) {
+				if (data != "null") {
+					$scope.escalations = data;
+				}
+			}
 		});
 	}
 	this.selected = 0;
