@@ -447,9 +447,9 @@
 													<div layout layout-sm="row">
 														<md-list ng>
 															<md-subheader>Matches</md-subheader>
-															<md-list-item class="md-1-line" ng-repeat="(k, v) in np.match.match">
-																	{{k}} -> {{v}}
-																	<md-button ng-click="np.match.del(k)">
+															<md-list-item class="md-1-line" ng-repeat="match in np.match.matches">
+																	{{match.key}} -> {{match.value}}
+																	<md-button ng-click="np.match.del(match.key)">
 																	<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
 																<md-divider ng-inset></md-divider>
 															</md-list-item>
@@ -474,9 +474,9 @@
 													<div layout layout-sm="row">
 														<md-list ng>
 															<md-subheader>Matches</md-subheader>
-															<md-list-item class="md-2-line" ng-repeat="(k, v) in np.not_match.match">
-																{{k}} -> {{v}}
-																<md-button ng-click="np.not_match.del(k)">
+															<md-list-item class="md-2-line" ng-repeat="match in np.not_match.matches">
+																{{match.key}} -> {{match.value}}
+																<md-button ng-click="np.not_match.del(match.key)">
 																<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
 															</md-list-item>
 														</md-list>
