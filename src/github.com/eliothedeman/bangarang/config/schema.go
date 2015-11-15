@@ -1,6 +1,12 @@
-package version
+package config
 
-import "github.com/boltdb/bolt"
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/boltdb/bolt"
+)
 
 var (
 	AboutBucket = []byte("about")
@@ -17,6 +23,95 @@ var (
 			// A no-op. This is the first schemad version
 			Upgrader: func(old *bolt.DB) error {
 				return nil
+			},
+		},
+		{
+			Version: Version{
+				0, 12, 0,
+			},
+			Buckets: []string{
+				"app",
+				"user",
+			},
+			Upgrader: func(old *bolt.DB) error {
+
+				upgradeRawSnapshot := func(buff []byte) ([]byte, error) {
+					// old
+					oldSnap := make(map[string]interface{})
+					err := json.Unmarshal(buff, &oldSnap)
+					if err != nil {
+						return nil, err
+					}
+
+					// remove the incompatible parts and reencode
+					// TODO (eliothedeman) actually attempt to update semi-compatible things
+
+					app, ok := oldSnap["app"].(map[string]interface{})
+					if !ok {
+						return nil, fmt.Errorf("Unable to upgrade snapshot. Now 'app' section found.")
+					}
+
+					// delete the policies
+					app["policies"] = map[string]interface{}{}
+
+					// add it back to the old snapshot
+					oldSnap["app"] = app
+
+					// reencode
+					return json.Marshal(&oldSnap)
+
+				}
+
+				// open for an update
+				err := old.Update(func(tx *bolt.Tx) error {
+
+					// get the bucket for app snapshots
+					b := tx.Bucket([]byte("app"))
+					if b == nil {
+						logrus.Warning("No config snapshots found")
+						return nil
+					}
+
+					// make something that can hold all of the new snapshots to be written after the upgrade
+					newSnapshots := make([]struct {
+						key []byte
+						val []byte
+					}, 0, b.Stats().KeyN)
+
+					b.ForEach(func(k, v []byte) error {
+						logrus.Infof("Starting snapshot upgrade on: %s", string(k))
+						upgraded, err := upgradeRawSnapshot(v)
+						if err != nil {
+							logrus.Errorf("Unable to upgrade snapshot: %s %s", string(k), err.Error())
+						}
+
+						newSnapshots = append(newSnapshots, struct {
+							key []byte
+							val []byte
+						}{
+							key: k,
+							val: upgraded,
+						})
+
+						return nil
+					})
+
+					// updated every snapshot with the upgraded config
+					for _, snap := range newSnapshots {
+						err := b.Put(snap.key, snap.val)
+						if err != nil {
+							logrus.Errorf("Unable to write upgraded snapshot to database %s %s", string(snap.key), err.Error())
+						}
+
+						logrus.Infof("Finished snapshot upgrade on: %s", string(snap.key))
+					}
+
+					return nil
+
+				})
+
+				return err
+
 			},
 		},
 	}
@@ -86,6 +181,7 @@ func (s Schema) Apply(b *bolt.DB) error {
 	}
 
 	// run the upgrader
+	logrus.Infof("Running database upgrader for %s", s.Version)
 	err = s.Upgrader(b)
 	if err != nil {
 		return err

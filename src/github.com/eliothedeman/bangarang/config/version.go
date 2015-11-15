@@ -1,4 +1,4 @@
-package version
+package config
 
 import (
 	"fmt"
@@ -9,8 +9,8 @@ import (
 var (
 	Current = Version{
 		Major: 0,
-		Minor: 10,
-		Patch: 10,
+		Minor: 12,
+		Patch: 0,
 	}
 
 	First = Version{

@@ -16,7 +16,6 @@ import (
 	"github.com/eliothedeman/bangarang/pipeline"
 	_ "github.com/eliothedeman/bangarang/provider/http"
 	_ "github.com/eliothedeman/bangarang/provider/tcp"
-	"github.com/eliothedeman/bangarang/version"
 )
 
 var (
@@ -48,7 +47,7 @@ func main() {
 
 	// display the current version and exit
 	if *showVersion {
-		fmt.Print(version.Current)
+		fmt.Print(config.Current)
 		os.Exit(0)
 	}
 

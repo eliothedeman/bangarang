@@ -9,7 +9,6 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
-	"github.com/eliothedeman/bangarang/version"
 )
 
 // DBConf provides methods for reading and writing configs from a database
@@ -74,10 +73,10 @@ func (d *DBConf) initAdminUser() error {
 func (d *DBConf) init() {
 
 	// get the schema, and apply it before moving on
-	s := version.GetSchemaFromDb(d.db)
+	s := GetSchemaFromDb(d.db)
 
 	// bootstrap
-	if s.Version == version.First {
+	if s.Version == First {
 		logrus.Info("Bootstrapping config db")
 		err := s.Apply(d.db)
 		if err != nil {
@@ -87,11 +86,11 @@ func (d *DBConf) init() {
 	}
 
 	// if we don't have the correct version, apply the new one
-	if version.LatestSchema().Greater(s) {
-		logrus.Info("Upgrading config db version from %s to %s", s.Version, version.LatestSchema().Version)
-		err := version.LatestSchema().Apply(d.db)
+	if LatestSchema().Greater(s) {
+		logrus.Info("Upgrading config db version from %s to %s", s.Version, LatestSchema().Version)
+		err := LatestSchema().Apply(d.db)
 		if err != nil {
-			logrus.Errorf("Unable to apply schema version %s to config db %s", version.LatestSchema().Version, err.Error())
+			logrus.Errorf("Unable to apply schema version %s to config db %s", LatestSchema().Version, err.Error())
 		}
 	}
 
