@@ -457,10 +457,7 @@ function GlobalPolicyController($scope, $http, $cookies, $mdDialog) {
 			console.log("New global policy submission was unsuccessful")
 
 		})
-	}
 
-	$scope.cancel = function() {
-		$scope.fetchPolicy()
 	}
 
 	$scope.fetchPolicy = function() {
@@ -478,7 +475,7 @@ function GlobalPolicyController($scope, $http, $cookies, $mdDialog) {
 angular.module('bangarang').controller("GlobalPolicyController", GlobalPolicyController);
 
 function PolicyController($scope, $http, $cookies) {
-	$scope.policies = [];
+	$scope.policies = {};
 	$scope.removeSure = {};
 	var t = $scope;
 	$scope.tmpEdit = {};
@@ -528,9 +525,9 @@ function PolicyController($scope, $http, $cookies) {
 
 	$scope.fetchPolicies = function() {
 		$http.get("api/policy/config/*").success(function(data, status) {
-			if (data) {
-				if (data != "null") {
-					$scope.policies = data;
+			if (typeof(data) == "object") {
+				for (var key in data) {
+					$scope.policies[key] = parsePolicy(data[key])
 				}
 			}
 		});

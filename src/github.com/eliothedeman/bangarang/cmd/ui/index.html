@@ -156,8 +156,8 @@
 									<md-card-content>
 										<md-list-item class="md-3-line">
 											<div class="md-list-item-text">
-												<h3>{{name}}</h3>
-												<json-formatter class="json-formatter" json=pol></json-formatter>
+												<h3>{{pol_name}}</h3>
+												<json-formatter class="json-formatter" json=pol_data></json-formatter>
 											</div>
 											<p ng-hide="shouldHideRemoveDialog(pol_name)">Sure?</p>
 											<md-button ng-click="removePolicy(pol_name)" class="md-primary" ng-hide="shouldHideRemoveDialog(pol_name)">Yes</md-button>
