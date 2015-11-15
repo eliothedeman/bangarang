@@ -21,7 +21,7 @@ func TestPausePipeline(t *testing.T) {
 	p.Unpause()
 
 	// make sure we can still insert events
-	p.Pass(&event.Event{})
+	p.Pass(event.NewEvent())
 }
 
 func TestAddConfig(t *testing.T) {
@@ -29,14 +29,13 @@ func TestAddConfig(t *testing.T) {
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: "service", Value: "KeepAlive"}}, nil)
 	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
-	p.Process(&event.Event{})
+	p.Process(event.NewEvent())
 
 	conf := &config.AppConfig{}
 	conf.Policies = map[string]*alarm.Policy{"new": testPolicy(c, nil, &event.TagSet{{Key: "2", Value: "2"}}, nil)}
 
-	log.Println(p.policies)
 	p.Refresh(conf)
-	p.Pass(&event.Event{})
+	p.Pass(event.NewEvent())
 
 	p.ViewConfig(func(ac *config.AppConfig) {
 		conf = ac

@@ -13,7 +13,7 @@ func TestResolve(t *testing.T) {
 	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
 	defer p.index.Delete()
 
-	e := &event.Event{}
+	e := event.NewEvent()
 	e.Tags.Set("host", "test")
 	e.Metric = 1
 
