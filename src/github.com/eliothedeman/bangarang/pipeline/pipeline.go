@@ -22,7 +22,7 @@ type Pipeline struct {
 	keepAliveAge       time.Duration
 	keepAliveCheckTime time.Duration
 	globalPolicy       *escalation.Policy
-	escalations        *escalation.Collection
+	escalations        map[string]*escalation.EscalationPolicy
 	policies           map[string]*escalation.Policy
 	index              *event.Index
 	providers          provider.EventProviderCollection
@@ -46,7 +46,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		unpauseChan:        make(chan struct{}),
 		pauseChan:          make(chan struct{}),
 		tracker:            NewTracker(),
-		escalations:        &escalation.Collection{},
+		escalations:        map[string]*escalation.EscalationPolicy{},
 		index:              event.NewIndex(),
 	}
 	p.Start()
@@ -133,7 +133,15 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 		}
 	}
 
-	p.escalations = &conf.Escalations
+	if conf.Escalations != nil {
+		p.escalations = conf.Escalations
+		// compile each escalation policiy
+
+		for _, v := range p.escalations {
+			v.Compile()
+		}
+
+	}
 
 	if conf.EventProviders != nil {
 		p.providers = *conf.EventProviders
@@ -318,7 +326,7 @@ func (p *Pipeline) ProcessIncident(in *event.Incident) {
 		}
 
 		// fetch the escalation to take
-		esc, ok := p.escalations.Collection()[in.Escalation]
+		esc, ok := p.escalations[in.Escalation]
 		if ok {
 
 			// send to every Escalation in the escalation

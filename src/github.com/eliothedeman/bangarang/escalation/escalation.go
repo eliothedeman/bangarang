@@ -15,82 +15,128 @@ var (
 	}
 )
 
-// Collection maps the name of an escalation policy to the actions to be taken by them
-type Collection struct {
-	Coll map[string][]Escalation
-	raw  map[string][]json.RawMessage
+// EscalationPolicy is the collection of escalations that are subscribed to by the policy
+type EscalationPolicy struct {
+	Match    *event.TagSet     `json:"match"`
+	NotMatch *event.TagSet     `json:"not_match"`
+	Warn     bool              `json:"warn"`
+	Crit     bool              `json:"crit"`
+	Ok       bool              `json:"ok"`
+	Name     string            `json:"name"`
+	Comment  string            `json:"comment"`
+	Configs  []json.RawMessage `json:"configs"`
+
+	// compiled regex matches
+	rMatch    Matcher
+	rNotMatch Matcher
+
+	// escalations to forward incidents to
+	escalations []Escalation
 }
 
-// Collection holds a map of strings to Escalations
-func (c *Collection) Collection() map[string][]Escalation {
-	if c.Coll == nil {
-		c.Coll = map[string][]Escalation{}
+// Compile sets up all the regex matches for the subscriptions and starts all of the escalations held by the policy
+func (e *EscalationPolicy) Compile() (err error) {
+	// create a matcher from each tagset
+	e.rMatch, err = MatcherFromTagSet(e.Match)
+	if err != nil {
+		return
 	}
-	return c.Coll
-}
-
-// AddRaw map's a raw escalation to it's name
-func (c *Collection) AddRaw(name string, raw []json.RawMessage) {
-	if c.raw == nil {
-		c.raw = make(map[string][]json.RawMessage)
+	e.rNotMatch, err = MatcherFromTagSet(e.NotMatch)
+	if err != nil {
+		return
 	}
-	c.raw[name] = raw
-}
 
-// RemoveRaw removes a raw value from teh collection if it exists
-func (c *Collection) RemoveRaw(name string) {
-	delete(c.raw, name)
-}
+	// create enough space for all of the new escalations
+	e.escalations = make([]Escalation, 0, len(e.Configs))
 
-// MarshalJSON encode the collection as json
-func (c *Collection) MarshalJSON() ([]byte, error) {
-	return json.Marshal(&c.raw)
-}
+	// go through each config and creat an escalation out of it
+	for _, raw := range e.Configs {
 
-// UnmarshalRaw Runs unmarshaling logic over the raw values stored in the collection
-func (c *Collection) UnmarshalRaw() error {
-	name := &struct {
-		Type string `json:"type"`
-		Name string `json:"name"`
-	}{}
-	c.Coll = make(map[string][]Escalation)
-	var err error
-	for k, v := range c.raw {
-		c.Coll[k] = make([]Escalation, 0)
-		for _, raw := range v {
-			name.Name = ""
-			name.Type = ""
-			err = json.Unmarshal(raw, name)
-			if err != nil {
-				return err
-			}
-
-			fact := GetFactory(name.Type)
-			newEscalation := fact()
-			conf := newEscalation.ConfigStruct()
-			err = json.Unmarshal(raw, conf)
-			if err != nil {
-				return err
-			}
-			err = newEscalation.Init(conf)
-			if err != nil {
-				return err
-			}
-			c.Coll[k] = append(c.Coll[k], newEscalation)
+		// run parsing logic on the config
+		newEscalation, perr := parseEscalation(raw)
+		if perr != nil {
+			return perr
 		}
+
+		// if all is well, append the new escalation
+		e.escalations = append(e.escalations, newEscalation)
+
 	}
 
 	return nil
 }
 
-// UnmarshalJSON a custom unmarshal func for an escalation policy
-func (c *Collection) UnmarshalJSON(buff []byte) error {
-	c.raw = make(map[string][]json.RawMessage)
-	err := json.Unmarshal(buff, &c.raw)
-	if err != nil {
-		return err
+// isSubscribed will return true if this policy is subscribed to incidents like the one given
+func (e *EscalationPolicy) isSubscribed(i *event.Incident) bool {
+
+	// check that the policy is subscribed to the incident's status
+	switch i.Status {
+	case event.OK:
+		if !e.Ok {
+			return false
+		}
+	case event.WARNING:
+		if !e.Warn {
+			return false
+		}
+	case event.CRITICAL:
+		if !e.Crit {
+			return false
+		}
+	default:
+		// don't forward any bad status
+		return false
 	}
-	return c.UnmarshalRaw()
+
+	return e.rMatch.MatchesAll(i.Tags) && !e.rNotMatch.MatchesOne(i.Tags)
+}
+
+// Pass an incident into the escalation for processing
+func (e *EscalationPolicy) Pass(i *event.Incident) {
+
+	// only process incidents that this policy subscribes to
+	if e.isSubscribed(i) {
+
+		// send if off to every escalation known about
+		for _, ep := range e.escalations {
+			err := ep.Send(i)
+			if err != nil {
+				logrus.Errorf("Unable to forward incident %s to escalation %+v", i.FormatDescription(), ep)
+			}
+		}
+	}
+}
+
+// parseEscalation given a raw config, create a new escalation
+func parseEscalation(buff json.RawMessage) (Escalation, error) {
+	name := &struct {
+		Type string `json:"type"`
+		Name string `json:"name"`
+	}{}
+
+	var err error
+
+	// parse out the name/escalation type
+	err = json.Unmarshal(buff, name)
+	if err != nil {
+		return nil, err
+	}
+
+	// create a new escalation of the correct type
+	newEscalation := GetFactory(name.Type)()
+
+	// get the config struct to unmarshal into
+	conf := newEscalation.ConfigStruct()
+
+	// unmarshal into config struct
+	err = json.Unmarshal(buff, conf)
+	if err != nil {
+		return nil, err
+	}
+
+	// init the new escalation with the config
+	err = newEscalation.Init(conf)
+	return newEscalation, err
 }
 
 // GetFactory returns the Factory associated with the given name
@@ -121,7 +167,6 @@ type Escalation interface {
 type Factory func() Escalation
 
 type EscalationCollection struct {
-	collections Collection
-	factories   map[string]Factory
+	factories map[string]Factory
 	sync.Mutex
 }

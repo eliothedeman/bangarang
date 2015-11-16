@@ -421,59 +421,6 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 }
 angular.module('bangarang').controller("NewPolicyController", NewPolicyController);
 
-function GlobalPolicyController($scope, $http, $cookies, $mdDialog) {
-	$scope.np = new Policy("")
-
-	$scope.addNewMatch = function() {
-		$scope.np.match.add($scope.nmk, $scope.nmv)
-		$scope.nmk = ""
-		$scope.nmv = ""
-	}
-
-	$scope.addNewNotMatch = function() {
-		$scope.np.not_match.add($scope.nnmk, $scope.nnmv)
-		$scope.nnmk = ""
-		$scope.nnmv = ""
-	}
-
-	$scope.submit = function() {
-		var c = $mdDialog.confirm()
-			.title("Submit global policy?")
-			.content("Are you sure you want to modify the global policy?")
-			.ariaLabel("Global Policy submit")
-			.ok("Yes")
-			.cancel("No")
-
-		$mdDialog.show(c).then(function() {
-
-			console.log("Submitting new global policy");
-			console.log($scope.np.data());
-			$http.post("api/policy/config/global", $scope.np.data()).success(function() {
-				console.log("New global policy successfully submitted")
-				$scope.fetchPolicy();
-			});
-		}, function(){
-
-			console.log("New global policy submission was unsuccessful")
-
-		})
-
-	}
-
-	$scope.fetchPolicy = function() {
-		$http.get("api/policy/config/global").success(function(data){
-			$scope.np = parsePolicy(data)
-		})
-	}
-
-	$scope.reset = function() {
-	}
-
-	$scope.reset();
-}
-
-angular.module('bangarang').controller("GlobalPolicyController", GlobalPolicyController);
-
 function PolicyController($scope, $http, $cookies) {
 	$scope.policies = {};
 	$scope.removeSure = {};
@@ -499,8 +446,7 @@ function PolicyController($scope, $http, $cookies) {
 		$scope.removeSure[name] = true;
 	}
 
-	$scope.hideRemoveDialog = function(name) {
-		$scope.removeSure[name] = false;
+	$scope.hideRemoveDialog = function(name) {$scope.removeSure[name] = false;
 	}
 
 	$scope.shouldHideRemoveDialog = function(name) {

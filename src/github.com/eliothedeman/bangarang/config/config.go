@@ -65,17 +65,17 @@ const (
 
 // AppConfig provides configuration options for setting up the application
 type AppConfig struct {
-	EscalationsDir  string                            `json:"escalations_dir"`
-	KeepAliveAge    time.Duration                     `json:"-"`
-	RawKeepAliveAge string                            `json:"keep_alive_age"`
-	DbPath          string                            `json:"db_path"`
-	Escalations     escalation.Collection             `json:"escalations"`
-	Encoding        string                            `json:"encoding"`
-	Policies        map[string]*escalation.Policy     `json:"policies"`
-	EventProviders  *provider.EventProviderCollection `json:"event_providers"`
-	LogLevel        string                            `json:"log_level"`
-	APIPort         int                               `json:"API_port"`
-	Hash            []byte                            `json:"-"`
+	EscalationsDir  string                                  `json:"escalations_dir"`
+	KeepAliveAge    time.Duration                           `json:"-"`
+	RawKeepAliveAge string                                  `json:"keep_alive_age"`
+	DbPath          string                                  `json:"db_path"`
+	Escalations     map[string]*escalation.EscalationPolicy `json:"escalations"`
+	Encoding        string                                  `json:"encoding"`
+	Policies        map[string]*escalation.Policy           `json:"policies"`
+	EventProviders  *provider.EventProviderCollection       `json:"event_providers"`
+	LogLevel        string                                  `json:"log_level"`
+	APIPort         int                                     `json:"API_port"`
+	Hash            []byte                                  `json:"-"`
 	fileName        string
 	provider        Provider
 }
@@ -102,7 +102,7 @@ func NewDefaultConfig() *AppConfig {
 		DbPath:          defaultDBPath,
 		APIPort:         defaultAPIPort,
 		Encoding:        defaultEncoding,
-		Escalations:     escalation.Collection{},
+		Escalations:     map[string]*escalation.EscalationPolicy{},
 		LogLevel:        defaultLogLevel,
 		EventProviders:  &provider.EventProviderCollection{},
 	}
