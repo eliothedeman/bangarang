@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/eliothedeman/bangarang/alarm"
-	"github.com/eliothedeman/bangarang/alarm/test"
+	"github.com/eliothedeman/bangarang/escalation"
+	"github.com/eliothedeman/bangarang/escalation/test"
 	"github.com/eliothedeman/bangarang/event"
 )
 
@@ -18,7 +18,7 @@ var (
 	tests_ran = 100
 )
 
-func testPipeline(p map[string]*alarm.Policy) (*Pipeline, *test.TestAlert) {
+func testPipeline(p map[string]*escalation.Policy) (*Pipeline, *test.TestAlert) {
 	tests_ran += 1
 	ta := test.NewTest().(*test.TestAlert)
 	pipe := &Pipeline{
@@ -27,9 +27,9 @@ func testPipeline(p map[string]*alarm.Policy) (*Pipeline, *test.TestAlert) {
 		pauseChan:    make(chan struct{}),
 		unpauseChan:  make(chan struct{}),
 		encodingPool: event.NewEncodingPool(event.EncoderFactories["json"], event.DecoderFactories["json"], runtime.NumCPU()),
-		escalations: &alarm.Collection{
-			Coll: map[string][]alarm.Alarm{
-				"test": []alarm.Alarm{ta},
+		escalations: &escalation.Collection{
+			Coll: map[string][]escalation.Escalation{
+				"test": []escalation.Escalation{ta},
 			},
 		},
 		tracker: NewTracker(),
@@ -41,9 +41,9 @@ func testPipeline(p map[string]*alarm.Policy) (*Pipeline, *test.TestAlert) {
 	return pipe, ta
 }
 
-func testPolicy(crit, warn *alarm.Condition, match, notMatch *event.TagSet) *alarm.Policy {
+func testPolicy(crit, warn *escalation.Condition, match, notMatch *event.TagSet) *escalation.Policy {
 
-	p := &alarm.Policy{
+	p := &escalation.Policy{
 		Warn:     warn,
 		Crit:     crit,
 		Match:    match,
@@ -54,8 +54,8 @@ func testPolicy(crit, warn *alarm.Condition, match, notMatch *event.TagSet) *ala
 	return p
 }
 
-func testCondition(g, l, e *float64, o int) *alarm.Condition {
-	return &alarm.Condition{
+func testCondition(g, l, e *float64, o int) *escalation.Condition {
+	return &escalation.Condition{
 		Greater:    g,
 		Less:       l,
 		Exactly:    e,
@@ -72,7 +72,7 @@ func TestKeepAlive(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: INTERNAL_TAG_NAME, Value: KEEP_ALIVE_INTERNAL_TAG}}, nil)
-	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, ta := testPipeline(map[string]*escalation.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := event.NewEvent()
 	e.Tags.Set("host", "one one")
@@ -107,7 +107,7 @@ func TestKeepAlive(t *testing.T) {
 func TestMatchPolicy(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, ta := testPipeline(map[string]*escalation.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := event.NewEvent()
 	e.Tags.Set("host", "test")
@@ -131,7 +131,7 @@ func TestMatchPolicy(t *testing.T) {
 func TestOccurences(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 2)
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, ta := testPipeline(map[string]*escalation.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := event.NewEvent()
 	e.Tags.Set("host", "test")
@@ -173,7 +173,7 @@ func genEventSlice(size int) []*event.Event {
 func BenchmarkProcessOk(b *testing.B) {
 	c := testCondition(test_f(10), nil, nil, 0)
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, _ := testPipeline(map[string]*escalation.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := genEventSlice(b.N)
 
@@ -190,7 +190,7 @@ func BenchmarkProcessOk(b *testing.B) {
 func BenchmarkProcess2CPU(b *testing.B) {
 	c := testCondition(test_f(10), nil, nil, 0)
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, _ := testPipeline(map[string]*escalation.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := genEventSlice(b.N)
 
@@ -217,7 +217,7 @@ func BenchmarkProcess2CPU(b *testing.B) {
 func BenchmarkProcess4CPU(b *testing.B) {
 	c := testCondition(test_f(10), nil, nil, 0)
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, _ := testPipeline(map[string]*escalation.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := genEventSlice(b.N)
 
@@ -250,7 +250,7 @@ func BenchmarkProcess4CPU(b *testing.B) {
 func BenchmarkIndex(b *testing.B) {
 	c := testCondition(test_f(0), nil, nil, 0)
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, _ := testPipeline(map[string]*escalation.Policy{"test": pipe})
 	defer p.index.Delete()
 
 	e := event.NewEvent()
@@ -272,7 +272,7 @@ func BenchmarkIndex(b *testing.B) {
 func TestProcess(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 0)
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, ta := testPipeline(map[string]*escalation.Policy{"test": pipe})
 	defer p.index.Delete()
 	e := event.NewEvent()
 	e.Tags.Set("host", "test")
@@ -302,7 +302,7 @@ func TestProcess(t *testing.T) {
 func TestProcessDedupe(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 0)
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, ta := testPipeline(map[string]*escalation.Policy{"test": pipe})
 	defer p.index.Delete()
 
 	events := make([]*event.Event, 100)

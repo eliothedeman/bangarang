@@ -2,20 +2,20 @@ package pd
 
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/eliothedeman/bangarang/alarm"
+	"github.com/eliothedeman/bangarang/escalation"
 	"github.com/eliothedeman/bangarang/event"
 	"github.com/marcw/pagerduty"
 )
 
 func init() {
-	alarm.LoadFactory("pager_duty", NewPagerduty)
+	escalation.LoadFactory("pager_duty", NewPagerduty)
 }
 
 type PagerDuty struct {
 	conf *PagerDutyConfig
 }
 
-func NewPagerduty() alarm.Alarm {
+func NewPagerduty() escalation.Escalation {
 	p := &PagerDuty{
 		conf: &PagerDutyConfig{},
 	}
@@ -27,7 +27,7 @@ func (p *PagerDuty) ConfigStruct() interface{} {
 }
 
 func (p *PagerDuty) Init(conf interface{}) error {
-	logrus.Info("Initilizing pager duty alarm.")
+	logrus.Info("Initilizing pager duty escalation.")
 	return nil
 }
 

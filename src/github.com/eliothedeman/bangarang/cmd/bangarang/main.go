@@ -3,16 +3,20 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 
+	"net/http"
+	_ "net/http/pprof"
+
 	"github.com/Sirupsen/logrus"
-	_ "github.com/eliothedeman/bangarang/alarm/console"
-	_ "github.com/eliothedeman/bangarang/alarm/email"
-	_ "github.com/eliothedeman/bangarang/alarm/grafana-graphite-annotation"
-	_ "github.com/eliothedeman/bangarang/alarm/pd"
 	"github.com/eliothedeman/bangarang/api"
 	"github.com/eliothedeman/bangarang/config"
+	_ "github.com/eliothedeman/bangarang/escalation/console"
+	_ "github.com/eliothedeman/bangarang/escalation/email"
+	_ "github.com/eliothedeman/bangarang/escalation/grafana-graphite-annotation"
+	_ "github.com/eliothedeman/bangarang/escalation/pd"
 	"github.com/eliothedeman/bangarang/pipeline"
 	_ "github.com/eliothedeman/bangarang/provider/http"
 	_ "github.com/eliothedeman/bangarang/provider/tcp"
@@ -43,6 +47,9 @@ func handleSigs() {
 }
 
 func main() {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 	flag.Parse()
 
 	// display the current version and exit

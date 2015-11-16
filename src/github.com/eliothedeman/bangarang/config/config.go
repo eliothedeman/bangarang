@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/eliothedeman/bangarang/alarm"
+	"github.com/eliothedeman/bangarang/escalation"
 	"github.com/eliothedeman/bangarang/provider"
 )
 
@@ -69,10 +69,9 @@ type AppConfig struct {
 	KeepAliveAge    time.Duration                     `json:"-"`
 	RawKeepAliveAge string                            `json:"keep_alive_age"`
 	DbPath          string                            `json:"db_path"`
-	Escalations     alarm.Collection                  `json:"escalations"`
-	GlobalPolicy    *alarm.Policy                     `json:"global_policy"`
+	Escalations     escalation.Collection             `json:"escalations"`
 	Encoding        string                            `json:"encoding"`
-	Policies        map[string]*alarm.Policy          `json:"policies"`
+	Policies        map[string]*escalation.Policy     `json:"policies"`
 	EventProviders  *provider.EventProviderCollection `json:"event_providers"`
 	LogLevel        string                            `json:"log_level"`
 	APIPort         int                               `json:"API_port"`
@@ -103,14 +102,14 @@ func NewDefaultConfig() *AppConfig {
 		DbPath:          defaultDBPath,
 		APIPort:         defaultAPIPort,
 		Encoding:        defaultEncoding,
-		Escalations:     alarm.Collection{},
+		Escalations:     escalation.Collection{},
 		LogLevel:        defaultLogLevel,
 		EventProviders:  &provider.EventProviderCollection{},
 	}
 }
 
-func loadPolicy(buff []byte) (*alarm.Policy, error) {
-	p := &alarm.Policy{}
+func loadPolicy(buff []byte) (*escalation.Policy, error) {
+	p := &escalation.Policy{}
 	err := json.Unmarshal(buff, p)
 	if err != nil {
 		return p, err

@@ -20,6 +20,14 @@ func NewTagset(size int) *TagSet {
 	return &ts
 }
 
+func (t *TagSet) Len() int {
+	if t == nil {
+		return 0
+	}
+
+	return len(*t)
+}
+
 func (t *TagSet) ForEach(f func(k, v string)) {
 	if t == nil {
 		return

@@ -3,14 +3,14 @@ package pipeline
 import (
 	"testing"
 
-	"github.com/eliothedeman/bangarang/alarm"
+	"github.com/eliothedeman/bangarang/escalation"
 	"github.com/eliothedeman/bangarang/event"
 )
 
 func TestResolve(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, ta := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, ta := testPipeline(map[string]*escalation.Policy{"test": pipe})
 	defer p.index.Delete()
 
 	e := event.NewEvent()

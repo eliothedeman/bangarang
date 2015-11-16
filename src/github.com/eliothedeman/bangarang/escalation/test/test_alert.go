@@ -3,7 +3,7 @@ package test
 import (
 	"sync"
 
-	"github.com/eliothedeman/bangarang/alarm"
+	"github.com/eliothedeman/bangarang/escalation"
 	"github.com/eliothedeman/bangarang/event"
 )
 
@@ -13,7 +13,7 @@ type TestAlert struct {
 }
 
 func init() {
-	alarm.LoadFactory("test", NewTest)
+	escalation.LoadFactory("test", NewTest)
 }
 
 func (t *TestAlert) Do(f func(*TestAlert)) {
@@ -37,7 +37,7 @@ func (t *TestAlert) Init(i interface{}) error {
 	return nil
 }
 
-func NewTest() alarm.Alarm {
+func NewTest() escalation.Escalation {
 	return &TestAlert{
 		Events: make(map[*event.Event]int),
 	}

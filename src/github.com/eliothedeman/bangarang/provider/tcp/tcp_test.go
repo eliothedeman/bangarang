@@ -1,8 +1,6 @@
 package tcp
 
 import (
-	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -12,6 +10,7 @@ import (
 
 	"github.com/eliothedeman/bangarang/event"
 	"github.com/eliothedeman/bangarang/provider"
+	"github.com/eliothedeman/newman"
 )
 
 func setup() {
@@ -44,7 +43,7 @@ func randomString(l int) string {
 }
 
 func newTestEvent() *event.Event {
-	e := &event.Event{}
+	e := event.NewEvent()
 	e.Tags.Set("host", randomString(rand.Int()%50))
 	e.Tags.Set("service", randomString(rand.Int()%50))
 	e.Tags.Set("sub_service", randomString(rand.Int()%50))
@@ -52,19 +51,6 @@ func newTestEvent() *event.Event {
 	e.Metric = rand.Float64() * 100
 	return e
 }
-
-// func TestConnect(t *testing.T) {
-// 	p, port := newTestTCP()
-// 	go p.Start(nil)
-
-// 	c, err := net.Dial("tcp", fmt.Sprintf("localhost:%d", port))
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-
-// 	c.Close()
-
-// }
 
 type testPasser struct {
 	in chan *event.Event
@@ -86,38 +72,20 @@ func TestSendSingle(t *testing.T) {
 
 	p.Start(tp)
 
-	conn, err := net.Dial("tcp", fmt.Sprintf("localhost:%d", port))
+	c, err := net.Dial("tcp", fmt.Sprintf("localhost:%d", port))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	e := newTestEvent()
 
-	buff, err := json.Marshal(e)
-	if err != nil {
-		t.Fatal(err)
-	}
-	sizeBuff := make([]byte, 8)
-	binary.LittleEndian.PutUint64(sizeBuff, uint64(len(buff)))
-	n, err := conn.Write(sizeBuff)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n != 8 {
-		t.Fail()
-	}
-	n, err = conn.Write(buff)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n != len(buff) {
-		t.Fail()
-	}
+	conn := newman.NewConn(c)
+	conn.Write(e)
 
 	ne := <-tp.in
 
 	ne.Tags.ForEach(func(k, v string) {
-		if e.Get(k) == v {
+		if e.Get(k) != v {
 			t.Fatalf("Wanted %s got %s for %s", e.Get(k), v, k)
 		}
 	})
@@ -138,35 +106,18 @@ func TestMany(t *testing.T) {
 
 	p.Start(tp)
 
-	conn, err := net.Dial("tcp", fmt.Sprintf("localhost:%d", port))
+	c, err := net.Dial("tcp", fmt.Sprintf("localhost:%d", port))
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	conn := newman.NewConn(c)
 
 	go func() {
 		// send 10000 events
 		for i := 0; i < 10000; i++ {
 			e := newTestEvent()
-			buff, err := json.Marshal(e)
-			if err != nil {
-				t.Fatal(err)
-			}
-			sizeBuff := make([]byte, 8)
-			binary.LittleEndian.PutUint64(sizeBuff, uint64(len(buff)))
-			n, err := conn.Write(sizeBuff)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if n != 8 {
-				t.Fail()
-			}
-			n, err = conn.Write(buff)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if n != len(buff) {
-				t.Fail()
-			}
+			conn.Write(e)
 		}
 
 	}()

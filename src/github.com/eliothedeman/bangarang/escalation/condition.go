@@ -1,4 +1,4 @@
-package alarm
+package escalation
 
 import (
 	"math"

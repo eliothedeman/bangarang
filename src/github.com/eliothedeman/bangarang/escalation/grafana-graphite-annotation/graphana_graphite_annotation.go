@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/eliothedeman/bangarang/alarm"
+	"github.com/eliothedeman/bangarang/escalation"
 	"github.com/eliothedeman/bangarang/event"
 )
 import "github.com/marpaia/graphite-golang"
@@ -16,7 +16,7 @@ const (
 )
 
 func init() {
-	alarm.LoadFactory("grafana_graphite_annotation", NewGrafanaGraphite)
+	escalation.LoadFactory("grafana_graphite_annotation", NewGrafanaGraphite)
 }
 
 type GrafanaGraphiteAnnotation struct {
@@ -57,6 +57,6 @@ func (g *GrafanaGraphiteAnnotation) Init(i interface{}) error {
 	return nil
 }
 
-func NewGrafanaGraphite() alarm.Alarm {
+func NewGrafanaGraphite() escalation.Escalation {
 	return &GrafanaGraphiteAnnotation{}
 }

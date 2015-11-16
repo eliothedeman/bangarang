@@ -1,4 +1,4 @@
-package alarm
+package escalation
 
 import (
 	"encoding/json"
@@ -9,22 +9,22 @@ import (
 )
 
 var (
-	alarms = &alarmCollection{
-		// maps an alarm type name to an alarm
+	Escalations = &EscalationCollection{
+		// maps an Escalation type name to an Escalation
 		factories: make(map[string]Factory),
 	}
 )
 
 // Collection maps the name of an escalation policy to the actions to be taken by them
 type Collection struct {
-	Coll map[string][]Alarm
+	Coll map[string][]Escalation
 	raw  map[string][]json.RawMessage
 }
 
-// Collection holds a map of strings to alarms
-func (c *Collection) Collection() map[string][]Alarm {
+// Collection holds a map of strings to Escalations
+func (c *Collection) Collection() map[string][]Escalation {
 	if c.Coll == nil {
-		c.Coll = map[string][]Alarm{}
+		c.Coll = map[string][]Escalation{}
 	}
 	return c.Coll
 }
@@ -53,10 +53,10 @@ func (c *Collection) UnmarshalRaw() error {
 		Type string `json:"type"`
 		Name string `json:"name"`
 	}{}
-	c.Coll = make(map[string][]Alarm)
+	c.Coll = make(map[string][]Escalation)
 	var err error
 	for k, v := range c.raw {
-		c.Coll[k] = make([]Alarm, 0)
+		c.Coll[k] = make([]Escalation, 0)
 		for _, raw := range v {
 			name.Name = ""
 			name.Type = ""
@@ -66,17 +66,17 @@ func (c *Collection) UnmarshalRaw() error {
 			}
 
 			fact := GetFactory(name.Type)
-			newAlarm := fact()
-			conf := newAlarm.ConfigStruct()
+			newEscalation := fact()
+			conf := newEscalation.ConfigStruct()
 			err = json.Unmarshal(raw, conf)
 			if err != nil {
 				return err
 			}
-			err = newAlarm.Init(conf)
+			err = newEscalation.Init(conf)
 			if err != nil {
 				return err
 			}
-			c.Coll[k] = append(c.Coll[k], newAlarm)
+			c.Coll[k] = append(c.Coll[k], newEscalation)
 		}
 	}
 
@@ -95,32 +95,32 @@ func (c *Collection) UnmarshalJSON(buff []byte) error {
 
 // GetFactory returns the Factory associated with the given name
 func GetFactory(name string) Factory {
-	alarms.Lock()
-	a := alarms.factories[name]
-	alarms.Unlock()
+	Escalations.Lock()
+	a := Escalations.factories[name]
+	Escalations.Unlock()
 	return a
 }
 
-// LoadFactory loads an Factory into the globaly available map of AlarmFactories
+// LoadFactory loads an Factory into the globaly available map of EscalationFactories
 func LoadFactory(name string, f Factory) {
-	logrus.Debugf("Loading alarm factory %s", name)
-	alarms.Lock()
-	alarms.factories[name] = f
-	alarms.Unlock()
+	logrus.Debugf("Loading Escalation factory %s", name)
+	Escalations.Lock()
+	Escalations.factories[name] = f
+	Escalations.Unlock()
 }
 
-// Alarm is the basic interface which provides a way to communicate incidents
+// Escalation is the basic interface which provides a way to communicate incidents
 // to the outside world
-type Alarm interface {
+type Escalation interface {
 	Send(i *event.Incident) error
 	ConfigStruct() interface{}
 	Init(interface{}) error
 }
 
-// Factory returns a new alarm
-type Factory func() Alarm
+// Factory returns a new Escalation
+type Factory func() Escalation
 
-type alarmCollection struct {
+type EscalationCollection struct {
 	collections Collection
 	factories   map[string]Factory
 	sync.Mutex

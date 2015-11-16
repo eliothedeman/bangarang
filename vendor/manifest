@@ -45,6 +45,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/eliothedeman/newman",
+			"repository": "https://github.com/eliothedeman/newman",
+			"revision": "e503e00508726b0e98e280654a74a6eb5f5c88f9",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/eliothedeman/smoothie",
 			"repository": "https://github.com/eliothedeman/smoothie",
 			"revision": "655f50e31c05ce842375f9cb73fe572b9ca53635",

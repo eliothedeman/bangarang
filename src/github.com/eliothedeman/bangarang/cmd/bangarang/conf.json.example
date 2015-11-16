@@ -1,6 +1,6 @@
 {
     "tcp_port": 8080,
-    "alarms": {
+    "Escalations": {
         "test": [
             {
                 "type":"console"

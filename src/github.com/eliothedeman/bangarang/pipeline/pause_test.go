@@ -6,16 +6,16 @@ import (
 	"testing"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/eliothedeman/bangarang/alarm"
-	_ "github.com/eliothedeman/bangarang/alarm/console"
 	"github.com/eliothedeman/bangarang/config"
+	"github.com/eliothedeman/bangarang/escalation"
+	_ "github.com/eliothedeman/bangarang/escalation/console"
 	"github.com/eliothedeman/bangarang/event"
 )
 
 func TestPausePipeline(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: "service", Value: "KeepAlive"}}, nil)
-	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, _ := testPipeline(map[string]*escalation.Policy{"test": pipe})
 	defer p.index.Delete()
 	p.Pause()
 	p.Unpause()
@@ -27,12 +27,12 @@ func TestPausePipeline(t *testing.T) {
 func TestAddConfig(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: "service", Value: "KeepAlive"}}, nil)
-	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, _ := testPipeline(map[string]*escalation.Policy{"test": pipe})
 	defer p.index.Delete()
 	p.Process(event.NewEvent())
 
 	conf := &config.AppConfig{}
-	conf.Policies = map[string]*alarm.Policy{"new": testPolicy(c, nil, &event.TagSet{{Key: "2", Value: "2"}}, nil)}
+	conf.Policies = map[string]*escalation.Policy{"new": testPolicy(c, nil, &event.TagSet{{Key: "2", Value: "2"}}, nil)}
 
 	p.Refresh(conf)
 	p.Pass(event.NewEvent())
@@ -56,7 +56,7 @@ func TestPausePipelineCache(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: "service", Value: "wwoo"}}, nil)
-	p, _ := testPipeline(map[string]*alarm.Policy{"test": pipe})
+	p, _ := testPipeline(map[string]*escalation.Policy{"test": pipe})
 	defer p.index.Delete()
 	p.Start()
 	p.Pause()
@@ -89,7 +89,7 @@ func TestRefreshPipeline(t *testing.T) {
 
 	p := NewPipeline(ac)
 	defer p.index.Delete()
-	ac.Policies = map[string]*alarm.Policy{"test": &alarm.Policy{}}
+	ac.Policies = map[string]*escalation.Policy{"test": &escalation.Policy{}}
 
 	p.Refresh(ac)
 

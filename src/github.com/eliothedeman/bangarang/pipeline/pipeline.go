@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/config"
+	"github.com/eliothedeman/bangarang/escalation"
 	"github.com/eliothedeman/bangarang/event"
 	"github.com/eliothedeman/bangarang/provider"
 )
@@ -21,9 +21,9 @@ const (
 type Pipeline struct {
 	keepAliveAge       time.Duration
 	keepAliveCheckTime time.Duration
-	globalPolicy       *alarm.Policy
-	escalations        *alarm.Collection
-	policies           map[string]*alarm.Policy
+	globalPolicy       *escalation.Policy
+	escalations        *escalation.Collection
+	policies           map[string]*escalation.Policy
 	index              *event.Index
 	providers          provider.EventProviderCollection
 	encodingPool       *event.EncodingPool
@@ -46,7 +46,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		unpauseChan:        make(chan struct{}),
 		pauseChan:          make(chan struct{}),
 		tracker:            NewTracker(),
-		escalations:        &alarm.Collection{},
+		escalations:        &escalation.Collection{},
 		index:              event.NewIndex(),
 	}
 	p.Start()
@@ -64,12 +64,12 @@ func (p *Pipeline) Pass(e *event.Event) {
 }
 
 // only adds polcies that are not already known of
-func (p *Pipeline) refreshPolicies(m map[string]*alarm.Policy) {
+func (p *Pipeline) refreshPolicies(m map[string]*escalation.Policy) {
 	logrus.Info("Refreshing policies")
 
 	// initilize the pipeline's polices if they don't already exist
 	if p.policies == nil {
-		p.policies = make(map[string]*alarm.Policy)
+		p.policies = make(map[string]*escalation.Policy)
 	}
 
 	// add in new policies
@@ -140,12 +140,6 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 	}
 
 	p.refreshPolicies(conf.Policies)
-	p.keepAliveAge = conf.KeepAliveAge
-	p.globalPolicy = conf.GlobalPolicy
-
-	if p.globalPolicy != nil {
-		p.globalPolicy.Compile()
-	}
 
 	// update to the new config
 	p.config = conf
@@ -327,7 +321,7 @@ func (p *Pipeline) ProcessIncident(in *event.Incident) {
 		esc, ok := p.escalations.Collection()[in.Escalation]
 		if ok {
 
-			// send to every alarm in the escalation
+			// send to every Escalation in the escalation
 			for _, a := range esc {
 				a.Send(in)
 			}
@@ -339,11 +333,6 @@ func (p *Pipeline) ProcessIncident(in *event.Incident) {
 
 // Run the given event though the pipeline
 func (p *Pipeline) Process(e *event.Event) {
-	if p.globalPolicy != nil {
-		if !p.globalPolicy.CheckMatch(e) || !p.globalPolicy.CheckNotMatch(e) {
-			return
-		}
-	}
 
 	// make sure we can know that the event has been tracked
 	e.WaitInc()
@@ -352,7 +341,7 @@ func (p *Pipeline) Process(e *event.Event) {
 	p.tracker.TrackEvent(e)
 
 	// process this event on every policy
-	var pol *alarm.Policy
+	var pol *escalation.Policy
 	for _, pol = range p.policies {
 		e.WaitInc()
 		pol.Process(e, func(in *event.Incident) {

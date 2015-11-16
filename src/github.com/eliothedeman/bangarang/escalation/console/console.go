@@ -3,12 +3,12 @@ package console
 import (
 	"github.com/Sirupsen/logrus"
 
-	"github.com/eliothedeman/bangarang/alarm"
+	"github.com/eliothedeman/bangarang/escalation"
 	"github.com/eliothedeman/bangarang/event"
 )
 
 func init() {
-	alarm.LoadFactory("console", NewConsole)
+	escalation.LoadFactory("console", NewConsole)
 }
 
 type Console struct {
@@ -37,6 +37,6 @@ func (c *Console) Init(i interface{}) error {
 	return nil
 }
 
-func NewConsole() alarm.Alarm {
+func NewConsole() escalation.Escalation {
 	return &Console{}
 }

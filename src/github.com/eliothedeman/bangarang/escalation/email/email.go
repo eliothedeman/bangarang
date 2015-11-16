@@ -11,12 +11,12 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/eliothedeman/bangarang/alarm"
+	"github.com/eliothedeman/bangarang/escalation"
 	"github.com/eliothedeman/bangarang/event"
 )
 
 func init() {
-	alarm.LoadFactory("email", NewEmail)
+	escalation.LoadFactory("email", NewEmail)
 }
 
 type Email struct {
@@ -24,7 +24,7 @@ type Email struct {
 	Auth *smtp.Auth
 }
 
-func NewEmail() alarm.Alarm {
+func NewEmail() escalation.Escalation {
 	e := &Email{
 		conf: &EmailConfig{},
 		Auth: nil,

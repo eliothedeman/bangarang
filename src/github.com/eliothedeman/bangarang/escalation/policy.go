@@ -1,4 +1,4 @@
-package alarm
+package escalation
 
 import (
 	"log"
@@ -86,8 +86,6 @@ func (p *Policy) start() {
 
 				// process the event if it matches the policy
 				if p.Matches(in.e) {
-					log.Println(in.e)
-					// process the request
 
 					// check critical
 					if shouldAlert, status := p.ActionCrit(in.e); shouldAlert {
@@ -138,6 +136,12 @@ func (p *Policy) Stop() {
 
 // check to see if an event satisfies the policy
 func (p *Policy) Matches(e *event.Event) bool {
+
+	// if there is nothing to positivly match on, there is no match
+	if p.Match.Len() == 0 {
+		return false
+	}
+
 	return p.CheckMatch(e) && !p.CheckNotMatch(e)
 }
 
