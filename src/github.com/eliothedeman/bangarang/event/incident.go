@@ -18,7 +18,6 @@ type Incident struct {
 	Time        int64  `json:"time" msg:"time"`
 	Id          int64  `json:"id" msg:"id"`
 	Active      bool   `json:"active" msg:"active"`
-	Escalation  string `json:"escalation" msg:"escalation"`
 	Description string `json:"description" msg:"description"`
 	Policy      string `json:"policy" msg:"policy"`
 	Status      int    `json:"status" "msg:"status"`
@@ -55,12 +54,11 @@ func (i *Incident) FormatDescription() string {
 
 func NewIncident(policy string, escalation string, status int, e *Event) *Incident {
 	in := &Incident{
-		EventName:  []byte(e.IndexName()),
-		Time:       time.Now().Unix(),
-		Active:     true,
-		Status:     status,
-		Policy:     policy,
-		Escalation: escalation,
+		EventName: []byte(e.IndexName()),
+		Time:      time.Now().Unix(),
+		Active:    true,
+		Status:    status,
+		Policy:    policy,
 	}
 
 	in.Tags = e.Tags

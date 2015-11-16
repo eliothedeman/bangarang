@@ -25,7 +25,6 @@ type Condition struct {
 	Derivative    bool         `json:"derivative"`
 	HoltWinters   bool         `json:"holt_winters"`
 	Simple        bool         `json:"simple"`
-	Escalation    string       `json:"escalation"`
 	Occurences    int          `json:"occurences"`
 	WindowSize    int          `json:"window_size"`
 	Aggregation   *Aggregation `json:"agregation"`
