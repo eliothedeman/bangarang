@@ -15,7 +15,7 @@ var (
 	}
 )
 
-// EscalationPolicy is the collection of escalations that are subscribed to by the policy
+// EscalationPolicy is the collection of Escalations that are subscribed to by the policy
 type EscalationPolicy struct {
 	Match    *event.TagSet     `json:"match"`
 	NotMatch *event.TagSet     `json:"not_match"`
@@ -30,24 +30,31 @@ type EscalationPolicy struct {
 	rMatch    Matcher
 	rNotMatch Matcher
 
-	// escalations to forward incidents to
-	escalations []Escalation
+	// Escalations to forward incidents to
+	Escalations []Escalation
 }
 
-// Compile sets up all the regex matches for the subscriptions and starts all of the escalations held by the policy
+// Compile sets up all the regex matches for the subscriptions and starts all of the Escalations held by the policy
 func (e *EscalationPolicy) Compile() (err error) {
 	// create a matcher from each tagset
-	e.rMatch, err = MatcherFromTagSet(e.Match)
-	if err != nil {
-		return
-	}
-	e.rNotMatch, err = MatcherFromTagSet(e.NotMatch)
-	if err != nil {
-		return
+
+	if e.Match != nil {
+		e.rMatch, err = MatcherFromTagSet(e.Match)
+		if err != nil {
+			return
+		}
 	}
 
-	// create enough space for all of the new escalations
-	e.escalations = make([]Escalation, 0, len(e.Configs))
+	if e.NotMatch != nil {
+		e.rNotMatch, err = MatcherFromTagSet(e.NotMatch)
+		if err != nil {
+			return
+		}
+
+	}
+
+	// create enough space for all of the new Escalations
+	e.Escalations = make([]Escalation, 0, len(e.Configs))
 
 	// go through each config and creat an escalation out of it
 	for _, raw := range e.Configs {
@@ -59,7 +66,7 @@ func (e *EscalationPolicy) Compile() (err error) {
 		}
 
 		// if all is well, append the new escalation
-		e.escalations = append(e.escalations, newEscalation)
+		e.Escalations = append(e.Escalations, newEscalation)
 
 	}
 
@@ -91,14 +98,14 @@ func (e *EscalationPolicy) isSubscribed(i *event.Incident) bool {
 	return e.rMatch.MatchesAll(i.Tags) && !e.rNotMatch.MatchesOne(i.Tags)
 }
 
-// Pass an incident into the escalation for processing
-func (e *EscalationPolicy) Pass(i *event.Incident) {
+// PassIncident takes an incident into the escalation for processing
+func (e *EscalationPolicy) PassIncident(i *event.Incident) {
 
 	// only process incidents that this policy subscribes to
 	if e.isSubscribed(i) {
 
 		// send if off to every escalation known about
-		for _, ep := range e.escalations {
+		for _, ep := range e.Escalations {
 			err := ep.Send(i)
 			if err != nil {
 				logrus.Errorf("Unable to forward incident %s to escalation %+v", i.FormatDescription(), ep)

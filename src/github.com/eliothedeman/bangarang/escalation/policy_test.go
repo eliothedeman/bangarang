@@ -17,6 +17,21 @@ const (
 `
 )
 
+type testingPasser struct {
+	incidents map[string]*event.Incident
+}
+
+func (t *testingPasser) PassIncident(i *event.Incident) {
+	if t.incidents == nil {
+		t.incidents = map[string]*event.Incident{}
+	}
+	t.incidents[string(i.IndexName())] = i
+}
+
+func newTestPasser() event.IncidentPasser {
+	return &testingPasser{}
+}
+
 func TestPolicyRegexParsing(t *testing.T) {
 	p := &Policy{}
 
@@ -43,7 +58,7 @@ func TestMatchOr(t *testing.T) {
 			"test_tag", "unknown|shadow",
 		},
 	}
-	p.Compile()
+	p.Compile(newTestPasser())
 
 	if !p.CheckMatch(e) {
 		t.Fail()
@@ -71,7 +86,7 @@ func TestMatchTagsMulti(t *testing.T) {
 			"other_tag", "ice",
 		},
 	}
-	p.Compile()
+	p.Compile(newTestPasser())
 
 	if !p.CheckMatch(e) {
 		t.Fail()
@@ -95,7 +110,7 @@ func TestMatchTagsMultiNotMatch(t *testing.T) {
 			"other_tag", "ice",
 		},
 	}
-	p.Compile()
+	p.Compile(newTestPasser())
 
 	if p.CheckMatch(e) {
 		t.Fail()
@@ -116,7 +131,7 @@ func TestMatchTagsSingle(t *testing.T) {
 			"test_tag", "[0-9]+",
 		},
 	}
-	p.Compile()
+	p.Compile(newTestPasser())
 
 	if !p.CheckMatch(e) {
 		t.Fail()
@@ -135,7 +150,7 @@ func TestCompileWithCrit(t *testing.T) {
 		Exactly: test_f(0.5),
 	}
 
-	p.Compile()
+	p.Compile(newTestPasser())
 
 }
 
@@ -147,7 +162,7 @@ func TestCompileSatisfies(t *testing.T) {
 		Exactly: test_f(0.5),
 	}
 
-	p.Compile()
+	p.Compile(newTestPasser())
 
 	e := &event.Event{}
 

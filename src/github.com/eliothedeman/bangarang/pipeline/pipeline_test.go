@@ -18,6 +18,21 @@ var (
 	tests_ran = 100
 )
 
+type testingPasser struct {
+	incidents map[string]*event.Incident
+}
+
+func (t *testingPasser) PassIncident(i *event.Incident) {
+	if t.incidents == nil {
+		t.incidents = map[string]*event.Incident{}
+	}
+	t.incidents[string(i.IndexName())] = i
+}
+
+func newTestPasser() event.IncidentPasser {
+	return &testingPasser{}
+}
+
 func testPipeline(p map[string]*escalation.Policy) (*Pipeline, *test.TestAlert) {
 	tests_ran += 1
 	ta := test.NewTest().(*test.TestAlert)
@@ -27,13 +42,14 @@ func testPipeline(p map[string]*escalation.Policy) (*Pipeline, *test.TestAlert) 
 		pauseChan:    make(chan struct{}),
 		unpauseChan:  make(chan struct{}),
 		encodingPool: event.NewEncodingPool(event.EncoderFactories["json"], event.DecoderFactories["json"], runtime.NumCPU()),
-		escalations: &escalation.Collection{
-			Coll: map[string][]escalation.Escalation{
-				"test": []escalation.Escalation{ta},
+		escalations: map[string]*escalation.EscalationPolicy{
+			"test": &escalation.EscalationPolicy{
+				Escalations: []escalation.Escalation{ta},
 			},
 		},
-		tracker: NewTracker(),
-		in:      make(chan *event.Event),
+		tracker:       NewTracker(),
+		in:            make(chan *event.Event, 10),
+		incidentInput: make(chan *event.Incident),
 	}
 
 	go pipe.tracker.Start()
@@ -50,7 +66,7 @@ func testPolicy(crit, warn *escalation.Condition, match, notMatch *event.TagSet)
 		NotMatch: notMatch,
 	}
 
-	p.Compile()
+	p.Compile(newTestPasser())
 	return p
 }
 
@@ -60,7 +76,6 @@ func testCondition(g, l, e *float64, o int) *escalation.Condition {
 		Less:       l,
 		Exactly:    e,
 		Occurences: o,
-		Escalation: "test",
 	}
 }
 
@@ -73,12 +88,13 @@ func TestKeepAlive(t *testing.T) {
 	c := testCondition(test_f(0), nil, nil, 1)
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: INTERNAL_TAG_NAME, Value: KEEP_ALIVE_INTERNAL_TAG}}, nil)
 	p, ta := testPipeline(map[string]*escalation.Policy{"test": pipe})
+	pipe.Compile(p)
 	defer p.index.Delete()
 	e := event.NewEvent()
 	e.Tags.Set("host", "one one")
 	e.Metric = -1
 
-	p.Pass(e)
+	p.PassEvent(e)
 	e.Wait()
 	// sleep long enough for the keep alives to trip
 	time.Sleep(100 * time.Millisecond)
@@ -114,7 +130,7 @@ func TestMatchPolicy(t *testing.T) {
 	e.Tags.Set("service", "test")
 	e.Metric = 1.0
 
-	p.Process(e)
+	p.processEvent(e)
 	e.Wait()
 	if len(ta.Events) == 0 {
 		t.Fatal()
@@ -138,7 +154,7 @@ func TestOccurences(t *testing.T) {
 	e.Tags.Set("service", "test")
 	e.Metric = 1.0
 
-	p.Pass(e)
+	p.PassEvent(e)
 	e.Wait()
 
 	ta.Do(func(ta *test.TestAlert) {
@@ -151,7 +167,7 @@ func TestOccurences(t *testing.T) {
 	e.Tags.Set("service", "test")
 	e.Metric = 1.0
 
-	p.Pass(e)
+	p.PassEvent(e)
 	e.Wait()
 
 	ta.Do(func(ta *test.TestAlert) {
@@ -180,7 +196,7 @@ func BenchmarkProcessOk(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		p.Pass(e[i])
+		p.PassEvent(e[i])
 	}
 	for i := 0; i < b.N; i++ {
 		e[i].Wait()
@@ -201,7 +217,7 @@ func BenchmarkProcess2CPU(b *testing.B) {
 	b.ResetTimer()
 	f := func(s []*event.Event) {
 		for i := 0; i < len(s); i++ {
-			p.Pass(s[i])
+			p.PassEvent(s[i])
 		}
 		w.Done()
 	}
@@ -228,7 +244,7 @@ func BenchmarkProcess4CPU(b *testing.B) {
 	b.ResetTimer()
 	f := func(s []*event.Event) {
 		for i := 0; i < len(s); i++ {
-			p.Pass(s[i])
+			p.PassEvent(s[i])
 		}
 		w.Done()
 	}
@@ -263,7 +279,7 @@ func BenchmarkIndex(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		e.Tags.Set("service", fmt.Sprintf("%d", i%1000))
-		p.Process(e)
+		p.processEvent(e)
 	}
 
 	e.Wait()
@@ -279,7 +295,7 @@ func TestProcess(t *testing.T) {
 	e.Tags.Set("service", "test")
 	e.Metric = 1.0
 
-	p.Process(e)
+	p.processEvent(e)
 	e.Wait()
 
 	if len(ta.Events) != 1 {
@@ -291,7 +307,7 @@ func TestProcess(t *testing.T) {
 	e.Tags.Set("service", "test")
 	e.Metric = -1.0
 
-	p.Process(e)
+	p.processEvent(e)
 	e.Wait()
 	if ta.Events[e] != event.OK {
 		t.Fatal(ta.Events)
@@ -315,10 +331,10 @@ func TestProcessDedupe(t *testing.T) {
 		events[i] = e
 	}
 
-	p.Process(events[0])
+	p.processEvent(events[0])
 
 	for i := 1; i < len(events); i++ {
-		p.Process(events[i])
+		p.processEvent(events[i])
 		events[i].Wait()
 	}
 

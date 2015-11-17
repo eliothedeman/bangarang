@@ -124,7 +124,7 @@ func GetEventProvider(name string) EventProvider {
 
 // Provides an interface for injesting events from an outside service
 type EventProvider interface {
-	Start(event.Passer)
+	Start(event.EventPasser)
 	ConfigStruct() interface{}
 	Init(interface{}) error
 }

@@ -21,7 +21,7 @@ func TestPausePipeline(t *testing.T) {
 	p.Unpause()
 
 	// make sure we can still insert events
-	p.Pass(event.NewEvent())
+	p.PassEvent(event.NewEvent())
 }
 
 func TestAddConfig(t *testing.T) {
@@ -29,13 +29,13 @@ func TestAddConfig(t *testing.T) {
 	pipe := testPolicy(c, nil, &event.TagSet{{Key: "service", Value: "KeepAlive"}}, nil)
 	p, _ := testPipeline(map[string]*escalation.Policy{"test": pipe})
 	defer p.index.Delete()
-	p.Process(event.NewEvent())
+	p.processEvent(event.NewEvent())
 
 	conf := &config.AppConfig{}
 	conf.Policies = map[string]*escalation.Policy{"new": testPolicy(c, nil, &event.TagSet{{Key: "2", Value: "2"}}, nil)}
 
 	p.Refresh(conf)
-	p.Pass(event.NewEvent())
+	p.PassEvent(event.NewEvent())
 
 	p.ViewConfig(func(ac *config.AppConfig) {
 		conf = ac
@@ -46,7 +46,7 @@ func TestAddConfig(t *testing.T) {
 	p.Refresh(conf)
 	log.Println(p.policies)
 	for i := 0; i < 100; i++ {
-		p.Pass(&event.Event{})
+		p.PassEvent(&event.Event{})
 
 	}
 
@@ -61,7 +61,7 @@ func TestPausePipelineCache(t *testing.T) {
 	p.Start()
 	p.Pause()
 	for i := 0; i < 100; i++ {
-		p.Pass(event.NewEvent())
+		p.PassEvent(event.NewEvent())
 	}
 
 	p.Unpause()
@@ -71,11 +71,13 @@ func TestRefreshPipeline(t *testing.T) {
 	one := []byte(`{
 	"api_port": 8082,
 	"escalations": {
-		"testing": [
-			{
-				"type": "console"
-			}
-		]
+		"testing": {
+			"configs": [
+				{
+					"type": "console"
+				}
+			]
+		}
 	},
 	"keep_alive_age": "10s",
     "escalations_dir": "alerts/"

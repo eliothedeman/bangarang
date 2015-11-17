@@ -34,6 +34,7 @@ type Pipeline struct {
 	pauseChan          chan struct{}
 	unpauseChan        chan struct{}
 	in                 chan *event.Event
+	incidentInput      chan *event.Incident
 }
 
 // NewPipeline
@@ -42,7 +43,8 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 		encodingPool:       event.NewEncodingPool(event.EncoderFactories[conf.Encoding], event.DecoderFactories[conf.Encoding], runtime.NumCPU()),
 		keepAliveAge:       conf.KeepAliveAge,
 		keepAliveCheckTime: 10 * time.Second,
-		in:                 make(chan *event.Event),
+		in:                 make(chan *event.Event, 10),
+		incidentInput:      make(chan *event.Incident),
 		unpauseChan:        make(chan struct{}),
 		pauseChan:          make(chan struct{}),
 		tracker:            NewTracker(),
@@ -59,7 +61,7 @@ func NewPipeline(conf *config.AppConfig) *Pipeline {
 	return p
 }
 
-func (p *Pipeline) Pass(e *event.Event) {
+func (p *Pipeline) PassEvent(e *event.Event) {
 	p.in <- e
 }
 
@@ -74,6 +76,9 @@ func (p *Pipeline) refreshPolicies(m map[string]*escalation.Policy) {
 
 	// add in new policies
 	for k, v := range m {
+
+		// compile the new policy
+		v.Compile(p)
 
 		// if the name of the new polcy is not known of, insert it
 		if _, inMap := p.policies[k]; !inMap {
@@ -111,7 +116,7 @@ func (p *Pipeline) RemovePolicy(name string) {
 				i.Status = event.OK
 
 				// process the resolved incident
-				go p.ProcessIncident(i)
+				go p.processIncident(i)
 			}
 		}
 		pol.Stop()
@@ -229,8 +234,7 @@ func (p *Pipeline) checkExpired() {
 
 	// process every event as if it was an incomming event
 	for _, e := range events {
-		println(e)
-		p.Pass(e)
+		p.PassEvent(e)
 	}
 }
 
@@ -294,11 +298,15 @@ func (p *Pipeline) Start() {
 	// fan in all of the providers and process them
 	go func() {
 		var e *event.Event
+		var i *event.Incident
 		for {
 			select {
 			// recieve the event
 			case e = <-p.in:
-				p.Process(e)
+				p.processEvent(e)
+
+			case i = <-p.incidentInput:
+				p.processIncident(i)
 
 			// handle pause
 			case <-p.pauseChan:
@@ -310,7 +318,14 @@ func (p *Pipeline) Start() {
 	}()
 }
 
-func (p *Pipeline) ProcessIncident(in *event.Incident) {
+// ProcessIncident relays the incident into the pipeline for processing
+func (p *Pipeline) PassIncident(in *event.Incident) {
+	p.incidentInput <- in
+}
+
+// processIncident forwards a deduped incident on to every escalation
+func (p *Pipeline) processIncident(in *event.Incident) {
+	log.Println(in)
 
 	// start tracking this incident in memory so we can call back to it
 	p.tracker.TrackIncident(in)
@@ -325,22 +340,15 @@ func (p *Pipeline) ProcessIncident(in *event.Incident) {
 			p.index.DeleteIncidentById(in.IndexName())
 		}
 
-		// fetch the escalation to take
-		esc, ok := p.escalations[in.Escalation]
-		if ok {
-
-			// send to every Escalation in the escalation
-			for _, a := range esc {
-				a.Send(in)
-			}
-		} else {
-			logrus.Error("unknown escalation", in.Escalation)
+		// send it on to every escalation
+		for _, esc := range p.escalations {
+			esc.PassIncident(in)
 		}
 	}
 }
 
 // Run the given event though the pipeline
-func (p *Pipeline) Process(e *event.Event) {
+func (p *Pipeline) processEvent(e *event.Event) {
 
 	// make sure we can know that the event has been tracked
 	e.WaitInc()
@@ -352,9 +360,7 @@ func (p *Pipeline) Process(e *event.Event) {
 	var pol *escalation.Policy
 	for _, pol = range p.policies {
 		e.WaitInc()
-		pol.Process(e, func(in *event.Incident) {
-			p.ProcessIncident(in)
-		})
+		pol.PassEvent(e)
 	}
 
 }

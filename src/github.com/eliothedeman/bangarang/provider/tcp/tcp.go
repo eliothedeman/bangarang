@@ -50,7 +50,7 @@ func (t *TCPProvider) ConfigStruct() interface{} {
 }
 
 // start accepting connections and consume each of them as they come in
-func (t *TCPProvider) Start(p event.Passer) {
+func (t *TCPProvider) Start(p event.EventPasser) {
 
 	logrus.Infof("TCP Provider listening on %s", t.laddr.String())
 	// start listening on that addr
@@ -75,7 +75,7 @@ func (t *TCPProvider) Start(p event.Passer) {
 	}()
 }
 
-func (t *TCPProvider) consume(c *net.TCPConn, p event.Passer) {
+func (t *TCPProvider) consume(c *net.TCPConn, p event.EventPasser) {
 	// create a newman connection
 	conn := newman.NewConn(c)
 
@@ -88,7 +88,7 @@ func (t *TCPProvider) consume(c *net.TCPConn, p event.Passer) {
 		e := raw.(*event.Event)
 
 		// pass it on to the next step
-		p.Pass(e)
+		p.PassEvent(e)
 	}
 
 	// when it is done, close the connection

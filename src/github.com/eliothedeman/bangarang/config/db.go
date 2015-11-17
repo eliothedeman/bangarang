@@ -284,10 +284,6 @@ func (d *DBConf) getVersion(version string) (*AppConfig, error) {
 		return nil, err
 	}
 
-	// compile all of the policies
-	for _, p := range s.App.Policies {
-		p.Compile()
-	}
 	s.App.provider = d
 
 	return s.App, nil

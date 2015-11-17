@@ -115,7 +115,5 @@ func loadPolicy(buff []byte) (*escalation.Policy, error) {
 		return p, err
 	}
 
-	p.Compile()
-
 	return p, err
 }

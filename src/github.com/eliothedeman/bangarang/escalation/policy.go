@@ -29,17 +29,18 @@ type Policy struct {
 	Warn        *Condition    `json:"warn"`
 	Name        string        `json:"name"`
 	Comment     string        `json:"comment"`
+	next        event.IncidentPasser
 	r_match     Matcher
 	r_not_match Matcher
 	stop        chan struct{}
-	in          chan *pack
+	in          chan *event.Event
 	resolve     chan *event.Incident
 }
 
 // start the policy listening for events
 func (p *Policy) start() {
 	go func() {
-		var in *pack
+		var e *event.Event
 		for {
 			select {
 			case toResolve := <-p.resolve:
@@ -82,28 +83,29 @@ func (p *Policy) start() {
 
 				}()
 				return
-			case in = <-p.in:
+			case e = <-p.in:
 
 				// process the event if it matches the policy
-				if p.Matches(in.e) {
+				if p.Matches(e) {
 
 					// check critical
-					if shouldAlert, status := p.ActionCrit(in.e); shouldAlert {
-						incident := event.NewIncident(p.Name, p.Crit.Escalation, status, in.e)
+					if shouldAlert, status := p.ActionCrit(e); shouldAlert {
+						incident := event.NewIncident(p.Name, status, e)
 						incident.SetResolve(p.resolve)
 
-						in.n(incident)
-						logrus.Info(incident.FormatDescription())
+						// send send it off to the next hop
+						p.next.PassIncident(incident)
 
 						// check warning
-					} else if shouldAlert, status := p.ActionWarn(in.e); shouldAlert {
-						incident := event.NewIncident(p.Name, p.Warn.Escalation, status, in.e)
+					} else if shouldAlert, status := p.ActionWarn(e); shouldAlert {
+						incident := event.NewIncident(p.Name, status, e)
 						incident.SetResolve(p.resolve)
-						in.n(incident)
-						logrus.Info(incident.FormatDescription())
+
+						// send it off to the next hop
+						p.next.PassIncident(incident)
 					}
 				}
-				in.e.WaitDec()
+				e.WaitDec()
 			}
 		}
 	}()
@@ -117,17 +119,9 @@ func (p *Policy) clean() {
 	p.r_not_match = nil
 }
 
-type pack struct {
-	e *event.Event
-	n func(*event.Incident)
-}
-
 // Process will send exicute the next function if the event satisfies the policy
-func (p *Policy) Process(e *event.Event, next func(*event.Incident)) {
-	p.in <- &pack{
-		e: e,
-		n: next,
-	}
+func (p *Policy) PassEvent(e *event.Event) {
+	p.in <- e
 }
 
 func (p *Policy) Stop() {
@@ -201,11 +195,12 @@ func (m Matcher) ForEach(f func(k string, v *regexp.Regexp)) {
 }
 
 // compile the regex patterns for this policy
-func (p *Policy) Compile() {
+func (p *Policy) Compile(next event.IncidentPasser) {
 	logrus.Infof("Compiling regex maches for %s", p.Name)
-	p.in = make(chan *pack, 10)
+	p.in = make(chan *event.Event, 10)
 	p.stop = make(chan struct{})
 	p.resolve = make(chan *event.Incident)
+	p.next = next
 	p.start()
 
 	if p.r_match == nil {

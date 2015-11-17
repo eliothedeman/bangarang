@@ -196,9 +196,9 @@ func (e *Event) WaitInc() {
 	e.mut.Unlock()
 }
 
-// Passer provides a method for passing an event down a step in the pipeline
-type Passer interface {
-	Pass(e *Event)
+// EventPasser provides a method for passing an event down a step in the pipeline
+type EventPasser interface {
+	PassEvent(e *Event)
 }
 
 func NewEvent() *Event {

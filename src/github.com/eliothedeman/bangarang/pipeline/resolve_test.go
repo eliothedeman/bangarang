@@ -17,7 +17,7 @@ func TestResolve(t *testing.T) {
 	e.Tags.Set("host", "test")
 	e.Metric = 1
 
-	p.Process(e)
+	p.processEvent(e)
 	e.Wait()
 	if len(ta.Events) != 1 {
 		t.Fatal(ta.Events)
@@ -26,7 +26,7 @@ func TestResolve(t *testing.T) {
 	ta.Events = make(map[*event.Event]int)
 
 	e.Metric = 0
-	p.Process(e)
+	p.processEvent(e)
 	e.Wait()
 
 	if len(ta.Events) != 1 {
