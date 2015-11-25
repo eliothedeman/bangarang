@@ -2,7 +2,6 @@ package pipeline
 
 import (
 	"log"
-	"runtime"
 	"sync"
 	"time"
 
@@ -21,12 +20,10 @@ const (
 type Pipeline struct {
 	keepAliveAge       time.Duration
 	keepAliveCheckTime time.Duration
-	globalPolicy       *escalation.Policy
 	escalations        map[string]*escalation.EscalationPolicy
 	policies           map[string]*escalation.Policy
 	index              *event.Index
 	providers          provider.EventProviderCollection
-	encodingPool       *event.EncodingPool
 	config             *config.AppConfig
 	confLock           sync.Mutex
 	tracker            *Tracker
@@ -37,26 +34,19 @@ type Pipeline struct {
 	incidentInput      chan *event.Incident
 }
 
-// NewPipeline
-func NewPipeline(conf *config.AppConfig) *Pipeline {
+// NewPipeline returns a pipeline that is empty of any configuation but will still pass events though
+func NewPipeline() *Pipeline {
 	p := &Pipeline{
-		encodingPool:       event.NewEncodingPool(event.EncoderFactories[conf.Encoding], event.DecoderFactories[conf.Encoding], runtime.NumCPU()),
-		keepAliveAge:       conf.KeepAliveAge,
-		keepAliveCheckTime: 10 * time.Second,
 		in:                 make(chan *event.Event, 10),
+		policies:           make(map[string]*escalation.Policy),
 		incidentInput:      make(chan *event.Incident),
 		unpauseChan:        make(chan struct{}),
 		pauseChan:          make(chan struct{}),
 		tracker:            NewTracker(),
+		keepAliveCheckTime: 10 * time.Second,
 		escalations:        map[string]*escalation.EscalationPolicy{},
 		index:              event.NewIndex(),
 	}
-	p.Start()
-
-	p.Refresh(conf)
-
-	logrus.Debug("Starting expiration checker")
-	go p.checkExpired()
 
 	return p
 }
@@ -297,6 +287,7 @@ func (p *Pipeline) Start() {
 
 	// fan in all of the providers and process them
 	go func() {
+		keepAliveCheckTime := time.After(p.keepAliveCheckTime)
 		var e *event.Event
 		var i *event.Incident
 		for {
@@ -304,6 +295,15 @@ func (p *Pipeline) Start() {
 			// recieve the event
 			case e = <-p.in:
 				p.processEvent(e)
+
+			// time to check for keepalives
+			case <-keepAliveCheckTime:
+
+				// start the exparation check
+				go p.checkExpired()
+
+				// reset the timer for the next check
+				keepAliveCheckTime = time.After(p.keepAliveCheckTime)
 
 			case i = <-p.incidentInput:
 				p.processIncident(i)

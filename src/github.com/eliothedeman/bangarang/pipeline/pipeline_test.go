@@ -1,22 +1,82 @@
 package pipeline
 
 import (
-	"fmt"
-	"log"
-	"runtime"
-	"sync"
 	"testing"
-	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/escalation"
-	"github.com/eliothedeman/bangarang/escalation/test"
 	"github.com/eliothedeman/bangarang/event"
 )
 
 var (
 	tests_ran = 100
 )
+
+type testContext struct {
+	before, after func(p *Pipeline)
+	pipeline      *Pipeline
+}
+
+func baseTestContext() *testContext {
+	return &testContext{
+		pipeline: NewPipeline(),
+		before: func(p *Pipeline) {
+
+		},
+		after: func(p *Pipeline) {
+			p.index.Delete()
+		},
+	}
+}
+
+func runningTestContext() *testContext {
+	return &testContext{
+		pipeline: NewPipeline(),
+		before: func(p *Pipeline) {
+			p.Start()
+
+		},
+		after: func(p *Pipeline) {
+			p.index.Delete()
+		},
+	}
+}
+
+func (t *testContext) runTest(f func(p *Pipeline)) {
+	t.before(t.pipeline)
+	f(t.pipeline)
+	t.after(t.pipeline)
+}
+
+func (t *testContext) getCurrentConfig() *config.AppConfig {
+	var c *config.AppConfig
+	t.pipeline.ViewConfig(func(conf *config.AppConfig) {
+		c = conf
+	})
+
+	return c
+}
+func (t *testContext) addEscalationPolicy(name string, p *escalation.EscalationPolicy) {
+	c := t.getCurrentConfig()
+	if c.Escalations == nil {
+		c.Escalations = make(map[string]*escalation.EscalationPolicy)
+	}
+	c.Escalations[name] = p
+
+	// refresh
+	t.pipeline.Refresh(c)
+}
+
+func (t *testContext) start() {
+	logrus.SetLevel(logrus.DebugLevel)
+	t.pipeline.Start()
+}
+
+// end the current test
+func (t *testContext) end() {
+	t.pipeline.index.Delete()
+}
 
 type testingPasser struct {
 	incidents map[string]*event.Incident
@@ -33,43 +93,6 @@ func newTestPasser() event.IncidentPasser {
 	return &testingPasser{}
 }
 
-func testPipeline(p map[string]*escalation.Policy) (*Pipeline, *test.TestAlert) {
-	tests_ran += 1
-	ta := test.NewTest().(*test.TestAlert)
-	pipe := &Pipeline{
-		policies:     p,
-		index:        event.NewIndex(),
-		pauseChan:    make(chan struct{}),
-		unpauseChan:  make(chan struct{}),
-		encodingPool: event.NewEncodingPool(event.EncoderFactories["json"], event.DecoderFactories["json"], runtime.NumCPU()),
-		escalations: map[string]*escalation.EscalationPolicy{
-			"test": &escalation.EscalationPolicy{
-				Escalations: []escalation.Escalation{ta},
-			},
-		},
-		tracker:       NewTracker(),
-		in:            make(chan *event.Event, 10),
-		incidentInput: make(chan *event.Incident),
-	}
-
-	go pipe.tracker.Start()
-	pipe.Start()
-	return pipe, ta
-}
-
-func testPolicy(crit, warn *escalation.Condition, match, notMatch *event.TagSet) *escalation.Policy {
-
-	p := &escalation.Policy{
-		Warn:     warn,
-		Crit:     crit,
-		Match:    match,
-		NotMatch: notMatch,
-	}
-
-	p.Compile(newTestPasser())
-	return p
-}
-
 func testCondition(g, l, e *float64, o int) *escalation.Condition {
 	return &escalation.Condition{
 		Greater:    g,
@@ -83,264 +106,67 @@ func test_f(f float64) *float64 {
 	return &f
 }
 
-func TestKeepAlive(t *testing.T) {
-	logrus.SetLevel(logrus.DebugLevel)
-	c := testCondition(test_f(0), nil, nil, 1)
-	pipe := testPolicy(c, nil, &event.TagSet{{Key: INTERNAL_TAG_NAME, Value: KEEP_ALIVE_INTERNAL_TAG}}, nil)
-	p, ta := testPipeline(map[string]*escalation.Policy{"test": pipe})
-	pipe.Compile(p)
-	defer p.index.Delete()
-	e := event.NewEvent()
-	e.Tags.Set("host", "one one")
-	e.Metric = -1
-
-	p.PassEvent(e)
-	e.Wait()
-	// sleep long enough for the keep alives to trip
-	time.Sleep(100 * time.Millisecond)
-
-	p.keepAliveAge = time.Millisecond * 15
-	p.keepAliveCheckTime = time.Millisecond * 50
-	s := make(chan struct{})
-	go func() {
-		p.checkExpired()
-		s <- struct{}{}
-
-	}()
-
-	// wait
-	<-s
-	time.Sleep(100 * time.Millisecond)
-
-	ta.Do(func(ta *test.TestAlert) {
-		if len(ta.Events) != 1 {
-			t.Fatal(ta.Events)
+func TestNewPipeline(t *testing.T) {
+	x := baseTestContext()
+	x.runTest(func(n *Pipeline) {
+		if n.escalations == nil {
+			t.Fatal()
 		}
-	})
+		if n.policies == nil {
+			t.Fatal()
+		}
 
-}
+		if n.index == nil {
+			t.Fatal()
+		}
 
-func TestMatchPolicy(t *testing.T) {
-	c := testCondition(test_f(0), nil, nil, 1)
-	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, ta := testPipeline(map[string]*escalation.Policy{"test": pipe})
-	defer p.index.Delete()
-	e := event.NewEvent()
-	e.Tags.Set("host", "test")
-	e.Tags.Set("service", "test")
-	e.Metric = 1.0
+		if n.config != nil {
+			t.Fatal()
+		}
 
-	p.processEvent(e)
-	e.Wait()
-	if len(ta.Events) == 0 {
-		t.Fatal()
-	}
-	ta.Do(func(ta *test.TestAlert) {
-		for k, _ := range ta.Events {
-			if k.IndexName() != e.IndexName() {
-				t.Fatal(k.IndexName(), e.IndexName())
-			}
+		if n.pauseChan == nil {
+			t.Fatal()
+		}
+		if n.unpauseChan == nil {
+			t.Fatal()
+		}
+		if n.in == nil {
+			t.Fatal()
+		}
+		if n.incidentInput == nil {
+			t.Fatal()
 		}
 	})
 }
 
-func TestOccurences(t *testing.T) {
-	c := testCondition(test_f(0), nil, nil, 2)
-	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, ta := testPipeline(map[string]*escalation.Policy{"test": pipe})
-	defer p.index.Delete()
-	e := event.NewEvent()
-	e.Tags.Set("host", "test")
-	e.Tags.Set("service", "test")
-	e.Metric = 1.0
-
-	p.PassEvent(e)
-	e.Wait()
-
-	ta.Do(func(ta *test.TestAlert) {
-		if len(ta.Events) != 0 {
-			t.Error("occrences hit too early")
-		}
-	})
-	e = event.NewEvent()
-	e.Tags.Set("host", "test")
-	e.Tags.Set("service", "test")
-	e.Metric = 1.0
-
-	p.PassEvent(e)
-	e.Wait()
-
-	ta.Do(func(ta *test.TestAlert) {
-		if len(ta.Events) != 1 {
-			t.Error("occrences not hit", ta.Events)
-		}
-	})
-}
-
-func genEventSlice(size int) []*event.Event {
-	e := make([]*event.Event, size)
-	for i := range e {
-		e[i] = event.NewEvent()
-	}
-	return e
-
-}
-
-func BenchmarkProcessOk(b *testing.B) {
-	c := testCondition(test_f(10), nil, nil, 0)
-	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, _ := testPipeline(map[string]*escalation.Policy{"test": pipe})
-	defer p.index.Delete()
-	e := genEventSlice(b.N)
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		p.PassEvent(e[i])
-	}
-	for i := 0; i < b.N; i++ {
-		e[i].Wait()
-	}
-}
-
-func BenchmarkProcess2CPU(b *testing.B) {
-	c := testCondition(test_f(10), nil, nil, 0)
-	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, _ := testPipeline(map[string]*escalation.Policy{"test": pipe})
-	defer p.index.Delete()
-	e := genEventSlice(b.N)
-
-	w := &sync.WaitGroup{}
-	w.Add(2)
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	f := func(s []*event.Event) {
-		for i := 0; i < len(s); i++ {
-			p.PassEvent(s[i])
-		}
-		w.Done()
-	}
-
-	go f(e[:len(e)/2])
-	go f(e[len(e)/2:])
-	w.Wait()
-	for i := 0; i < b.N; i++ {
-		e[i].Wait()
-	}
-}
-
-func BenchmarkProcess4CPU(b *testing.B) {
-	c := testCondition(test_f(10), nil, nil, 0)
-	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, _ := testPipeline(map[string]*escalation.Policy{"test": pipe})
-	defer p.index.Delete()
-	e := genEventSlice(b.N)
-
-	w := &sync.WaitGroup{}
-	w.Add(4)
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	f := func(s []*event.Event) {
-		for i := 0; i < len(s); i++ {
-			p.PassEvent(s[i])
-		}
-		w.Done()
-	}
-
-	one := len(e) / 4
-	two := one * 2
-	three := one + two
-
-	go f(e[:one])
-	go f(e[one:two])
-	go f(e[two:three])
-	go f(e[three:])
-	w.Wait()
-	for i := 0; i < b.N; i++ {
-		e[i].Wait()
-	}
-}
-
-func BenchmarkIndex(b *testing.B) {
-	c := testCondition(test_f(0), nil, nil, 0)
-	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, _ := testPipeline(map[string]*escalation.Policy{"test": pipe})
-	defer p.index.Delete()
-
-	e := event.NewEvent()
-	e.Tags.Set("host", "test")
-	e.Tags.Set("service", "test")
-
-	e.Metric = -1.0
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		e.Tags.Set("service", fmt.Sprintf("%d", i%1000))
-		p.processEvent(e)
-	}
-
-	e.Wait()
-}
-
-func TestProcess(t *testing.T) {
-	c := testCondition(test_f(0), nil, nil, 0)
-	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, ta := testPipeline(map[string]*escalation.Policy{"test": pipe})
-	defer p.index.Delete()
-	e := event.NewEvent()
-	e.Tags.Set("host", "test")
-	e.Tags.Set("service", "test")
-	e.Metric = 1.0
-
-	p.processEvent(e)
-	e.Wait()
-
-	if len(ta.Events) != 1 {
-		t.Fatal(ta.Events)
-	}
-
-	e = event.NewEvent()
-	e.Tags.Set("host", "test")
-	e.Tags.Set("service", "test")
-	e.Metric = -1.0
-
-	p.processEvent(e)
-	e.Wait()
-	if ta.Events[e] != event.OK {
-		t.Fatal(ta.Events)
-	}
-
-}
-
-func TestProcessDedupe(t *testing.T) {
-	c := testCondition(test_f(0), nil, nil, 0)
-	pipe := testPolicy(c, nil, &event.TagSet{{Key: "host", Value: "test"}}, nil)
-	p, ta := testPipeline(map[string]*escalation.Policy{"test": pipe})
-	defer p.index.Delete()
-
-	events := make([]*event.Event, 100)
-
-	for i := 0; i < len(events); i++ {
+func TestPassEvent(t *testing.T) {
+	x := baseTestContext()
+	x.runTest(func(p *Pipeline) {
 		e := event.NewEvent()
-		e.Tags.Set("host", "test")
-		e.Tags.Set("service", "test")
-		e.Metric = 1.0
-		events[i] = e
-	}
+		go func() {
+			p.PassEvent(e)
+		}()
 
-	p.processEvent(events[0])
+		ne := <-p.in
+		if ne != e {
+			t.Fatal()
+		}
+	})
+}
 
-	for i := 1; i < len(events); i++ {
-		p.processEvent(events[i])
-		events[i].Wait()
-	}
+func TestPauseUnpause(t *testing.T) {
+	x := runningTestContext()
+	x.runTest(func(p *Pipeline) {
+		// make sure events can go in and out
+		e := event.NewEvent()
+		p.PassEvent(e)
+		p.Pause()
 
-	if len(ta.Events) != 1 {
-		log.Println(ta.Events)
-		t.Fail()
-	}
+		for i := 0; i < 1000; i++ {
+			p.PassEvent(event.NewEvent())
+		}
 
+		p.Unpause()
+
+	})
 }

@@ -81,8 +81,13 @@ func main() {
 
 	logrus.Infof("Starting processing pipeline with %d policie(s)", len(ac.Policies))
 	// create and start up a new pipeline
-	p := pipeline.NewPipeline(ac)
+	p := pipeline.NewPipeline()
+
+	// start the pipeline
 	p.Start()
+
+	// apply the config fo the pipeline
+	p.Refresh(ac)
 
 	logrus.Infof("Serving the http api on port %d", 8081)
 	// create and start a new api server

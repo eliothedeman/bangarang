@@ -46,6 +46,7 @@ func NewTracker() *Tracker {
 		tagCounters:       make(map[string]map[string]*counter),
 		tagTimers:         make(map[string]map[string]time.Time),
 	}
+	go t.Start()
 
 	return t
 }
