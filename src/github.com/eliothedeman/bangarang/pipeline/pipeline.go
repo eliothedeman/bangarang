@@ -95,7 +95,7 @@ func (p *Pipeline) RemovePolicy(name string) {
 	p.Pause()
 	pol, ok := p.policies[name]
 	if ok {
-		log.Println("stopping", name)
+		logrus.Info("Stopping policiy %s", name)
 
 		// resolve all incidents that were created by this policy, and are still alive
 		ins := p.index.ListIncidents()
@@ -106,7 +106,7 @@ func (p *Pipeline) RemovePolicy(name string) {
 				i.Status = event.OK
 
 				// process the resolved incident
-				go p.processIncident(i)
+				go p.PassIncident(i)
 			}
 		}
 		pol.Stop()

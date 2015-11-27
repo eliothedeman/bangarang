@@ -30,6 +30,10 @@ func baseTestContext() *testContext {
 	}
 }
 
+func (t *testContex) addPolicy(name string, pol *escalation.Policy) {
+
+}
+
 func runningTestContext() *testContext {
 	return &testContext{
 		pipeline: NewPipeline(),
@@ -168,5 +172,11 @@ func TestPauseUnpause(t *testing.T) {
 
 		p.Unpause()
 
+		// pass another event
+		p.PassEvent(event.NewEvent())
 	})
+}
+
+func TestRemovePolicy(t *testing.T) {
+	x := runningTestContext()
 }

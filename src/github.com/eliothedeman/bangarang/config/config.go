@@ -22,7 +22,6 @@ type Provider interface {
 	GetCurrent() (*AppConfig, error)
 	PutConfig(*AppConfig, *User) (string, error)
 	ListSnapshots() []*Snapshot
-	ListRawSnapshots() []json.RawMessage
 	GetUser(userName string) (*User, error)
 	GetUserByUserName(string) (*User, error)
 	DeleteUser(userName string) error
