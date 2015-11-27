@@ -66,7 +66,7 @@ func (i *Incident) Post(req *Request) {
 		return
 	}
 
-	i.pipeline.ProcessIncident(in)
+	i.pipeline.PassIncident(in)
 }
 
 // Delete will resolve a given event
@@ -100,7 +100,7 @@ func (i *Incident) Delete(req *Request) {
 	if in != nil {
 		in.Status = event.OK
 		in.Description = ""
-		i.pipeline.ProcessIncident(in)
+		i.pipeline.PassIncident(in)
 	}
 }
 

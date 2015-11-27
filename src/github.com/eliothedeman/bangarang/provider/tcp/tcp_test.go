@@ -56,7 +56,7 @@ type testPasser struct {
 	in chan *event.Event
 }
 
-func (t *testPasser) Pass(e *event.Event) {
+func (t *testPasser) PassEvent(e *event.Event) {
 	t.in <- e
 }
 

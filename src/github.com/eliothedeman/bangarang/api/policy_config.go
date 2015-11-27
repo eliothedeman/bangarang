@@ -128,7 +128,7 @@ func (p *PolicyConfig) Post(req *Request) {
 			pol.Name = id
 		}
 
-		pol.Compile()
+		pol.Compile(p.pipeline)
 		if conf.Policies == nil {
 			conf.Policies = make(map[string]*escalation.Policy)
 		}

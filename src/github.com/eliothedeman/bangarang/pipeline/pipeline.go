@@ -16,6 +16,10 @@ const (
 	KEEP_ALIVE_INTERNAL_TAG = "KeepAlive"
 )
 
+var (
+	DefaultKeepAliveCheckTime = 1 * time.Minute
+)
+
 // Pipeline
 type Pipeline struct {
 	keepAliveAge       time.Duration
@@ -43,7 +47,7 @@ func NewPipeline() *Pipeline {
 		unpauseChan:        make(chan struct{}),
 		pauseChan:          make(chan struct{}),
 		tracker:            NewTracker(),
-		keepAliveCheckTime: 10 * time.Second,
+		keepAliveCheckTime: DefaultKeepAliveCheckTime,
 		escalations:        map[string]*escalation.EscalationPolicy{},
 		index:              event.NewIndex(),
 	}

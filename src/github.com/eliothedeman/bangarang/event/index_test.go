@@ -39,7 +39,7 @@ func TestDeleteIncidentById(t *testing.T) {
 	i := newTestIndex()
 	defer i.Delete()
 	e := newTestEvent("h", "s", 1)
-	in := NewIncident("DeleteIncident", "test", OK, e)
+	in := NewIncident("test", OK, e)
 	i.PutIncident(in)
 	in = i.GetIncident(in.IndexName())
 	if in == nil {
@@ -58,7 +58,7 @@ func TestListIncidents(t *testing.T) {
 	i := newTestIndex()
 	defer i.Delete()
 	e := newTestEvent("h", "s", 1)
-	in := NewIncident("ListIncidents", "test", OK, e)
+	in := NewIncident("test", OK, e)
 	i.PutIncident(in)
 
 	ins := i.ListIncidents()
@@ -72,7 +72,7 @@ func TestAddIncident(t *testing.T) {
 	i := newTestIndex()
 	defer i.Delete()
 	e := newTestEvent("h", "s", 1)
-	in := NewIncident("test", "test", OK, e)
+	in := NewIncident("test", OK, e)
 	i.PutIncident(in)
 
 	b := i.GetIncident(in.IndexName())
