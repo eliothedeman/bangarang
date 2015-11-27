@@ -102,6 +102,7 @@ func NewDefaultConfig() *AppConfig {
 		APIPort:         defaultAPIPort,
 		Encoding:        defaultEncoding,
 		Escalations:     map[string]*escalation.EscalationPolicy{},
+		Policies:        map[string]*escalation.Policy{},
 		LogLevel:        defaultLogLevel,
 		EventProviders:  &provider.EventProviderCollection{},
 	}

@@ -19,7 +19,7 @@ type testContext struct {
 }
 
 func baseTestContext() *testContext {
-	return &testContext{
+	c := &testContext{
 		pipeline: NewPipeline(),
 		before: func(p *Pipeline) {
 
@@ -28,23 +28,25 @@ func baseTestContext() *testContext {
 			p.index.Delete()
 		},
 	}
+
+	return c
 }
 
-func (t *testContex) addPolicy(name string, pol *escalation.Policy) {
+func (t *testContext) addPolicy(name string, pol *escalation.Policy) {
 
 }
 
 func runningTestContext() *testContext {
-	return &testContext{
-		pipeline: NewPipeline(),
-		before: func(p *Pipeline) {
-			p.Start()
 
-		},
-		after: func(p *Pipeline) {
-			p.index.Delete()
-		},
+	b := baseTestContext()
+	b.before = func(p *Pipeline) {
+		p.Start()
+		conf := config.NewDefaultConfig()
+		conf.SetProvider(config.NewMockProvider())
+		p.Refresh(conf)
 	}
+
+	return b
 }
 
 func (t *testContext) runTest(f func(p *Pipeline)) {
@@ -179,4 +181,36 @@ func TestPauseUnpause(t *testing.T) {
 
 func TestRemovePolicy(t *testing.T) {
 	x := runningTestContext()
+	x.runTest(func(p *Pipeline) {
+		// make a test user
+		u := config.NewUser("test", "test", "password", config.WRITE)
+
+		// add an empty escalation policy
+		p.UpdateConfig(func(c *config.AppConfig) error {
+			c.Policies["hello"] = &escalation.Policy{}
+			c.Policies["hello"].Compile(&testingPasser{})
+
+			return nil
+		}, u)
+
+		// make sure the policy is there
+		p.ViewConfig(func(c *config.AppConfig) {
+			if _, ok := c.Policies["hello"]; !ok {
+				t.Fatal("Policy was not added")
+			}
+		})
+
+		// remove policy
+		p.UpdateConfig(func(c *config.AppConfig) error {
+			delete(c.Policies, "hello")
+			return nil
+		}, u)
+
+		// make sure the policy is gone
+		p.ViewConfig(func(c *config.AppConfig) {
+			if _, ok := c.Policies["hello"]; ok {
+				t.Fatal("Policy was not removed")
+			}
+		})
+	})
 }
