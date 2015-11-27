@@ -214,3 +214,42 @@ func TestRemovePolicy(t *testing.T) {
 		})
 	})
 }
+
+func TestGetTracker(t *testing.T) {
+	x := baseTestContext()
+	x.runTest(func(p *Pipeline) {
+		track := p.GetTracker()
+		if track == nil {
+			t.Fatal()
+		}
+	})
+}
+
+func TestRefresh(t *testing.T) {
+	x := runningTestContext()
+	x.runTest(func(p *Pipeline) {
+		p.PassEvent(event.NewEvent())
+		p.Refresh(config.NewDefaultConfig())
+		p.PassEvent(event.NewEvent())
+	})
+}
+
+func TestPutIncident(t *testing.T) {
+	x := runningTestContext()
+	x.runTest(func(p *Pipeline) {
+		in := event.NewIncident("test", event.OK, event.NewEvent())
+		p.PutIncident(in)
+	})
+}
+
+func TestListIncidents(t *testing.T) {
+	x := runningTestContext()
+	x.runTest(func(p *Pipeline) {
+		in := event.NewIncident("test", event.OK, event.NewEvent())
+		p.PutIncident(in)
+
+		if l := p.ListIncidents(); l[0].Policy != in.Policy {
+			t.Fatal("Incident was not added to the index")
+		}
+	})
+}
