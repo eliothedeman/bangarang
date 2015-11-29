@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -299,24 +298,6 @@ func (d *DBConf) GetConfig(versionHash string) (*AppConfig, error) {
 	return d.getVersion(versionHash)
 }
 
-func (d *DBConf) ListRawSnapshots() []json.RawMessage {
-	raw := []json.RawMessage{}
-	err := d.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(appConfigBucketName))
-		return b.ForEach(func(k, v []byte) error {
-			raw = append(raw, json.RawMessage(v))
-			return nil
-		})
-	})
-
-	if err != nil {
-		logrus.Error(err)
-	}
-
-	return raw
-
-}
-
 func (d *DBConf) ListSnapshots() []*Snapshot {
 	snaps := []*Snapshot{}
 	err := d.db.View(func(tx *bolt.Tx) error {
@@ -353,14 +334,15 @@ func (d *DBConf) PutConfig(a *AppConfig, u *User) (string, error) {
 			old := newSnapshot(NewDefaultConfig(), u)
 			err := d.decode(oldBuff, old)
 			if err != nil {
-				log.Println(err)
+				logrus.Error("Unable to decode snapshot")
+				logrus.Error(err)
 				return err
 			}
 
 			// write the old snapshot at it's hash
 			err = b.Put([]byte(old.Hash), oldBuff)
 			if err != nil {
-				log.Println(err)
+				logrus.Error(err)
 				return err
 			}
 		}
@@ -368,7 +350,7 @@ func (d *DBConf) PutConfig(a *AppConfig, u *User) (string, error) {
 		// write the new snapshot to disk
 		newBuff, err := d.encode(newSnapshot(a, u))
 		if err != nil {
-			log.Println(err)
+			logrus.Error(err)
 			return err
 		}
 
@@ -376,7 +358,7 @@ func (d *DBConf) PutConfig(a *AppConfig, u *User) (string, error) {
 	})
 
 	if err != nil {
-		log.Println(err)
+		logrus.Error(err)
 		return "", err
 	}
 
