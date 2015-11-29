@@ -294,8 +294,7 @@ func TestKeepAlive(t *testing.T) {
 
 			cond := &escalation.Condition{}
 			cond.Simple = true
-			x := float64(0)
-			cond.Greater = &x
+			cond.Greater = test_f(0)
 			cond.WindowSize = 2
 			cond.Occurences = 1
 			pol.Crit = cond
@@ -327,6 +326,67 @@ func TestKeepAlive(t *testing.T) {
 		if ka.Get(INTERNAL_TAG_NAME) != KEEP_ALIVE_INTERNAL_TAG {
 			t.Fail()
 		}
+	})
+}
 
+func TestResolve(t *testing.T) {
+	x := runningTestContext()
+	x.runTest(func(p *Pipeline) {
+		u := &config.User{}
+		u.Permissions = config.WRITE
+
+		ta := test.NewTestAlert()
+
+		// add a escalation policy that will catch our metrics
+		p.UpdateConfig(func(c *config.AppConfig) error {
+			esc := &escalation.EscalationPolicy{}
+			esc.Crit = true
+			esc.Ok = true
+			esc.Escalations = []escalation.Escalation{ta}
+			esc.Match = event.NewTagset(0)
+			esc.Match.Set("host", ".*")
+			c.Escalations["test"] = esc
+			esc.Compile()
+
+			// create a policy that will match against this host
+			pol := &escalation.Policy{}
+			pol.Match = event.NewTagset(0)
+			pol.Match.Set("host", ".*")
+
+			cond := &escalation.Condition{}
+			cond.Simple = true
+			cond.Greater = test_f(1)
+			cond.WindowSize = 2
+			cond.Occurences = 1
+			pol.Crit = cond
+			c.Policies["test"] = pol
+
+			return nil
+
+		}, u)
+
+		// create an event
+		e := event.NewEvent()
+
+		e.Metric = 4
+		e.Tags.Set("host", "test")
+		p.PassEvent(e)
+		e.Wait()
+
+		// TODO get rid of waiting for things to pass through the pipeline
+		time.Sleep(20 * time.Millisecond)
+		if len(ta.Incidents) != 1 {
+			t.Error(ta.Incidents)
+		}
+
+		time.Sleep(20 * time.Millisecond)
+
+		e.Metric = 0
+		p.PassEvent(e)
+		e.Wait()
+		time.Sleep(10 * time.Millisecond)
+		if len(ta.Incidents) != 2 {
+			t.Error(ta.Incidents[0])
+		}
 	})
 }
