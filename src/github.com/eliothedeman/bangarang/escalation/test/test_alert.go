@@ -8,7 +8,7 @@ import (
 )
 
 type TestAlert struct {
-	Events map[*event.Event]int
+	Incidents []*event.Incident
 	sync.Mutex
 }
 
@@ -24,7 +24,7 @@ func (t *TestAlert) Do(f func(*TestAlert)) {
 
 func (t *TestAlert) Send(i *event.Incident) error {
 	t.Do(func(t *TestAlert) {
-		t.Events[i.GetEvent()] = i.Status
+		t.Incidents = append(t.Incidents, i)
 	})
 	return nil
 }
@@ -39,6 +39,12 @@ func (t *TestAlert) Init(i interface{}) error {
 
 func NewTest() escalation.Escalation {
 	return &TestAlert{
-		Events: make(map[*event.Event]int),
+		Incidents: make([]*event.Incident, 0),
+	}
+}
+
+func NewTestAlert() *TestAlert {
+	return &TestAlert{
+		Incidents: make([]*event.Incident, 0),
 	}
 }

@@ -86,6 +86,7 @@ func (p *Policy) start() {
 			case e = <-p.in:
 
 				// process the event if it matches the policy
+
 				if p.Matches(e) {
 
 					// check critical

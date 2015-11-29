@@ -2,10 +2,12 @@ package pipeline
 
 import (
 	"testing"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/config"
 	"github.com/eliothedeman/bangarang/escalation"
+	"github.com/eliothedeman/bangarang/escalation/test"
 	"github.com/eliothedeman/bangarang/event"
 )
 
@@ -263,5 +265,68 @@ func TestDedupe(t *testing.T) {
 		if p.Dedupe(in) {
 			t.Fatal("Incident was not deduped")
 		}
+	})
+}
+
+func TestKeepAlive(t *testing.T) {
+	x := runningTestContext()
+	x.runTest(func(p *Pipeline) {
+
+		u := &config.User{}
+		u.Permissions = config.WRITE
+
+		ta := test.NewTestAlert()
+
+		// add a escalation policy that will catch a keep alive
+		p.UpdateConfig(func(c *config.AppConfig) error {
+			esc := &escalation.EscalationPolicy{}
+			esc.Crit = true
+			esc.Escalations = []escalation.Escalation{ta}
+			esc.Match = event.NewTagset(0)
+			esc.Match.Set(INTERNAL_TAG_NAME, ".*")
+			c.Escalations["test"] = esc
+			esc.Compile()
+
+			// create a condition for the KeepAlive
+			pol := &escalation.Policy{}
+			pol.Match = event.NewTagset(0)
+			pol.Match.Set(INTERNAL_TAG_NAME, KEEP_ALIVE_INTERNAL_TAG)
+
+			cond := &escalation.Condition{}
+			cond.Simple = true
+			x := float64(0)
+			cond.Greater = &x
+			cond.WindowSize = 2
+			cond.Occurences = 1
+			pol.Crit = cond
+			c.Policies["test"] = pol
+
+			return nil
+
+		}, u)
+
+		// create an event
+		e := event.NewEvent()
+		e.Tags.Set("host", "test")
+		p.PassEvent(e)
+		e.Wait()
+
+		time.Sleep(20 * time.Millisecond)
+		p.checkExpired()
+		time.Sleep(50 * time.Millisecond)
+
+		if len(ta.Incidents) != 1 {
+			t.Error(ta.Incidents)
+		}
+
+		ka := ta.Incidents[0].GetEvent()
+		if ka.Get("host") != "test" {
+			t.Fail()
+		}
+
+		if ka.Get(INTERNAL_TAG_NAME) != KEEP_ALIVE_INTERNAL_TAG {
+			t.Fail()
+		}
+
 	})
 }

@@ -53,6 +53,11 @@ func (e *EscalationPolicy) Compile() (err error) {
 
 	}
 
+	// if the configs aren't set, don't write over them
+	if e.Configs == nil {
+		return nil
+	}
+
 	// create enough space for all of the new Escalations
 	e.Escalations = make([]Escalation, 0, len(e.Configs))
 

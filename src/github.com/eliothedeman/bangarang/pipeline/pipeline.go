@@ -1,7 +1,6 @@
 package pipeline
 
 import (
-	"log"
 	"sync"
 	"time"
 
@@ -329,7 +328,6 @@ func (p *Pipeline) PassIncident(in *event.Incident) {
 
 // processIncident forwards a deduped incident on to every escalation
 func (p *Pipeline) processIncident(in *event.Incident) {
-	log.Println(in)
 
 	// start tracking this incident in memory so we can call back to it
 	p.tracker.TrackIncident(in)
