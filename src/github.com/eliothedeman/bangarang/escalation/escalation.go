@@ -31,7 +31,7 @@ type EscalationPolicy struct {
 	rNotMatch Matcher
 
 	// Escalations to forward incidents to
-	Escalations []Escalation
+	Escalations []Escalation `json:"-"`
 }
 
 // Compile sets up all the regex matches for the subscriptions and starts all of the Escalations held by the policy

@@ -52,32 +52,18 @@ function DashboardController($scope, $cookies, $http, $mdDialog) {
 		};
 	}
 
-	buildHostMap = function() {
-		hostMap = {}
-		for (host in $scope.raw_stats.by_host) {
-			constructMap(host, $scope.raw_stats.by_host[host], hostMap)
-		}
-		$scope.hostMap = hostMap;
-		$scope.byStats["Hosts"] = hostMap;
-	}
-
-	buildServiceMap = function() {
+	buildMap = function() {
 		serviceMap = {}
+		for (tag in $scop.raw_stats.count_by_tag) {
+			
+			$scope.byStats[tag] = d
+		}
 		for (service in $scope.raw_stats.by_service) {
 			constructMap(service.split(".").reverse().join("."), $scope.raw_stats.by_service[service], serviceMap)
 		}
 		$scope.serviceMap = serviceMap;
 		$scope.byStats["Services"] = serviceMap;
 	}
-	buildSubServiceMap = function() {
-		subServiceMap = {}
-		for (subService in $scope.raw_stats.by_sub_service) {
-			constructMap(subService.split(".").reverse().join("."), $scope.raw_stats.by_sub_service[subService], subServiceMap)
-		}
-		$scope.subServiceMap = subServiceMap;
-		$scope.byStats["Sub Services"] = subServiceMap;
-	}
-
 
 	$scope.startFetching = function() {
 		$scope.fetchIncidents();
