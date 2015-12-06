@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -87,6 +88,7 @@ func (d *DBConf) init() {
 	}
 
 	for _, x := range Schemas {
+		log.Println(s.Version)
 		if x.Greater(s) {
 			err := x.Apply(d.db)
 			if err != nil {
@@ -96,18 +98,6 @@ func (d *DBConf) init() {
 			}
 		}
 	}
-
-	for LatestSchema().Greater(GetSchemaFromDb(d.db)) {
-		logrus.Infof("Upgrading config db version from %s to %s", s.Version, LatestSchema().Version)
-		err := LatestSchema().Apply(d.db)
-		if err != nil {
-			logrus.Errorf("Unable to apply schema version %s to config db %s", LatestSchema().Version, err.Error())
-		} else {
-			s = LatestSchema()
-		}
-	}
-
-	logrus.Infof("Using db config version %s", s.Version)
 
 	err := d.initAdminUser()
 	if err != nil {

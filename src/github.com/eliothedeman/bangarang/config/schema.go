@@ -247,6 +247,7 @@ func GetSchemaFromDb(b *bolt.DB) Schema {
 		}
 
 		v = VersionFromString(string(b.Get([]byte("version"))))
+		log.Println(v)
 		return nil
 	})
 	if err != nil {
@@ -254,7 +255,8 @@ func GetSchemaFromDb(b *bolt.DB) Schema {
 	}
 
 	// find the oldest valid schema
-	for _, s := range Schemas {
+	for i := len(Schemas) - 1; i >= 0; i-- {
+		s := Schemas[i]
 
 		// best case, exact match
 		if s.Version.String() == v.String() {
