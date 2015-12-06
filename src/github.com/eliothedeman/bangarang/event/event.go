@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
-	"sync"
+	"sync/atomic"
 	"time"
 	"unsafe"
 )
@@ -15,6 +15,13 @@ const (
 	WARNING
 	CRITICAL
 )
+const (
+	StateStart uint32 = iota
+	StatePipeline
+	StatePolicy
+	StateIncident
+	StateComplete
+)
 
 // Event represents a metric as it passes through the pipeline.
 // It holds meta data about the metric, as well as methods to trace the event as it is processed
@@ -23,8 +30,7 @@ type Event struct {
 	Tags      *TagSet   `json:"tags" msg:"tags"`
 	Time      time.Time `json:"time" msg: "time"`
 	indexName string
-	wait      sync.WaitGroup
-	mut       sync.Mutex
+	state     *uint32
 }
 
 func (e *Event) UnmarshalBinary(buff []byte) error {
@@ -178,22 +184,38 @@ func sizeOfMap(m map[string]string) int {
 	return size
 }
 
-func (e *Event) Wait() {
-	e.wait.Wait()
+// SetState atomically updates the event's state to the given number
+func (e *Event) SetState(s uint32) {
+	atomic.StoreUint32(e.state, s)
 }
 
-// WaitDec decrements the event's waitgroup counter
-func (e *Event) WaitDec() {
-	e.mut.Lock()
-	e.wait.Done()
-	e.mut.Unlock()
+// GetState returns the current state of the event at call time
+func (e *Event) GetState() uint32 {
+	return atomic.LoadUint32(e.state)
 }
 
-// WaitAdd increments ot the event's waitgroup counter
-func (e *Event) WaitInc() {
-	e.mut.Lock()
-	e.wait.Add(1)
-	e.mut.Unlock()
+// WaitForState returns a function that will block until that state has been met or the timeout has been hit
+func (e *Event) WaitForState(s uint32, timeout time.Duration) func() {
+	return func() {
+		timedOut := time.After(timeout)
+		for {
+			select {
+			case <-timedOut:
+				return
+			default:
+				if e.GetState() >= s {
+					// start a new goroutine to drain the "timedOuch" channel
+					go func() {
+						<-timedOut
+					}()
+					return
+				}
+
+				// sleep so we don't eat the CPU
+				time.Sleep(time.Microsecond)
+			}
+		}
+	}
 }
 
 // EventPasser provides a method for passing an event down a step in the pipeline
@@ -202,8 +224,10 @@ type EventPasser interface {
 }
 
 func NewEvent() *Event {
+	var startState uint32 = StateStart
 	e := &Event{
-		Tags: &TagSet{},
+		Tags:  &TagSet{},
+		state: &startState,
 	}
 	return e
 }

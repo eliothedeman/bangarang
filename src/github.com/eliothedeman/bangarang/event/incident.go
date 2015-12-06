@@ -72,6 +72,7 @@ func NewIncident(policy string, status int, e *Event) *Incident {
 		Active:    true,
 		Status:    status,
 		Policy:    policy,
+		Event:     *e,
 	}
 
 	in.Tags = e.Tags

@@ -328,6 +328,7 @@ func (p *Pipeline) PassIncident(in *event.Incident) {
 
 // processIncident forwards a deduped incident on to every escalation
 func (p *Pipeline) processIncident(in *event.Incident) {
+	in.GetEvent().SetState(event.StateIncident)
 
 	// start tracking this incident in memory so we can call back to it
 	p.tracker.TrackIncident(in)
@@ -344,20 +345,18 @@ func (p *Pipeline) processIncident(in *event.Incident) {
 
 		// send it on to every escalation
 		for _, esc := range p.escalations {
-			in.GetEvent().WaitInc()
 			esc.PassIncident(in)
-			in.GetEvent().WaitDec()
 		}
 	}
 
-	in.Event.WaitDec()
+	in.GetEvent().SetState(event.StateComplete)
 }
 
 // Run the given event though the pipeline
 func (p *Pipeline) processEvent(e *event.Event) {
 
-	// make sure we can know that the event has been tracked
-	e.WaitInc()
+	// update to current state
+	e.SetState(event.StatePipeline)
 
 	// track stas for this event
 	p.tracker.TrackEvent(e)
@@ -365,10 +364,8 @@ func (p *Pipeline) processEvent(e *event.Event) {
 	// process this event on every policy
 	var pol *escalation.Policy
 	for _, pol = range p.policies {
-		e.WaitInc()
 		pol.PassEvent(e)
 	}
-
 }
 
 func (p *Pipeline) GetIndex() *event.Index {

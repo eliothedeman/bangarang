@@ -308,7 +308,7 @@ func TestKeepAlive(t *testing.T) {
 		e := event.NewEvent()
 		e.Tags.Set("host", "test")
 		p.PassEvent(e)
-		e.Wait()
+		e.WaitForState(event.StateComplete, time.Millisecond)
 
 		time.Sleep(20 * time.Millisecond)
 		p.checkExpired()
@@ -371,7 +371,7 @@ func TestResolve(t *testing.T) {
 		e.Metric = 4
 		e.Tags.Set("host", "test")
 		p.PassEvent(e)
-		e.Wait()
+		e.WaitForState(event.StateComplete, time.Millisecond)
 
 		// TODO get rid of waiting for things to pass through the pipeline
 		time.Sleep(20 * time.Millisecond)
@@ -383,7 +383,7 @@ func TestResolve(t *testing.T) {
 
 		e.Metric = 0
 		p.PassEvent(e)
-		e.Wait()
+		e.WaitForState(event.StateComplete, time.Millisecond)
 		time.Sleep(10 * time.Millisecond)
 		if len(ta.Incidents) != 2 {
 			t.Error(ta.Incidents[0])

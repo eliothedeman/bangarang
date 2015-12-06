@@ -84,6 +84,7 @@ func (p *Policy) start() {
 				}()
 				return
 			case e = <-p.in:
+				e.SetState(event.StatePolicy)
 
 				// process the event if it matches the policy
 
@@ -95,7 +96,6 @@ func (p *Policy) start() {
 						incident.SetResolve(p.resolve)
 
 						// send send it off to the next hop
-						incident.GetEvent().WaitInc()
 						p.next.PassIncident(incident)
 
 						// check warning
@@ -104,11 +104,12 @@ func (p *Policy) start() {
 						incident.SetResolve(p.resolve)
 
 						// send it off to the next hop
-						incident.GetEvent().WaitInc()
 						p.next.PassIncident(incident)
+					} else {
+						e.SetState(event.StateComplete)
 					}
 				}
-				e.WaitDec()
+
 			}
 		}
 	}()

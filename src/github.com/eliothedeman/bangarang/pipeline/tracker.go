@@ -257,13 +257,11 @@ func (t *Tracker) trackEvent(e *event.Event) {
 
 	// don't track internal events
 	if len(e.Get(INTERNAL_TAG_NAME)) != 0 {
-		e.WaitDec()
 		return
 	}
 	t.total.inc()
 	t.updateCounts(e)
 	t.updateTimes(e)
-	e.WaitDec()
 
 }
 
