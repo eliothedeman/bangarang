@@ -53,8 +53,8 @@ func runningTestContext() *testContext {
 
 func (t *testContext) runTest(f func(p *Pipeline)) {
 	t.before(t.pipeline)
+	defer t.after(t.pipeline)
 	f(t.pipeline)
-	t.after(t.pipeline)
 }
 
 func (t *testContext) getCurrentConfig() *config.AppConfig {
