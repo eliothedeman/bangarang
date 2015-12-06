@@ -344,9 +344,13 @@ func (p *Pipeline) processIncident(in *event.Incident) {
 
 		// send it on to every escalation
 		for _, esc := range p.escalations {
+			in.GetEvent().WaitInc()
 			esc.PassIncident(in)
+			in.GetEvent().WaitDec()
 		}
 	}
+
+	in.Event.WaitDec()
 }
 
 // Run the given event though the pipeline
