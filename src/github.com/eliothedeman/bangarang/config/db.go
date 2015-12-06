@@ -80,8 +80,21 @@ func (d *DBConf) init() {
 		err := s.Apply(d.db)
 		if err != nil {
 			logrus.Errorf("Unable to bootstrap config %s", err.Error())
+			return
+		} else {
+			s = GetSchemaFromDb(d.db)
 		}
+	}
 
+	for _, x := range Schemas {
+		if x.Greater(s) {
+			err := x.Apply(d.db)
+			if err != nil {
+				logrus.Errorf("Unable to apply schema version %s to config db %s", LatestSchema().Version, err.Error())
+			} else {
+				s = GetSchemaFromDb(d.db)
+			}
+		}
 	}
 
 	for LatestSchema().Greater(GetSchemaFromDb(d.db)) {

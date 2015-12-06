@@ -15,81 +15,16 @@ var (
 	Schemas     = []Schema{
 		{
 			Version: Version{
-				0, 13, 0,
+				0, 10, 4,
 			},
 			Buckets: []string{
 				"app",
 				"user",
 			},
+
+			// A no-op. This is the first schemad version
 			Upgrader: func(old *bolt.DB) error {
-				upgradeRawSnapshot := func(buff []byte) ([]byte, error) {
-					oldSnap := make(map[string]interface{})
-					err := json.Unmarshal(buff, &oldSnap)
-					if err != nil {
-						return nil, err
-					}
-
-					app, ok := oldSnap["app"].(map[string]interface{})
-					if !ok {
-						return nil, fmt.Errorf("Unable to upgrade snapshot. No 'app' section found.")
-					}
-
-					// remove the escalations
-					app["escalations"] = map[string]interface{}{}
-
-					// reencode the message
-					return json.Marshal(&app)
-				}
-				// open for an update
-				err := old.Update(func(tx *bolt.Tx) error {
-
-					// get the bucket for app snapshots
-					b := tx.Bucket([]byte("app"))
-					if b == nil {
-						logrus.Warning("No config snapshots found")
-						return nil
-					}
-
-					// make something that can hold all of the new snapshots to be written after the upgrade
-					newSnapshots := make([]struct {
-						key []byte
-						val []byte
-					}, 0, b.Stats().KeyN)
-
-					b.ForEach(func(k, v []byte) error {
-						logrus.Debugf("Starting snapshot upgrade on: %s", string(k))
-						upgraded, err := upgradeRawSnapshot(v)
-						if err != nil {
-							logrus.Errorf("Unable to upgrade snapshot: %s %s", string(k), err.Error())
-						}
-
-						newSnapshots = append(newSnapshots, struct {
-							key []byte
-							val []byte
-						}{
-							key: k,
-							val: upgraded,
-						})
-
-						return nil
-					})
-
-					// updated every snapshot with the upgraded config
-					for _, snap := range newSnapshots {
-						err := b.Put(snap.key, snap.val)
-						if err != nil {
-							logrus.Errorf("Unable to write upgraded snapshot to database %s %s", string(snap.key), err.Error())
-						}
-
-						logrus.Debugf("Finished snapshot upgrade on: %s", string(snap.key))
-					}
-
-					return nil
-
-				})
-
-				return err
-
+				return nil
 			},
 		},
 		{
@@ -201,16 +136,81 @@ var (
 		},
 		{
 			Version: Version{
-				0, 10, 4,
+				0, 13, 0,
 			},
 			Buckets: []string{
 				"app",
 				"user",
 			},
-
-			// A no-op. This is the first schemad version
 			Upgrader: func(old *bolt.DB) error {
-				return nil
+				upgradeRawSnapshot := func(buff []byte) ([]byte, error) {
+					oldSnap := make(map[string]interface{})
+					err := json.Unmarshal(buff, &oldSnap)
+					if err != nil {
+						return nil, err
+					}
+
+					app, ok := oldSnap["app"].(map[string]interface{})
+					if !ok {
+						return nil, fmt.Errorf("Unable to upgrade snapshot. No 'app' section found.")
+					}
+
+					// remove the escalations
+					app["escalations"] = map[string]interface{}{}
+
+					// reencode the message
+					return json.Marshal(&app)
+				}
+				// open for an update
+				err := old.Update(func(tx *bolt.Tx) error {
+
+					// get the bucket for app snapshots
+					b := tx.Bucket([]byte("app"))
+					if b == nil {
+						logrus.Warning("No config snapshots found")
+						return nil
+					}
+
+					// make something that can hold all of the new snapshots to be written after the upgrade
+					newSnapshots := make([]struct {
+						key []byte
+						val []byte
+					}, 0, b.Stats().KeyN)
+
+					b.ForEach(func(k, v []byte) error {
+						logrus.Debugf("Starting snapshot upgrade on: %s", string(k))
+						upgraded, err := upgradeRawSnapshot(v)
+						if err != nil {
+							logrus.Errorf("Unable to upgrade snapshot: %s %s", string(k), err.Error())
+						}
+
+						newSnapshots = append(newSnapshots, struct {
+							key []byte
+							val []byte
+						}{
+							key: k,
+							val: upgraded,
+						})
+
+						return nil
+					})
+
+					// updated every snapshot with the upgraded config
+					for _, snap := range newSnapshots {
+						err := b.Put(snap.key, snap.val)
+						if err != nil {
+							logrus.Errorf("Unable to write upgraded snapshot to database %s %s", string(snap.key), err.Error())
+						}
+
+						logrus.Debugf("Finished snapshot upgrade on: %s", string(snap.key))
+					}
+
+					return nil
+
+				})
+
+				return err
+
 			},
 		},
 	}
@@ -218,7 +218,7 @@ var (
 
 // LatestSchema returns the newest schema
 func LatestSchema() Schema {
-	return Schemas[0]
+	return Schemas[len(Schemas)-1]
 }
 
 // givena n old and new schema update the current db
