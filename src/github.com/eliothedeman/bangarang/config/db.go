@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -88,8 +87,8 @@ func (d *DBConf) init() {
 	}
 
 	for _, x := range Schemas {
-		log.Println(s.Version)
 		if x.Greater(s) {
+			logrus.Infof("Upgrading database from version %s to %s", s.Version, x.Version)
 			err := x.Apply(d.db)
 			if err != nil {
 				logrus.Errorf("Unable to apply schema version %s to config db %s", LatestSchema().Version, err.Error())

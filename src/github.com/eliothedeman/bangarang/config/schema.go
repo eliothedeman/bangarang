@@ -158,8 +158,10 @@ var (
 					// remove the escalations
 					app["escalations"] = map[string]interface{}{}
 
+					oldSnap["app"] = app
+
 					// reencode the message
-					return json.Marshal(&app)
+					return json.Marshal(&oldSnap)
 				}
 				// open for an update
 				err := old.Update(func(tx *bolt.Tx) error {
@@ -247,7 +249,6 @@ func GetSchemaFromDb(b *bolt.DB) Schema {
 		}
 
 		v = VersionFromString(string(b.Get([]byte("version"))))
-		log.Println(v)
 		return nil
 	})
 	if err != nil {
@@ -267,6 +268,7 @@ func GetSchemaFromDb(b *bolt.DB) Schema {
 		if !s.Version.Greater(v) {
 			return s
 		}
+
 	}
 
 	return Schemas[0]
