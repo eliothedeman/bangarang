@@ -211,7 +211,7 @@ func (p *Policy) Compile(next event.IncidentPasser) {
 
 		// handle the nil case
 		if p.Match != nil {
-			p.r_match = make(Matcher, len(*p.Match))
+			p.r_match = make(Matcher, p.Match.Len())
 
 		} else {
 			p.r_match = make(Matcher, 0)
@@ -220,7 +220,7 @@ func (p *Policy) Compile(next event.IncidentPasser) {
 
 	if p.r_not_match == nil {
 		if p.NotMatch != nil {
-			p.r_not_match = make(Matcher, len(*p.NotMatch))
+			p.r_not_match = make(Matcher, p.NotMatch.Len())
 
 		} else {
 			p.r_not_match = make(Matcher, 0)
@@ -241,6 +241,7 @@ func (p *Policy) Compile(next event.IncidentPasser) {
 		i += 1
 	})
 
+	i = 0
 	p.NotMatch.ForEach(func(k, v string) {
 		m, err := regexp.Compile(v)
 		if err != nil {

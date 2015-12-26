@@ -8,6 +8,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
+	"github.com/eliothedeman/bangarang/event"
 )
 
 var (
@@ -36,7 +37,18 @@ var (
 				"user",
 			},
 			Upgrader: func(old *bolt.DB) error {
+				convertToKV := func(i interface{}) *event.TagSet {
+					if i == nil {
+						return event.NewTagset(0)
+					}
+					m := i.(map[string]interface{})
+					kv := event.NewTagset(len(m))
+					for k, v := range m {
+						kv.Set(k, v.(string))
+					}
 
+					return kv
+				}
 				upgradeRawSnapshot := func(buff []byte) ([]byte, error) {
 					// old
 					oldSnap := make(map[string]interface{})
@@ -59,11 +71,12 @@ var (
 						pols, ok := raw_pols.(map[string]interface{})
 						if ok {
 							for k, v := range pols {
+								x := v.(map[string]interface{})
 
 								logrus.Debugf("Removing old match/not_match from %s", k)
-								v.(map[string]interface{})["match"] = []struct{}{}
-								v.(map[string]interface{})["not_match"] = []struct{}{}
-								v.(map[string]interface{})["group_by"] = []struct{}{}
+								x["match"] = convertToKV(x["match"])
+								x["not_match"] = convertToKV(x["not_match"])
+								x["group_by"] = convertToKV(x["group_by"])
 							}
 						} else {
 							log.Println(reflect.TypeOf(raw_pols).String())
