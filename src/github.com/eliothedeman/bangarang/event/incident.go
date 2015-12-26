@@ -19,7 +19,7 @@ func DefaultIncidentFormatter(i *Incident) string {
 	return fmt.Sprintf("%s on %s is %s. Triggered by %s", i.Tags.Get("service"), i.Tags.Get("host"), Status(i.Status), i.Policy)
 }
 
-// An incident is created whenever an event changes to a state that is not event.OK
+// An incident is created whenever an event changes to a state
 type Incident struct {
 	EventName   []byte `json:"event" msg:"event_name"`
 	Time        int64  `json:"time" msg:"time"`

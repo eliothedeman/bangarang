@@ -266,7 +266,7 @@ func (p *Policy) Compile(next event.IncidentPasser) {
 	}
 }
 
-// return the action to take for a given event
+// ActionCrit returns the state change and the current status of the event
 func (p *Policy) ActionCrit(e *event.Event) (bool, int) {
 	status := event.OK
 	if p.Crit != nil {
@@ -282,6 +282,7 @@ func (p *Policy) ActionCrit(e *event.Event) (bool, int) {
 	return false, status
 }
 
+// ActionWarn returns the state change and the current status of the event
 func (p *Policy) ActionWarn(e *event.Event) (bool, int) {
 	status := event.OK
 	if p.Warn != nil {

@@ -166,10 +166,12 @@ func (p *Pipeline) unpause() {
 	<-p.unpauseChan
 }
 
+// Pause stops the pipeline and buffers incomming events
 func (p *Pipeline) Pause() {
 	p.pauseChan <- struct{}{}
 }
 
+// Unpause restarts the pipeline and runs the buffered events through the pipeline
 func (p *Pipeline) Unpause() {
 	p.unpause()
 }
@@ -285,6 +287,7 @@ func (p *Pipeline) UpdateConfig(f func(c *config.AppConfig) error, u *config.Use
 	return nil
 }
 
+// Start consumes events as they are sent to the pipeline
 func (p *Pipeline) Start() {
 	logrus.Info("Starting pipeline")
 
