@@ -3,15 +3,12 @@ package newman
 import (
 	"encoding/binary"
 	"io"
-	"time"
 
 	"golang.org/x/net/context"
 )
 
 const (
-	DefaultBufferSize        = 1024 * 100 // 100k
-	Compression       uint64 = 1 << iota
-	Encrypted
+	DefaultBufferSize = 1024 * 100 // 100k
 )
 
 // NoopCloser io.ReadWriteCloser has a noop for "Close"
@@ -34,25 +31,26 @@ type Conn struct {
 	buff         []byte
 	nextSizeBuff []byte
 	rwc          io.ReadWriteCloser
-	options      uint64
 	ctx          context.Context
+	waiter       Waiter
 }
 
 // NewConn returns a new Conn with the appropriate configuration
-func NewConn(rwc io.ReadWriteCloser, options ...uint64) *Conn {
+func NewConn(rwc io.ReadWriteCloser) *Conn {
 	c := &Conn{
 		buff:         make([]byte, DefaultBufferSize),
 		nextSizeBuff: make([]byte, 8),
 		rwc:          rwc,
 		ctx:          context.Background(),
-	}
-
-	// assign all options
-	for _, o := range options {
-		c.options |= o
+		waiter:       &NoopWaiter{},
 	}
 
 	return c
+}
+
+// SetWaitFunc takes a function that will be called whenever the connection needs to wait before reading/writing
+func (c *Conn) SetWaiter(w Waiter) {
+	c.waiter = w
 }
 
 // Write a message to the connection
@@ -129,19 +127,19 @@ func (c *Conn) Generate(f func() Message) (<-chan Message, context.CancelFunc) {
 func (c *Conn) writeNextBuffer(buff []byte) error {
 	// write out the size of the next message
 	binary.LittleEndian.PutUint64(c.nextSizeBuff, uint64(len(buff)))
-	err := writeIntoBuffer(c.nextSizeBuff, c.rwc)
+	err := writeIntoBuffer(c.nextSizeBuff, c.rwc, c.waiter)
 	if err != nil {
 		return err
 	}
 
 	// write the next message
-	return writeIntoBuffer(buff, c.rwc)
+	return writeIntoBuffer(buff, c.rwc, c.waiter)
 }
 
 // readNextBuffer reads the next message into the message buffer
 func (c *Conn) readNextBuffer() (int, error) {
 	// read the size of the next message
-	err := readIntoBuffer(c.nextSizeBuff, c.rwc)
+	err := readIntoBuffer(c.nextSizeBuff, c.rwc, c.waiter)
 	if err != nil {
 		return 0, err
 	}
@@ -157,14 +155,11 @@ func (c *Conn) readNextBuffer() (int, error) {
 	}
 
 	// read the next message into the buffer
-	return size, readIntoBuffer(c.buff[:size], c.rwc)
+	return size, readIntoBuffer(c.buff[:size], c.rwc, c.waiter)
 }
 
 // writeIntoBuffer writes an entire message to the io.Writer
-func writeIntoBuffer(buff []byte, w io.Writer) error {
-
-	// this will be used to back off the connection if the connection's buffers are full
-	backOffTime := time.Millisecond
+func writeIntoBuffer(buff []byte, w io.Writer, wait Waiter) error {
 
 	x := len(buff)
 	var n, l int
@@ -178,11 +173,10 @@ func writeIntoBuffer(buff []byte, w io.Writer) error {
 
 		// back off if nothing could be written
 		if n == 0 {
-			time.Sleep(backOffTime)
-			backOffTime = backOffTime * 2
+			wait.Wait()
 
 		} else {
-			backOffTime = time.Millisecond
+			wait.Reset()
 
 			// add the written amount to the write counter
 			l += n
@@ -195,10 +189,7 @@ func writeIntoBuffer(buff []byte, w io.Writer) error {
 }
 
 // readIntoBuffer will read off of a rwc until it the buffer has been filled
-func readIntoBuffer(buff []byte, r io.Reader) error {
-
-	// this will be used to back off the connection when there is nothing to read
-	backOffTime := time.Millisecond
+func readIntoBuffer(buff []byte, r io.Reader, wait Waiter) error {
 
 	x := len(buff)
 	var n, l int
@@ -212,11 +203,9 @@ func readIntoBuffer(buff []byte, r io.Reader) error {
 
 		// back off if we got nothing
 		if n == 0 {
-			time.Sleep(backOffTime)
-			backOffTime = backOffTime * 2
+			wait.Wait()
 		} else {
-			// reset the backOffTime
-			backOffTime = time.Millisecond
+			wait.Reset()
 
 			// add the read amount to the length counter
 			l += n

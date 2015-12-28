@@ -31,6 +31,7 @@ type TCPConfig struct {
 	Listen string `json:"listen"`
 }
 
+// Init runs the config for the provider
 func (t *TCPProvider) Init(i interface{}) error {
 	c := i.(*TCPConfig)
 
@@ -45,6 +46,7 @@ func (t *TCPProvider) Init(i interface{}) error {
 	return nil
 }
 
+// ConfigStruct returns a struct of config options
 func (t *TCPProvider) ConfigStruct() interface{} {
 	return &TCPConfig{}
 }
@@ -78,6 +80,7 @@ func (t *TCPProvider) Start(p event.EventPasser) {
 func (t *TCPProvider) consume(c *net.TCPConn, p event.EventPasser) {
 	// create a newman connection
 	conn := newman.NewConn(c)
+	conn.SetWaiter(&newman.Backoff{})
 
 	// drain the connection for ever
 	in, _ := conn.Generate(func() newman.Message {
@@ -93,7 +96,6 @@ func (t *TCPProvider) consume(c *net.TCPConn, p event.EventPasser) {
 
 	// when it is done, close the connection
 	c.Close()
-
 }
 
 func (t *TCPProvider) listen() error {

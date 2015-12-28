@@ -8,10 +8,9 @@ import (
 
 func TestNewConn(t *testing.T) {
 	in := bytes.NewBuffer(nil)
-	c := NewConn(WrapNoopCloser(in), Encrypted)
-
-	if c.options != Encrypted {
-		t.Fatal()
+	c := NewConn(WrapNoopCloser(in))
+	if c == nil {
+		t.Fail()
 	}
 
 	_, err := in.Write([]byte("hello"))
