@@ -115,6 +115,8 @@ func (i *Index) ListIncidents() []*Incident {
 			y := &Incident{}
 			err := json.Unmarshal(v, y)
 			if err != nil {
+				logrus.Warnf("Invalid json: key=%s val=%s", string(k), string(v))
+				ins[x] = y
 				return err
 			}
 
