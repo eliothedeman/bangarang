@@ -3,6 +3,7 @@ package event
 import (
 	"log"
 	"testing"
+	"time"
 )
 
 var (
@@ -18,20 +19,27 @@ func newTestIndex() *Index {
 	return NewIndex()
 }
 
-func newTestEvent(h, s, ss string, m float64) *Event {
+func newTestEvent(h, s string, m float64) *Event {
 	return &Event{
-		Host:       h,
-		Service:    s,
-		SubService: ss,
-		Metric:     m,
+		Tags: &TagSet{
+			{
+				Key:   "host",
+				Value: h,
+			},
+			{
+				Key:   "service",
+				Value: s,
+			},
+		},
+		Time: time.Now(),
 	}
 }
 
 func TestDeleteIncidentById(t *testing.T) {
 	i := newTestIndex()
 	defer i.Delete()
-	e := newTestEvent("h", "s", "ss", 1)
-	in := NewIncident("DeleteIncident", "test", OK, e)
+	e := newTestEvent("h", "s", 1)
+	in := NewIncident("test", OK, e)
 	i.PutIncident(in)
 	in = i.GetIncident(in.IndexName())
 	if in == nil {
@@ -49,8 +57,8 @@ func TestDeleteIncidentById(t *testing.T) {
 func TestListIncidents(t *testing.T) {
 	i := newTestIndex()
 	defer i.Delete()
-	e := newTestEvent("h", "s", "ss", 1)
-	in := NewIncident("ListIncidents", "test", OK, e)
+	e := newTestEvent("h", "s", 1)
+	in := NewIncident("test", OK, e)
 	i.PutIncident(in)
 
 	ins := i.ListIncidents()
@@ -63,8 +71,8 @@ func TestListIncidents(t *testing.T) {
 func TestAddIncident(t *testing.T) {
 	i := newTestIndex()
 	defer i.Delete()
-	e := newTestEvent("h", "s", "ss", 1)
-	in := NewIncident("test", "test", OK, e)
+	e := newTestEvent("h", "s", 1)
+	in := NewIncident("test", OK, e)
 	i.PutIncident(in)
 
 	b := i.GetIncident(in.IndexName())

@@ -8,6 +8,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/config"
+	"github.com/eliothedeman/bangarang/escalation"
 	"github.com/eliothedeman/bangarang/pipeline"
 	"github.com/gorilla/mux"
 )
@@ -53,8 +54,6 @@ func (p *EscalationConfig) Get(req *Request) {
 		return
 	}
 
-	coll := conf.Escalations.Collection()
-	logrus.Error(coll)
 }
 
 // Delete the given event provider
@@ -68,11 +67,7 @@ func (p *EscalationConfig) Delete(req *Request) {
 		}
 
 		logrus.Info("Removing escalation: %s", id)
-		conf.Escalations.RemoveRaw(id)
-		err := conf.Escalations.UnmarshalRaw()
-		if err != nil {
-			return err
-		}
+		delete(conf.Escalations, id)
 		return nil
 
 	}, req.u)
@@ -99,17 +94,13 @@ func (p *EscalationConfig) Post(req *Request) {
 			return err
 		}
 
-		t := []json.RawMessage{}
-		err = json.Unmarshal(buff, &t)
+		esc := &escalation.EscalationPolicy{}
+		err = json.Unmarshal(buff, esc)
 		if err != nil {
 			return err
 		}
 
-		conf.Escalations.AddRaw(id, t)
-		err = conf.Escalations.UnmarshalRaw()
-		if err != nil {
-			return err
-		}
+		conf.Escalations[id] = esc
 
 		return nil
 

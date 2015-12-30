@@ -3,13 +3,11 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
-	"github.com/eliothedeman/bangarang/version"
 )
 
 // DBConf provides methods for reading and writing configs from a database
@@ -74,28 +72,31 @@ func (d *DBConf) initAdminUser() error {
 func (d *DBConf) init() {
 
 	// get the schema, and apply it before moving on
-	s := version.GetSchemaFromDb(d.db)
+	s := GetSchemaFromDb(d.db)
 
 	// bootstrap
-	if s.Version == version.First {
+	if s.Version == First {
 		logrus.Info("Bootstrapping config db")
 		err := s.Apply(d.db)
 		if err != nil {
 			logrus.Errorf("Unable to bootstrap config %s", err.Error())
-		}
-
-	}
-
-	// if we don't have the correct version, apply the new one
-	if version.LatestSchema().Greater(s) {
-		logrus.Info("Upgrading config db version from %s to %s", s.Version, version.LatestSchema().Version)
-		err := version.LatestSchema().Apply(d.db)
-		if err != nil {
-			logrus.Errorf("Unable to apply schema version %s to config db %s", version.LatestSchema().Version, err.Error())
+			return
+		} else {
+			s = GetSchemaFromDb(d.db)
 		}
 	}
 
-	logrus.Infof("Using db config version %s", s.Version)
+	for _, x := range Schemas {
+		if x.Greater(s) {
+			logrus.Infof("Upgrading database from version %s to %s", s.Version, x.Version)
+			err := x.Apply(d.db)
+			if err != nil {
+				logrus.Errorf("Unable to apply schema version %s to config db %s", LatestSchema().Version, err.Error())
+			} else {
+				s = GetSchemaFromDb(d.db)
+			}
+		}
+	}
 
 	err := d.initAdminUser()
 	if err != nil {
@@ -280,15 +281,10 @@ func (d *DBConf) getVersion(version string) (*AppConfig, error) {
 	}
 
 	err = d.decode(buff, s)
-
 	if err != nil {
 		return nil, err
 	}
 
-	// compile all of the policies
-	for _, p := range s.App.Policies {
-		p.Compile()
-	}
 	s.App.provider = d
 
 	return s.App, nil
@@ -302,24 +298,6 @@ func (d *DBConf) GetCurrent() (*AppConfig, error) {
 // GetConfig get the config file which has the hash of given version
 func (d *DBConf) GetConfig(versionHash string) (*AppConfig, error) {
 	return d.getVersion(versionHash)
-}
-
-func (d *DBConf) ListRawSnapshots() []json.RawMessage {
-	raw := []json.RawMessage{}
-	err := d.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(appConfigBucketName))
-		return b.ForEach(func(k, v []byte) error {
-			raw = append(raw, json.RawMessage(v))
-			return nil
-		})
-	})
-
-	if err != nil {
-		logrus.Error(err)
-	}
-
-	return raw
-
 }
 
 func (d *DBConf) ListSnapshots() []*Snapshot {
@@ -358,14 +336,15 @@ func (d *DBConf) PutConfig(a *AppConfig, u *User) (string, error) {
 			old := newSnapshot(NewDefaultConfig(), u)
 			err := d.decode(oldBuff, old)
 			if err != nil {
-				log.Println(err)
+				logrus.Error("Unable to decode snapshot")
+				logrus.Error(err)
 				return err
 			}
 
 			// write the old snapshot at it's hash
 			err = b.Put([]byte(old.Hash), oldBuff)
 			if err != nil {
-				log.Println(err)
+				logrus.Error(err)
 				return err
 			}
 		}
@@ -373,7 +352,7 @@ func (d *DBConf) PutConfig(a *AppConfig, u *User) (string, error) {
 		// write the new snapshot to disk
 		newBuff, err := d.encode(newSnapshot(a, u))
 		if err != nil {
-			log.Println(err)
+			logrus.Error(err)
 			return err
 		}
 
@@ -381,7 +360,7 @@ func (d *DBConf) PutConfig(a *AppConfig, u *User) (string, error) {
 	})
 
 	if err != nil {
-		log.Println(err)
+		logrus.Error(err)
 		return "", err
 	}
 

@@ -1,32 +1,32 @@
 package pipeline
 
 import (
-	"log"
-	"runtime"
 	"sync"
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/config"
+	"github.com/eliothedeman/bangarang/escalation"
 	"github.com/eliothedeman/bangarang/event"
 	"github.com/eliothedeman/bangarang/provider"
 )
 
 const (
-	KEEP_ALIVE_SERVICE_NAME = "KeepAlive"
+	KEEP_ALIVE_INTERNAL_TAG = "KeepAlive"
+)
+
+var (
+	DefaultKeepAliveCheckTime = 1 * time.Minute
 )
 
 // Pipeline
 type Pipeline struct {
 	keepAliveAge       time.Duration
 	keepAliveCheckTime time.Duration
-	globalPolicy       *alarm.Policy
-	escalations        *alarm.Collection
-	policies           map[string]*alarm.Policy
+	escalations        map[string]*escalation.EscalationPolicy
+	policies           map[string]*escalation.Policy
 	index              *event.Index
 	providers          provider.EventProviderCollection
-	encodingPool       *event.EncodingPool
 	config             *config.AppConfig
 	confLock           sync.Mutex
 	tracker            *Tracker
@@ -34,46 +34,44 @@ type Pipeline struct {
 	pauseChan          chan struct{}
 	unpauseChan        chan struct{}
 	in                 chan *event.Event
+	incidentInput      chan *event.Incident
 }
 
-// NewPipeline
-func NewPipeline(conf *config.AppConfig) *Pipeline {
+// NewPipeline returns a pipeline that is empty of any configuation but will still pass events though
+func NewPipeline() *Pipeline {
 	p := &Pipeline{
-		encodingPool:       event.NewEncodingPool(event.EncoderFactories[conf.Encoding], event.DecoderFactories[conf.Encoding], runtime.NumCPU()),
-		keepAliveAge:       conf.KeepAliveAge,
-		keepAliveCheckTime: 10 * time.Second,
-		in:                 make(chan *event.Event),
+		in:                 make(chan *event.Event, 10),
+		policies:           make(map[string]*escalation.Policy),
+		incidentInput:      make(chan *event.Incident),
 		unpauseChan:        make(chan struct{}),
 		pauseChan:          make(chan struct{}),
 		tracker:            NewTracker(),
-		escalations:        &alarm.Collection{},
+		keepAliveCheckTime: DefaultKeepAliveCheckTime,
+		escalations:        map[string]*escalation.EscalationPolicy{},
 		index:              event.NewIndex(),
 	}
-	p.Start()
-
-	p.Refresh(conf)
-
-	logrus.Debug("Starting expiration checker")
-	go p.checkExpired()
 
 	return p
 }
 
-func (p *Pipeline) Pass(e *event.Event) {
+func (p *Pipeline) PassEvent(e *event.Event) {
 	p.in <- e
 }
 
 // only adds polcies that are not already known of
-func (p *Pipeline) refreshPolicies(m map[string]*alarm.Policy) {
+func (p *Pipeline) refreshPolicies(m map[string]*escalation.Policy) {
 	logrus.Info("Refreshing policies")
 
 	// initilize the pipeline's polices if they don't already exist
 	if p.policies == nil {
-		p.policies = make(map[string]*alarm.Policy)
+		p.policies = make(map[string]*escalation.Policy)
 	}
 
 	// add in new policies
 	for k, v := range m {
+
+		// compile the new policy
+		v.Compile(p)
 
 		// if the name of the new polcy is not known of, insert it
 		if _, inMap := p.policies[k]; !inMap {
@@ -100,7 +98,7 @@ func (p *Pipeline) RemovePolicy(name string) {
 	p.Pause()
 	pol, ok := p.policies[name]
 	if ok {
-		log.Println("stopping", name)
+		logrus.Infof("Stopping policiy %s", name)
 
 		// resolve all incidents that were created by this policy, and are still alive
 		ins := p.index.ListIncidents()
@@ -111,7 +109,7 @@ func (p *Pipeline) RemovePolicy(name string) {
 				i.Status = event.OK
 
 				// process the resolved incident
-				go p.ProcessIncident(i)
+				go p.PassIncident(i)
 			}
 		}
 		pol.Stop()
@@ -133,19 +131,21 @@ func (p *Pipeline) Refresh(conf *config.AppConfig) {
 		}
 	}
 
-	p.escalations = &conf.Escalations
+	if conf.Escalations != nil {
+		p.escalations = conf.Escalations
+		// compile each escalation policiy
+
+		for _, v := range p.escalations {
+			v.Compile()
+		}
+
+	}
 
 	if conf.EventProviders != nil {
 		p.providers = *conf.EventProviders
 	}
 
 	p.refreshPolicies(conf.Policies)
-	p.keepAliveAge = conf.KeepAliveAge
-	p.globalPolicy = conf.GlobalPolicy
-
-	if p.globalPolicy != nil {
-		p.globalPolicy.Compile()
-	}
 
 	// update to the new config
 	p.config = conf
@@ -166,10 +166,12 @@ func (p *Pipeline) unpause() {
 	<-p.unpauseChan
 }
 
+// Pause stops the pipeline and buffers incomming events
 func (p *Pipeline) Pause() {
 	p.pauseChan <- struct{}{}
 }
 
+// Unpause restarts the pipeline and runs the buffered events through the pipeline
 func (p *Pipeline) Unpause() {
 	p.unpause()
 }
@@ -213,40 +215,39 @@ func (p *Pipeline) pause() {
 	}
 }
 
+// GetTracker returns the pipeline's tracker
 func (p *Pipeline) GetTracker() *Tracker {
 	return p.tracker
 }
 
+// checkExpired checks for keep alive
 func (p *Pipeline) checkExpired() {
 	var events []*event.Event
-	for {
-		time.Sleep(p.keepAliveCheckTime)
 
-		// get keepalive events for all known hosts
-		events = createKeepAliveEvents(p.tracker.HostTimes())
+	// TODO track every tag in the future
+	events = createKeepAliveEvents(p.tracker.TagTimes("host"), "host")
 
-		// process every event as if it was an incomming event
-		for _, e := range events {
-			p.Pass(e)
-		}
+	// process every event as if it was an incomming event
+	for _, e := range events {
+		p.PassEvent(e)
 	}
 }
 
 // create keep alive events for each hostname -> time pair
-func createKeepAliveEvents(times map[string]time.Time) []*event.Event {
-	n := time.Now()
+func createKeepAliveEvents(times map[string]time.Time, tag string) []*event.Event {
 	events := make([]*event.Event, len(times))
-	x := 0
-	for host, t := range times {
+	i := 0
+	now := time.Now()
+
+	// fill out events
+	for k, v := range times {
 		e := event.NewEvent()
-		e.Host = host
-		e.Metric = n.Sub(t).Seconds()
-		e.Service = KEEP_ALIVE_SERVICE_NAME
-
-		events[x] = e
-		x += 1
+		e.Tags.Set(tag, k)
+		e.Tags.Set(INTERNAL_TAG_NAME, KEEP_ALIVE_INTERNAL_TAG)
+		e.Metric = now.Sub(v).Seconds()
+		events[i] = e
+		i++
 	}
-
 	return events
 }
 
@@ -286,17 +287,32 @@ func (p *Pipeline) UpdateConfig(f func(c *config.AppConfig) error, u *config.Use
 	return nil
 }
 
+// Start consumes events as they are sent to the pipeline
 func (p *Pipeline) Start() {
 	logrus.Info("Starting pipeline")
 
 	// fan in all of the providers and process them
 	go func() {
+		keepAliveCheckTime := time.After(p.keepAliveCheckTime)
 		var e *event.Event
+		var i *event.Incident
 		for {
 			select {
 			// recieve the event
 			case e = <-p.in:
-				p.Process(e)
+				p.processEvent(e)
+
+			// time to check for keepalives
+			case <-keepAliveCheckTime:
+
+				// start the exparation check
+				go p.checkExpired()
+
+				// reset the timer for the next check
+				keepAliveCheckTime = time.After(p.keepAliveCheckTime)
+
+			case i = <-p.incidentInput:
+				p.processIncident(i)
 
 			// handle pause
 			case <-p.pauseChan:
@@ -308,7 +324,14 @@ func (p *Pipeline) Start() {
 	}()
 }
 
-func (p *Pipeline) ProcessIncident(in *event.Incident) {
+// ProcessIncident relays the incident into the pipeline for processing
+func (p *Pipeline) PassIncident(in *event.Incident) {
+	p.incidentInput <- in
+}
+
+// processIncident forwards a deduped incident on to every escalation
+func (p *Pipeline) processIncident(in *event.Incident) {
+	in.GetEvent().SetState(event.StateIncident)
 
 	// start tracking this incident in memory so we can call back to it
 	p.tracker.TrackIncident(in)
@@ -323,40 +346,29 @@ func (p *Pipeline) ProcessIncident(in *event.Incident) {
 			p.index.DeleteIncidentById(in.IndexName())
 		}
 
-		// fetch the escalation to take
-		esc, ok := p.escalations.Collection()[in.Escalation]
-		if ok {
-
-			// send to every alarm in the escalation
-			for _, a := range esc {
-				a.Send(in)
-			}
-		} else {
-			logrus.Error("unknown escalation", in.Escalation)
+		// send it on to every escalation
+		for _, esc := range p.escalations {
+			esc.PassIncident(in)
 		}
 	}
+
+	in.GetEvent().SetState(event.StateComplete)
 }
 
 // Run the given event though the pipeline
-func (p *Pipeline) Process(e *event.Event) {
-	if p.globalPolicy != nil {
-		if !p.globalPolicy.CheckMatch(e) || !p.globalPolicy.CheckNotMatch(e) {
-			return
-		}
-	}
+func (p *Pipeline) processEvent(e *event.Event) {
+
+	// update to current state
+	e.SetState(event.StatePipeline)
 
 	// track stas for this event
 	p.tracker.TrackEvent(e)
 
 	// process this event on every policy
-	var pol *alarm.Policy
+	var pol *escalation.Policy
 	for _, pol = range p.policies {
-		e.WaitInc()
-		pol.Process(e, func(in *event.Incident) {
-			p.ProcessIncident(in)
-		})
+		pol.PassEvent(e)
 	}
-
 }
 
 func (p *Pipeline) GetIndex() *event.Index {

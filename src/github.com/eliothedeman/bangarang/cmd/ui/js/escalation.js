@@ -1,8 +1,138 @@
+"use strict"
+class Escalation {
+	constructor(name) {
+		this.name = name
+		this.comment = ""
+		this.match = new Match([])
+		this.not_match = new Match([])
+		this.crit = false
+		this.warn = false
+		this.ok = false
+		this.configs = []
+		this.type_list = [
+			{
+				title: "Pagerduty",
+				name: "pager_duty",
+				opts: [
+					{
+						title:"Api Key",
+						name: "key",
+						value: ""
+					},
+					{
+						title: "Subdomain",
+						name: "subdomain",
+						value: ""
+					}
+				]
+			},
+			{
+				title: "Email",
+				name: "email",
+				opts: [
+					{
+						title: "To",
+						name: "recipients",
+						value: "",
+						format: function() {
+							if (typeof this.value == "string") {
+								this.value = this.value.split(",");
+							}
+						}
+					},
+					{
+						title: "From",
+						name:"sender",
+						value:""
+					},
+					{
+						title: "User",
+						name:"user",
+						value:""
+					},
+					{
+						title: "Password",
+						name:"password",
+						value:""
+					},
+					{
+						title:"Host",
+						name:"host",
+						value: "smtp.gmail.com"
+					},
+					{
+						title:"Port",
+						name:"port",
+						value: 465
+					}
+				]
+			},
+			{
+				title: "Console",
+				name: "console",
+				opts: []
+			},
+			{
+				title: "Grafana Graphite Annotation",
+				name: "grafana_graphite_annotation",
+				opts: [
+					{
+						title:"Host",
+						name: "host",
+						value: ""
+					},
+					{
+						title:"Port",
+						name: "port",
+						value: 2003
+					}	
+				]
+			}
+		]
+	}
+
+	getOpts(name) {
+		for (var i = this.type_list.length - 1; i >= 0; i--) {
+			var opt = this.type_list[i];
+			if (opt.name == name) {
+				return opt.opts
+			}
+
+		};
+
+		return {}
+	}
+
+	data() {
+		var d = {
+			name: this.name,
+			comment: this.comment,
+			match: this.match.data(),
+			not_match: this.not_match.data(),
+			ok: this.ok,
+			warn: this.warn,
+			crit: this.crit,
+			configs: this.configs,
+		}
+
+		return d
+	}
+
+	addEscalation(conf) {
+		this.configs.push(conf)
+	}
+
+}
+
 function EscalationController($scope, $http, $cookies, $mdDialog) {
-	$scope.escalations = null;
+	$scope.escalations = [];
 	$scope.fetchEscalations = function() {
 		$http.get("api/escalation/config/*").success(function(data, status) {
-			$scope.escalations = data;
+			if (data) {
+				if (data != "null") {
+					$scope.escalations = data;
+				}
+			}
 		});
 	}
 	this.selected = 0;
@@ -45,158 +175,42 @@ angular.module("bangarang").controller("EscalationController", EscalationControl
 
 
 function NewEscalationController($scope, $http, $interval) {
-	this.name = "";
-	this.type = null;
-	this.ots = {};
-
-	this.type_list = [
-		{
-			title: "Pagerduty",
-			name: "pager_duty"
-		},
-		{
-			title: "Email",
-			name: "email",
-		},
-		{
-			title: "Console",
-			name: "console"
-		},
-		{
-			title: "Grafana Graphite Annotation",
-			name: "grafana_graphite_annotation"
-		}
-
-	]
-
-	this.pdOpts = [
-		{
-			title:"Api Key",
-			name: "key",
-			value: ""
-		},
-		{
-			title: "Subdomain",
-			name: "subdomain",
-			value: ""
-		}
-	];
-
-	this.ggaOpts = [
-		{
-			title:"Host",
-			name: "host",
-			value: ""
-		},
-		{
-			title:"Port",
-			name: "port",
-			value: 2003
-		}
-	]
-
-	this.emailOpts = [
-		{
-			title: "To",
-			name: "recipients",
-			value: "",
-			format: function() {
-				if (typeof this.value == "string") {
-					this.value = this.value.split(",");
-				}
-			}
-		},
-		{
-			title: "From",
-			name:"sender",
-			value:""
-		},
-		{
-			title: "User",
-			name:"user",
-			value:""
-		},
-		{
-			title: "Password",
-			name:"password",
-			value:""
-		},
-		{
-			title:"Host",
-			name:"host",
-			value: "smtp.gmail.com"
-		},
-		{
-			title:"Port",
-			name:"port",
-			value: 465
-		}
-	];
-	this.consoleOpts = [];
-	this.chips = [];
-
-	this.getOpts = function(type) {
-		switch (type) {
-			case "pager_duty":
-				return this.pdOpts;
-
-			case "email":
-				return this.emailOpts;
-
-			case "console":
-				return this.consoleOpts;
-
-			case "grafana_graphite_annotation":
-				return this.ggaOpts;
-
-			default:
-				return [];
-		}
-	}
-
-
-
-	this.newEscalation = function() {
-
-		if (!this.type) {
-			return;
-		}
-
-		var e = {
-			type: this.type
-		};
-
-		var opts = this.getOpts(this.type);
-		for (var i = 0; i < opts.length; i++) {
-
-			// if the opts value has a format function, all it
-			if (opts[i].format) {
-				opts[i].format()
-			}
-			e[opts[i].name] = opts[i].value;
-		}
-
-		this.chips.push(e);
-	}
+	$scope.esc = new Escalation("");
+	$scope.tmp_type = "";
 
 	this.submitNew = function() {
-		if (!this.name) {
-			return;
+		if (!$scope.validate()) {
+			alert("Escalation is not complete")
+			return
 		}
-		$scope.newEscalationProgress = 50;
-		a = this;
-		$http.post("api/escalation/config/" + this.name, this.chips).success(function(data) {
-			a.reset();
-		});
 
+		$http.post("api/escalation/config/" + $scope.esc.name, $scope.esc.data()).success(function(data) {
+			$scope.reset()
+		});
 	}
 
-	this.reset = function() {
-		this.type = null;
-		this.name = "";
-		this.chips = [];
-		this.opts = {};
-		$scope.newEscalationProgress = 0;
+	$scope.appendEscalation = function() {
+		var d = {};
+		var opts = $scope.esc.getOpts($scope.tmp_type);
+		for (var i = opts.length - 1; i >= 0; i--) {
+			var opt = opts[i];
+			d[opt.name] = opt.value;
+
+		};
+
+		d.type = $scope.tmp_type;
+		$scope.esc.configs.push(d);
+	}
+
+	$scope.validate = function() {
+		if (!$scope.esc.name) {
+			return false;
+		}
+		return true;
+	}
+
+	$scope.reset = function() {
+		$scope.esc = new Escalation("");
 	}
 }
 

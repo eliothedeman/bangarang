@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/eliothedeman/bangarang/alarm"
 	"github.com/eliothedeman/bangarang/config"
+	"github.com/eliothedeman/bangarang/escalation"
 	"github.com/eliothedeman/bangarang/pipeline"
 	"github.com/gorilla/mux"
 )
@@ -57,15 +57,11 @@ func (p *PolicyConfig) Get(req *Request) {
 		}
 
 		// special case for global
-		var pol *alarm.Policy
-		if id == "global" {
-			pol = conf.GlobalPolicy
-		} else {
-			pol, ok = conf.Policies[id]
-			if !ok {
-				http.Error(req.w, fmt.Sprintf("Unable to find policy '%s'", id), http.StatusBadRequest)
-				return
-			}
+		var pol *escalation.Policy
+		pol, ok = conf.Policies[id]
+		if !ok {
+			http.Error(req.w, fmt.Sprintf("Unable to find policy '%s'", id), http.StatusBadRequest)
+			return
 		}
 		buff, err := json.Marshal(pol)
 		if err != nil {
@@ -89,13 +85,8 @@ func (p *PolicyConfig) Delete(req *Request) {
 		}
 
 		logrus.Infof("Removing policy: %s", id)
-		if id == global_name {
-			conf.GlobalPolicy = &alarm.Policy{}
-			conf.GlobalPolicy.Compile()
-		} else {
-			delete(conf.Policies, id)
-			p.pipeline.RemovePolicy(id)
-		}
+		delete(conf.Policies, id)
+		p.pipeline.RemovePolicy(id)
 
 		return nil
 
@@ -127,7 +118,7 @@ func (p *PolicyConfig) Post(req *Request) {
 		// read the policy
 		buff, err := ioutil.ReadAll(req.r.Body)
 
-		pol := &alarm.Policy{}
+		pol := &escalation.Policy{}
 
 		err = json.Unmarshal(buff, pol)
 		if err != nil {
@@ -137,16 +128,12 @@ func (p *PolicyConfig) Post(req *Request) {
 			pol.Name = id
 		}
 
-		pol.Compile()
+		pol.Compile(p.pipeline)
 		if conf.Policies == nil {
-			conf.Policies = make(map[string]*alarm.Policy)
+			conf.Policies = make(map[string]*escalation.Policy)
 		}
 
-		if id == global_name {
-			conf.GlobalPolicy = pol
-		} else {
-			conf.Policies[id] = pol
-		}
+		conf.Policies[id] = pol
 
 		return nil
 

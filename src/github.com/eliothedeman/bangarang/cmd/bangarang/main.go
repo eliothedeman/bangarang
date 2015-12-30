@@ -3,20 +3,23 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 
+	"net/http"
+	_ "net/http/pprof"
+
 	"github.com/Sirupsen/logrus"
-	_ "github.com/eliothedeman/bangarang/alarm/console"
-	_ "github.com/eliothedeman/bangarang/alarm/email"
-	_ "github.com/eliothedeman/bangarang/alarm/grafana-graphite-annotation"
-	_ "github.com/eliothedeman/bangarang/alarm/pd"
 	"github.com/eliothedeman/bangarang/api"
 	"github.com/eliothedeman/bangarang/config"
+	_ "github.com/eliothedeman/bangarang/escalation/console"
+	_ "github.com/eliothedeman/bangarang/escalation/email"
+	_ "github.com/eliothedeman/bangarang/escalation/grafana-graphite-annotation"
+	_ "github.com/eliothedeman/bangarang/escalation/pd"
 	"github.com/eliothedeman/bangarang/pipeline"
 	_ "github.com/eliothedeman/bangarang/provider/http"
 	_ "github.com/eliothedeman/bangarang/provider/tcp"
-	"github.com/eliothedeman/bangarang/version"
 )
 
 var (
@@ -44,11 +47,14 @@ func handleSigs() {
 }
 
 func main() {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 	flag.Parse()
 
 	// display the current version and exit
 	if *showVersion {
-		fmt.Print(version.Current)
+		fmt.Print(config.Current)
 		os.Exit(0)
 	}
 
@@ -75,8 +81,13 @@ func main() {
 
 	logrus.Infof("Starting processing pipeline with %d policie(s)", len(ac.Policies))
 	// create and start up a new pipeline
-	p := pipeline.NewPipeline(ac)
+	p := pipeline.NewPipeline()
+
+	// start the pipeline
 	p.Start()
+
+	// apply the config fo the pipeline
+	p.Refresh(ac)
 
 	logrus.Infof("Serving the http api on port %d", 8081)
 	// create and start a new api server

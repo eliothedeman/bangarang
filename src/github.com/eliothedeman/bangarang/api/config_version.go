@@ -45,7 +45,7 @@ func (c *ConfigVersion) Get(req *Request) {
 
 	// return all config versions
 	if ver == "*" {
-		buff, err := json.Marshal(p.ListRawSnapshots())
+		buff, err := json.Marshal(p.ListSnapshots())
 		if err != nil {
 			logrus.Error(err)
 			http.Error(req.w, err.Error(), http.StatusInternalServerError)

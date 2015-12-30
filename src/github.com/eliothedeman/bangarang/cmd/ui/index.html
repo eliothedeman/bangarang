@@ -152,17 +152,17 @@
 					<md-tabs md-center-tabs md-dynamic-height md-border-bottom md-selected="selected" ng-init="getSelected()">
 						<md-tab label="All" md-on-select="updateSelected(0);fetchPolicies()">
 							<md-list>
-								<md-card ng-repeat="(name, pol) in policies">
+								<md-card ng-repeat="(pol_name, pol_data) in policies">
 									<md-card-content>
 										<md-list-item class="md-3-line">
 											<div class="md-list-item-text">
-												<h3>{{name}}</h3>
-												<json-formatter class="json-formatter" json=pol></json-formatter>
+												<h3>{{pol_name}}</h3>
+												<json-formatter class="json-formatter" json=pol_data></json-formatter>
 											</div>
-											<p ng-hide="shouldHideRemoveDialog(name)">Sure?</p>
-											<md-button ng-click="removePolicy(name)" class="md-primary" ng-hide="shouldHideRemoveDialog(name)">Yes</md-button>
-											<md-button ng-click="hideRemoveDialog(name)" class="md-warn" ng-hide="shouldHideRemoveDialog(name)">No</md-button>
-											<md-button ng-click="showRemoveDialog(name)">
+											<p ng-hide="shouldHideRemoveDialog(pol_name)">Sure?</p>
+											<md-button ng-click="removePolicy(pol_name)" class="md-primary" ng-hide="shouldHideRemoveDialog(pol_name)">Yes</md-button>
+											<md-button ng-click="hideRemoveDialog(pol_name)" class="md-warn" ng-hide="shouldHideRemoveDialog(pol_name)">No</md-button>
+											<md-button ng-click="showRemoveDialog(pol_name)">
 											<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon>
 											</md-button>
 										</md-list-item>
@@ -170,55 +170,7 @@
 								</md-card>
 							</md-list>
 						</md-tab>
-						<md-tab label="global" md-on-select="updateSelected(1)">
-							<div ng-controller="GlobalPolicyController" ng-init="fetchPolicy()">
-								<md-card>
-									<md-card-content md-dynamic-height>
-										<h4>Global Policy</h4>
-										<label>Match</label>
-										<div layout layout-sm="colunm">
-											<md-input-container>
-												<label>Key</label>
-												<input  ng-model="newMatchKey">
-											</md-input-container>
-											<md-input-container>
-												<label>Value</label>
-												<input  ng-model="newMatchVal">
-											</md-input-container>
-											<md-button ng-click=addNewMatch()>Add</md-button>
-										</div>
-										<md-chips ng-model="matchChips">
-											<md-chip-template>
-												Key: <strong>{{$chip.key}}</strong>
-												Val: <strong>{{$chip.val}}</strong>
-											</md-chip-template>
-										</md-chips>
-										<br>
-										<label>Not Match</label>
-										<div layout layout-sm="colunm">
-											<md-input-container>
-												<label>Key</label>
-												<input  ng-model="newNotMatchKey">
-											</md-input-container>
-											<md-input-container>
-												<label>Value</label>
-												<input  ng-model="newNotMatchVal">
-											</md-input-container>
-											<md-button ng-click=addNewNotMatch()>Add</md-button>
-										</div>
-										<md-chips ng-model="notMatchChips">
-											<md-chip-template>
-												Key: <strong>{{$chip.key}}</strong>
-												Val: <strong>{{$chip.val}}</strong>
-											</md-chip-template>
-										</md-chips>
-										<md-button aria-label="" class="md-raised" ng-click="submit()">Submit</md-button>
-										<md-button aria-label="calcel" class="md-raised md-warn" ng-click="cancel()">Cancel</md-button>
-									</md-card-content>
-								</md-card>
-							</div>
-						</md-tab>
-						<md-tab label="new" md-on-select="updateSelected(2)">
+						<md-tab label="new" md-on-select="updateSelected(1)">
 							<div ng-controller="NewPolicyController as npc">
 								<md-card md-dynamic-height>
 									<md-card-content md-dynamic-height>
@@ -249,9 +201,9 @@
 													<div layout layout-sm="row">
 														<md-list ng>
 															<md-subheader>Matches</md-subheader>
-															<md-list-item class="md-1-line" ng-repeat="(k, v) in np.match.match">
-																{{k}} -> {{v}}
-																<md-button ng-click="np.match.del(k)">
+															<md-list-item class="md-1-line" ng-repeat="match in np.match.matches">
+																{{match.key}} -> {{match.value}}
+																<md-button ng-click="np.match.del(match.key)">
 																<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
 																<md-divider ng-inset></md-divider>
 															</md-list-item>
@@ -276,9 +228,9 @@
 													<div layout layout-sm="row">
 														<md-list ng>
 															<md-subheader>Matches</md-subheader>
-															<md-list-item class="md-2-line" ng-repeat="(k, v) in np.not_match.match">
-																{{k}} -> {{v}}
-																<md-button ng-click="np.not_match.del(k)">
+															<md-list-item class="md-2-line" ng-repeat="match in np.not_match.matches">
+																{{match.key}} -> {{match.value}}
+																<md-button ng-click="np.not_match.del(match.key)">
 																<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
 																<md-divider ng-inset></md-divider>
 															</md-list-item>
@@ -324,14 +276,6 @@
 																<label>Value</label>
 																<input type="number" ng-model="np.crit.value">
 															</md-input-container>
-															<md-input-container>
-																<label>{{np.crit.escalation ? np.crit.escalation : "Escalation"}}</label>
-																<md-select md-on-open="loadEscalationNames()" ng-model="np.crit.escalation">
-																	<md-option value="{{name}}" ng-repeat="name in escalation_names">
-																		{{name}}
-																	</md-option>
-																</md-select>
-															</md-input-container>
 														</div>
 													</div>
 												</md-card-content>
@@ -371,14 +315,6 @@
 																<label>Value</label>
 																<input type="number" ng-model="np.warn.value">
 															</md-input-container>
-															<md-input-container>
-																<label>{{np.warn.escalation ? np.warn.escalation : "Escalation"}}</label>
-																<md-select md-on-open="loadEscalationNames()" ng-model="np.warn.escalation">
-																	<md-option value="{{name}}" ng-repeat="name in escalation_names">
-																		{{name}}
-																	</md-option>
-																</md-select>
-															</md-input-container>
 														</div>
 													</div>
 												</md-card-content>
@@ -392,7 +328,7 @@
 								</md-card>
 							</div>
 						</md-tab>
-						<md-tab label="edit" md-on-select="updateSelected(3)">
+						<md-tab label="edit" md-on-select="updateSelected(2)">
 							<div ng-controller="NewPolicyController as npc">
 								<md-card md-dynamic-height>
 									<md-card-content md-dynamic-height>
@@ -425,9 +361,9 @@
 													<div layout layout-sm="row">
 														<md-list ng>
 															<md-subheader>Matches</md-subheader>
-															<md-list-item class="md-1-line" ng-repeat="(k, v) in np.match.match">
-																	{{k}} -> {{v}}
-																	<md-button ng-click="np.match.del(k)">
+															<md-list-item class="md-1-line" ng-repeat="match in np.match.matches">
+																	{{match.key}} -> {{match.value}}
+																	<md-button ng-click="np.match.del(match.key)">
 																	<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
 																<md-divider ng-inset></md-divider>
 															</md-list-item>
@@ -452,9 +388,9 @@
 													<div layout layout-sm="row">
 														<md-list ng>
 															<md-subheader>Matches</md-subheader>
-															<md-list-item class="md-2-line" ng-repeat="(k, v) in np.not_match.match">
-																{{k}} -> {{v}}
-																<md-button ng-click="np.not_match.del(k)">
+															<md-list-item class="md-2-line" ng-repeat="match in np.not_match.matches">
+																{{match.key}} -> {{match.value}}
+																<md-button ng-click="np.not_match.del(match.key)">
 																<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
 															</md-list-item>
 														</md-list>
@@ -498,14 +434,6 @@
 																<label>Value</label>
 																<input type="number" ng-model="np.crit.value">
 															</md-input-container>
-															<md-input-container>
-																<label>{{np.crit.escalation ? np.crit.escalation : "Escalation"}}</label>
-																<md-select md-on-open="loadEscalationNames()" ng-model="np.crit.escalation" placeholder="{{np.crit.escalation}}">
-																	<md-option value="{{name}}" ng-repeat="name in escalation_names">
-																		{{name}}
-																	</md-option>
-																</md-select>
-															</md-input-container>
 														</div>
 													</div>
 												</md-card-content>
@@ -545,13 +473,6 @@
 																<label>Value</label>
 																<input type="number" ng-model="np.warn.value">
 															</md-input-container>
-															<md-input-container>
-																<label>{{np.warn.escalation ? np.warn.escalation : "Escalation"}}</label>
-																<md-select md-on-open="loadEscalationNames()" ng-model="np.warn.escalation" placeholder="{{np.warn.escalation}}">
-																	<md-option value="{{name}}" ng-repeat="name in escalation_names">
-																		{{name}}
-																	</md-option>
-																</md-select>
 															</md-input-container>
 														</div>
 													</div>
@@ -598,33 +519,99 @@
 								<md-card-content ng-controller="NewEscalationController as ne">
 									<md-input-container>
 										<label>Name</label>
-										<input ng-model="ne.name">
+										<input ng-model="esc.name">
 									</md-input-container>
 									<div layout layout-sm="colunm">
-										<md-select placeholder="Type" ng-model="ne.type">
-											<md-option ng-repeat="t in ne.type_list" value="{{t.name}}">{{t.title}}</md-option>
+										<md-select placeholder="Type" ng-model="tmp_type">
+											<md-option ng-repeat="t in esc.type_list" value="{{t.name}}">{{t.title}}</md-option>
 										</md-select>
 									</div>
-									<div ng-repeat="opt in ne.getOpts(ne.type)">
+									<div ng-repeat="opt in esc.getOpts(tmp_type)">
 										<md-input-container>
 											<label>{{opt.title}}</label>
 											<input ng-model="opt.value">
 										</md-input-container>
 									</div>
 									<div layout layout-sm="row">
-										<md-button class="md-raised" ng-click="ne.newEscalation()">Add</md-button>
-										<md-button class="md-raised md-warn" ng-click="ne.reset()">Cancel</md-button>
+										<md-button class="md-raised" ng-click="appendEscalation()">Add</md-button>
 									</div>
+									<div layout layout-sm="row">
+										<md-card class="md-whiteframe-z2">
+											<md-card-content>
+												<label>Match</label>
+												<div layout layout-sm="column" >
+													<md-input-container>
+														<label>Key</label>
+														<input ng-model="nmk">
+													</md-input-container>
+													<md-input-container>
+														<label>Value</label>
+														<input ng-model="nmv">
+													</md-input-container>
+													<md-button ng-click="esc.match.add(nmk, nmv)">Add</md-button>
+												</div>
+
+												<div layout layout-sm="row">
+													<md-list ng>
+														<md-subheader>Matches</md-subheader>
+														<md-list-item class="md-1-line" ng-repeat="match in esc.match.matches">
+															{{match.key}} -> {{match.value}}
+															<md-button ng-click="esc.match.del(match.key)">
+															<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
+															<md-divider ng-inset></md-divider>
+														</md-list-item>
+													</md-list>
+												</div>
+											</md-card-content>
+										</md-card>
+										<md-card class="md-whiteframe-z2">
+											<md-card-content>
+												<label>Not Match</label>
+												<div layout layout-sm="colunm" >
+													<md-input-container>
+														<label>Key</label>
+														<input ng-model="nnmk">
+													</md-input-container>
+													<md-input-container>
+														<label>Value</label>
+														<input ng-model="nnmv">
+													</md-input-container>
+													<md-button ng-click="esc.not_match.add(nnmk, nnmv)">Add</md-button>
+												</div>
+												<div layout layout-sm="row">
+													<md-list ng>
+														<md-subheader>Not Matches</md-subheader>
+														<md-list-item class="md-2-line" ng-repeat="match in esc.not_match.matches">
+															{{match.key}} -> {{match.value}}
+															<md-button ng-click="esc.not_match.del(match.key)">
+															<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
+															<md-divider ng-inset></md-divider>
+														</md-list-item>
+													</md-list>
+												</div>
+											</md-card-content>
+										</md-card>
+									</div>	
+									<div layout layout-sm="row">
+										<md-list ng>
+											<md-subheader>Escalations</md-subheader>
+											<md-list-item class="md-2-line" ng-repeat="conf in esc.configs">
+												<h3>{{conf.type}}</h3>
+												<!-- <md-button ng-click="esc.not_match.del(match.key)"> -->
+												<!-- <md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button> -->
+												<md-divider ng-inset></md-divider>
+											</md-list-item>
+										</md-list>
+									</div>
+									<md-switch ng-model="esc.ok" aria-label="ok">Ok</md-switch>
+									<md-switch ng-model="esc.warn" aria-label="ok">Warn</md-switch>
+									<md-switch ng-model="esc.crit" aria-label="crit">Crit</md-switch>
 									<br>
 									<md-divider></md-divider>
 									<br>
 									<div layout layout-sm="row">
 										<md-button class="md-raised" ng-click="ne.submitNew()">Submit</md-button>
-										<md-chips ng-model="ne.chips">
-											<md-chip-template>
-												{{$chip.type}}
-											</md-chip-template>
-										</md-chips>
+										<md-button class="md-raised md-warn" ng-click="reset()">Cancel</md-button>
 									</div>
 									<md-progress-linear md-mode="buffer" class="md-warn" value="{{newEscalationProgress}}"></md-progress-linear>
 								</md-card-content>

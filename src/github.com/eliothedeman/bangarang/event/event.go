@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"math"
 	"reflect"
-	"strings"
-	"sync"
+	"sync/atomic"
+	"time"
 	"unsafe"
 )
 
@@ -15,21 +15,22 @@ const (
 	WARNING
 	CRITICAL
 )
-
-//go:generate ffjson $GOFILE
-//go:generate msgp $GOFILE
+const (
+	StateStart uint32 = iota
+	StatePipeline
+	StatePolicy
+	StateIncident
+	StateComplete
+)
 
 // Event represents a metric as it passes through the pipeline.
 // It holds meta data about the metric, as well as methods to trace the event as it is processed
 type Event struct {
-	Host       string            `json:"host" msg:"host"`
-	Service    string            `json:"service" msg:"service"`
-	SubService string            `json:"sub_service" msg:"sub_service"`
-	Metric     float64           `json:"metric" msg:"metric"`
-	Tags       map[string]string `json:"tags" msg:"tags"`
-	indexName  string
-	wait       sync.WaitGroup
-	mut        sync.Mutex
+	Metric    float64   `json:"metric" msg:"metric"`
+	Tags      *TagSet   `json:"tags" msg:"tags"`
+	Time      time.Time `json:"time" msg: "time"`
+	indexName string
+	state     *uint32
 }
 
 func (e *Event) UnmarshalBinary(buff []byte) error {
@@ -41,41 +42,39 @@ func (e *Event) UnmarshalBinary(buff []byte) error {
 	i := binary.BigEndian.Uint64(buff[8:16])
 	e.Metric = math.Float64frombits(i)
 
-	// host
-	offset := 16
-	l := int(buff[offset])
-	offset += 1
-	e.Host = string(buff[offset : offset+l])
-	offset += l
+	// load the time
+	// seconds
+	i = binary.BigEndian.Uint64(buff[16:24])
 
-	// service
-	l = int(buff[offset])
-	offset += 1
-	e.Service = string(buff[offset : offset+l])
-	offset += l
+	// nanoseconds
+	x := binary.BigEndian.Uint64(buff[24:32])
+	e.Time = time.Unix(int64(i), int64(x))
 
-	// sub_service
-	l = int(buff[offset])
-	offset += 1
-	e.SubService = string(buff[offset : offset+l])
-	offset += l
+	l := 0
+	offset := 32
 
 	// tags
-	e.Tags = map[string]string{}
+	e.Tags = NewTagset(int(buff[offset]))
+	offset += 1
+	i = 0
+	var key, val string
 	for offset < len(buff) {
 
 		// key
 		l = int(buff[offset])
 		offset += 1
-		key := string(buff[offset : offset+l])
+		key = string(buff[offset : offset+l])
 		offset += l
 
 		l = int(buff[offset])
 		offset += 1
-		value := string(buff[offset : offset+l])
+		val = string(buff[offset : offset+l])
 		offset += l
 
-		e.Tags[key] = value
+		e.Tags.Set(key, val)
+
+		i += 1
+
 	}
 
 	return nil
@@ -84,12 +83,10 @@ func (e *Event) UnmarshalBinary(buff []byte) error {
 // MarshalBinary creates the binary representation of an event
 // Size header 8 bytes
 // Metric 8 bytes
-// Host Size 1 byte
-// Host (max 256 bytes)
-// Service Size 1 byte
-// Service (max 256 bytes)
-// SubService Size 1 byte
-// SubService (max 256 bytes)
+// Time seconds 8 bytes
+// Time nanoseconds  8 bytes
+//
+// TagSetSize 1 byte (max 256 key->val pairs)
 //
 // Tags: key size 1 byte
 // Tags: key (max 256 bytes)
@@ -110,29 +107,20 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 	binary.BigEndian.PutUint64(buff[offset:offset+8], math.Float64bits(e.Metric))
 	offset += 8
 
-	// host
-	tmp = sizeOfString(e.Host)
-	buff[offset] = uint8(tmp)
-	offset += 1
-	copy(buff[offset:offset+tmp], e.Host)
-	offset += tmp
+	// time
+	// seconds
+	binary.BigEndian.PutUint64(buff[offset:offset+8], uint64(e.Time.Unix()))
+	offset += 8
 
-	// service
-	tmp = sizeOfString(e.Service)
-	buff[offset] = uint8(tmp)
-	offset += 1
-	copy(buff[offset:offset+tmp], e.Service)
-	offset += tmp
+	// nano seconds
+	binary.BigEndian.PutUint64(buff[offset:offset+8], uint64(e.Time.Nanosecond()))
+	offset += 8
 
-	// service
-	tmp = sizeOfString(e.SubService)
-	buff[offset] = uint8(tmp)
+	buff[offset] = uint8(len(*e.Tags))
 	offset += 1
-	copy(buff[offset:offset+tmp], e.SubService)
-	offset += tmp
 
 	// tags
-	for k, v := range e.Tags {
+	e.Tags.ForEach(func(k, v string) {
 		tmp = sizeOfString(k)
 		buff[offset] = uint8(tmp)
 		offset += 1
@@ -144,7 +132,8 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 		offset += 1
 		copy(buff[offset:offset+tmp], v)
 		offset += tmp
-	}
+
+	})
 
 	return buff, nil
 }
@@ -152,23 +141,11 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 // binSize returns the size of an event once encoded as binary
 func (e *Event) binSize() int {
 
-	// start with the size of the "size" header + size of metric
-	size := 16
-
-	// all non-fixed sizes also have an 1 byte size field
-
-	// get the size of all the strings
-	size += sizeOfString(e.Host)
-	size += 1
-
-	size += sizeOfString(e.Service)
-	size += 1
-
-	size += sizeOfString(e.SubService)
-	size += 1
+	// start with the size of the "size" header + size of metric + size of time
+	size := 32
 
 	// get the size of the tags
-	size += sizeOfMap(e.Tags)
+	size += e.Tags.binSize()
 
 	return size
 }
@@ -192,8 +169,10 @@ func unsafeBytes(s string) []byte {
 
 // return the size of all the string in the map
 func sizeOfMap(m map[string]string) int {
+	// tagset header
+	size := 1
 	// key/val headers
-	size := len(m) * 2
+	size += len(m) * 2
 	for k, v := range m {
 
 		// size of key
@@ -205,57 +184,64 @@ func sizeOfMap(m map[string]string) int {
 	return size
 }
 
-func (e *Event) Wait() {
-	e.wait.Wait()
+// SetState atomically updates the event's state to the given number
+func (e *Event) SetState(s uint32) {
+	atomic.StoreUint32(e.state, s)
 }
 
-// WaitDec decrements the event's waitgroup counter
-func (e *Event) WaitDec() {
-	e.mut.Lock()
-	e.wait.Done()
-	e.mut.Unlock()
+// GetState returns the current state of the event at call time
+func (e *Event) GetState() uint32 {
+	return atomic.LoadUint32(e.state)
 }
 
-// WaitAdd increments ot the event's waitgroup counter
-func (e *Event) WaitInc() {
-	e.mut.Lock()
-	e.wait.Add(1)
-	e.mut.Unlock()
+// WaitForState returns a function that will block until that state has been met or the timeout has been hit
+func (e *Event) WaitForState(s uint32, timeout time.Duration) func() {
+	return func() {
+		timedOut := time.After(timeout)
+		for {
+			select {
+			case <-timedOut:
+				return
+			default:
+				if e.GetState() >= s {
+					// start a new goroutine to drain the "timedOuch" channel
+					go func() {
+						<-timedOut
+					}()
+					return
+				}
+
+				// sleep so we don't eat the CPU
+				time.Sleep(time.Microsecond)
+			}
+		}
+	}
 }
 
-// Passer provides a method for passing an event down a step in the pipeline
-type Passer interface {
-	Pass(e *Event)
+// EventPasser provides a method for passing an event down a step in the pipeline
+type EventPasser interface {
+	PassEvent(e *Event)
 }
 
 func NewEvent() *Event {
-	e := &Event{}
+	var startState uint32 = StateStart
+	e := &Event{
+		Tags:  &TagSet{},
+		state: &startState,
+	}
 	return e
 }
 
 // Get any value on an event as a string
 func (e *Event) Get(key string) string {
-
-	// attempt to find the string values of the event
-	switch strings.ToLower(key) {
-	case "host":
-		return e.Host
-	case "service":
-		return e.Service
-	case "sub_service":
-		return e.SubService
+	if e.Tags == nil {
+		return ""
 	}
-
-	// if we make it to this point, assume we are looking for a tag
-	if val, ok := e.Tags[key]; ok {
-		return val
-	}
-
-	return ""
+	return e.Tags.Get(key)
 }
 
 func (e *Event) IndexName() string {
-	return e.Host + e.Service + e.SubService
+	return e.Tags.String()
 }
 
 func Status(code int) string {

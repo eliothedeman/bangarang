@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/eliothedeman/bangarang/alarm"
+	"github.com/eliothedeman/bangarang/escalation"
 	"github.com/eliothedeman/bangarang/provider"
 )
 
@@ -22,7 +22,6 @@ type Provider interface {
 	GetCurrent() (*AppConfig, error)
 	PutConfig(*AppConfig, *User) (string, error)
 	ListSnapshots() []*Snapshot
-	ListRawSnapshots() []json.RawMessage
 	GetUser(userName string) (*User, error)
 	GetUserByUserName(string) (*User, error)
 	DeleteUser(userName string) error
@@ -65,18 +64,17 @@ const (
 
 // AppConfig provides configuration options for setting up the application
 type AppConfig struct {
-	EscalationsDir  string                            `json:"escalations_dir"`
-	KeepAliveAge    time.Duration                     `json:"-"`
-	RawKeepAliveAge string                            `json:"keep_alive_age"`
-	DbPath          string                            `json:"db_path"`
-	Escalations     alarm.Collection                  `json:"escalations"`
-	GlobalPolicy    *alarm.Policy                     `json:"global_policy"`
-	Encoding        string                            `json:"encoding"`
-	Policies        map[string]*alarm.Policy          `json:"policies"`
-	EventProviders  *provider.EventProviderCollection `json:"event_providers"`
-	LogLevel        string                            `json:"log_level"`
-	APIPort         int                               `json:"API_port"`
-	Hash            []byte                            `json:"-"`
+	EscalationsDir  string                                  `json:"escalations_dir"`
+	KeepAliveAge    time.Duration                           `json:"-"`
+	RawKeepAliveAge string                                  `json:"keep_alive_age"`
+	DbPath          string                                  `json:"db_path"`
+	Escalations     map[string]*escalation.EscalationPolicy `json:"escalations"`
+	Encoding        string                                  `json:"encoding"`
+	Policies        map[string]*escalation.Policy           `json:"policies"`
+	EventProviders  *provider.EventProviderCollection       `json:"event_providers"`
+	LogLevel        string                                  `json:"log_level"`
+	APIPort         int                                     `json:"API_port"`
+	Hash            []byte                                  `json:"-"`
 	fileName        string
 	provider        Provider
 }
@@ -103,20 +101,19 @@ func NewDefaultConfig() *AppConfig {
 		DbPath:          defaultDBPath,
 		APIPort:         defaultAPIPort,
 		Encoding:        defaultEncoding,
-		Escalations:     alarm.Collection{},
+		Escalations:     map[string]*escalation.EscalationPolicy{},
+		Policies:        map[string]*escalation.Policy{},
 		LogLevel:        defaultLogLevel,
 		EventProviders:  &provider.EventProviderCollection{},
 	}
 }
 
-func loadPolicy(buff []byte) (*alarm.Policy, error) {
-	p := &alarm.Policy{}
+func loadPolicy(buff []byte) (*escalation.Policy, error) {
+	p := &escalation.Policy{}
 	err := json.Unmarshal(buff, p)
 	if err != nil {
 		return p, err
 	}
-
-	p.Compile()
 
 	return p, err
 }
