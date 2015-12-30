@@ -1,3 +1,16 @@
+"use strict"
+class Incident {
+	constructor(status, metric, policy, tags, time) {
+		this.status = status;
+		this.tags = new Match([]);
+		this.metric = metric;
+		this.policy = policy;
+		this.time = time
+		for (var key in tags) {
+			this.tags.add(tags[key].key, tags[key].value);
+		}
+	}
+}
 function DashboardController($scope, $cookies, $http, $mdDialog) {
 	$scope.incidents = [];
 	$scope.fetching = false;
@@ -26,45 +39,6 @@ function DashboardController($scope, $cookies, $http, $mdDialog) {
 	}
 
 
-	constructMap = function(host, val, target) {
-		host = host.split(".")
-		next = {}
-		if (target[host[host.length -1]]) {
-			next = target[host[host.length-1]]
-		} else {
-			target[host[host.length - 1]] = next
-		}
-		if (!(next["count"])) {
-			next["count"] = 0
-		}
-		next["count"] += val
-		for (var i = host.length - 2; i >= 0; i--) {
-			if (!next[host[i]]) {
-				next[host[i]] = {}
-				next = next[host[i]]
-			} else {
-				next = next[host[i]]
-			}
-			if (!(next["count"])) {
-				next["count"] = 0
-			}
-			next["count"]+= val;
-		};
-	}
-
-	buildMap = function() {
-		serviceMap = {}
-		for (tag in $scop.raw_stats.count_by_tag) {
-			
-			$scope.byStats[tag] = d
-		}
-		for (service in $scope.raw_stats.by_service) {
-			constructMap(service.split(".").reverse().join("."), $scope.raw_stats.by_service[service], serviceMap)
-		}
-		$scope.serviceMap = serviceMap;
-		$scope.byStats["Services"] = serviceMap;
-	}
-
 	$scope.startFetching = function() {
 		$scope.fetchIncidents();
 		$scope.fetchStats();
@@ -82,15 +56,9 @@ function DashboardController($scope, $cookies, $http, $mdDialog) {
 	$scope.fetchStats = function() {
 		$http.get("api/stats/event").success(function(data) {
 			$scope.raw_stats = data;
-			buildHostMap()
-			buildServiceMap()
-			buildSubServiceMap()
 			$scope.stats["Total Events"] = data.total_events
 			$scope.stats["Events/s"] = (data.total_events - $scope.lastTotal) / 5
 			$scope.lastTotal = data.total_events
-			$scope.stats["Hosts"] = Object.keys(data.by_host).length
-			$scope.stats["Services"] = Object.keys(data.by_service).length
-			$scope.stats["Sub Services"] = Object.keys(data.by_sub_service).length
 		});
 
 		$http.get("api/stats/system").success(function(data) {
@@ -117,7 +85,8 @@ function DashboardController($scope, $cookies, $http, $mdDialog) {
 	}
 
 	$scope.formatDescription = function(incident) {
-		return incident.service + (incident.sub_service ? "." + incident.sub_service : " ") + " on " + incident.host + " is " + incident.metric.toFixed(2) + " at " + new Date(incident.time * 1000).format("h:MM:ssTT mmmm-dd-yyyy") + " triggered by " + incident.policy;
+		var t = incident.tags;
+		return t.get("service") + " on " + t.get("host") + " is " + incident.metric.toFixed(2) + " at " + new Date(incident.time * 1000).format("h:MM:ssTT mmmm-dd-yyyy") + " triggered by " + incident.policy;
 	}
 
 	var codes = {
@@ -143,15 +112,16 @@ function DashboardController($scope, $cookies, $http, $mdDialog) {
 	$scope.fetchIncidents = function() {
 		$http.get("api/incident/*").success(function(data) {
 			var ins = [];
-			for (k in data) {
-				ins.push({key:k, val:data[k]})
+			for (var k in data) {
+				var i = data[k];
+				ins.push(new Incident(i.status, i.metric, i.policy, i.tags, i.time));
 			}
 
 			ins.sort(function(x,y) {
-				if (x.val.status != y.val.status) {
-					return y.val.status - x.val.status
+				if (x.status != y.status) {
+					return y.status - x.status
 				}
-				return y.val.time - x.val.time;
+				return y.time - x.time;
 			})
 			$scope.incidents = ins;
 		});

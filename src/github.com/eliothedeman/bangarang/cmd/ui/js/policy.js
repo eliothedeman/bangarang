@@ -10,6 +10,16 @@ class Match {
 		this.matches.push({key:key, value:val})
 	}
 
+	get(key) {
+		for (var i in this.matches) {
+			if (this.matches[i].key == key) {
+				return this.matches[i].value;
+			}
+		}
+
+		return undefined;
+	}
+
 	del(key) {
 		console.log("Removing match with key: " + key)
 

@@ -122,10 +122,10 @@
 					<div layout="column" layout-fill>
 						<md-list>
 							<div style="padding-left: 2%; padding-right: 5%; padding-bottom: 10px;" ng-repeat="i in incidents">
-								<md-list-item   class="md-2-line md-whiteframe-z3"  layout layout-align="center center" style="border-style: solid; border-color: {{getStatusColor(i.val.status)}}">
+								<md-list-item   class="md-2-line md-whiteframe-z3"  layout layout-align="center center" style="border-style: solid; border-color: {{getStatusColor(i.status)}}">
 									<div class="md-list-item-text" style="padding: 12px;">
-										<h3 style="" >{{getStatusCode(i.val.status)}}</h3>
-										<p>{{formatDescription(i.val)}}</p>
+										<h3 style="" >{{getStatusCode(i.status)}}</h3>
+										<p>{{formatDescription(i)}}</p>
 									</div>
 									<md-menu>
 										<md-button class="md-icon-button" ng-click="dc.showResolveDialog($mdOpenMenu, $event)">
