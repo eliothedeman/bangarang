@@ -239,7 +239,7 @@ function Config($scope, $cookies, $http, $mdDialog) {
 			data.reverse()
 			$scope.snapshotsByHash = {};
 			for (var i = data.length - 1; i >= 0; i--) {
-				data[i].date = new Date(data[i].time_stamp).format("h:M:s mmmm-dd- yyyy")
+				data[i].date = new Date(data[i].time_stamp).format("h:MM:ssTT mmmm-dd-yyyy")
 				$scope.snapshotsByHash[data[i].hash] = data[i]
 			};
 			$scope.snapshots = data;

@@ -11,7 +11,7 @@ var (
 		Major: 0,
 		Minor: 13,
 		Patch: 0,
-	}
+    }
 
 	First = Version{
 		0, 10, 4,
