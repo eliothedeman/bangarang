@@ -51,6 +51,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/eliothedeman/randutil",
+			"repository": "https://github.com/eliothedeman/randutil",
+			"revision": "201725e001b49e6bede5a3087dbf71e42a19ba3a",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/eliothedeman/smoothie",
 			"repository": "https://github.com/eliothedeman/smoothie",
 			"revision": "655f50e31c05ce842375f9cb73fe572b9ca53635",

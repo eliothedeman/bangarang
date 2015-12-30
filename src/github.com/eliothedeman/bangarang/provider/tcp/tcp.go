@@ -17,7 +17,6 @@ func init() {
 
 // provides events from tcp connections
 type TCPProvider struct {
-	encoding string
 	laddr    *net.TCPAddr
 	listener *net.TCPListener
 }
@@ -78,6 +77,7 @@ func (t *TCPProvider) Start(p event.EventPasser) {
 }
 
 func (t *TCPProvider) consume(c *net.TCPConn, p event.EventPasser) {
+
 	// create a newman connection
 	conn := newman.NewConn(c)
 	conn.SetWaiter(&newman.Backoff{})

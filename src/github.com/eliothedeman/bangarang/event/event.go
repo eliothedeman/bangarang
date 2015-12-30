@@ -152,8 +152,8 @@ func (e *Event) binSize() int {
 
 func sizeOfString(s string) int {
 	size := len(s)
-	if size > 256 {
-		return 256
+	if size > 255 {
+		return 255
 	}
 
 	return size

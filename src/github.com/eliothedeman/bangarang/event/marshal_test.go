@@ -1,6 +1,11 @@
 package event
 
-import "testing"
+import (
+	"math/rand"
+	"testing"
+	"time"
+)
+import "github.com/eliothedeman/randutil"
 
 func TestMarshalBinary(t *testing.T) {
 	e := newTestEvent("localhost", "what's up", 3.0005)
@@ -12,6 +17,59 @@ func TestMarshalBinary(t *testing.T) {
 	if len(buff) != e.binSize() {
 		t.Fail()
 	}
+}
+
+func TestMarshalTagTooBig(t *testing.T) {
+	e := NewEvent()
+	e.Tags.Set("host", randutil.AlphaString(300))
+	buff, err := e.MarshalBinary()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ne := NewEvent()
+	err = ne.UnmarshalBinary(buff)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(ne.Tags.Get("host")) != 255 {
+		t.Fatal(ne.Tags.Get("host"))
+	}
+
+}
+
+func TestMarshalMany(t *testing.T) {
+	nte := func() *Event {
+		e := NewEvent()
+		for i := 0; i < randutil.IntRange(0, 10); i++ {
+			e.Tags.Set(randutil.String(randutil.IntRange(1, 10), randutil.Alphanumeric), randutil.String(randutil.IntRange(1, 10), randutil.Alphanumeric))
+		}
+		e.Time = time.Now()
+
+		e.Metric = rand.Float64()
+		return e
+	}
+
+	for i := 0; i < 100000; i++ {
+		e := nte()
+		buff, err := e.MarshalBinary()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ne := NewEvent()
+		err = ne.UnmarshalBinary(buff)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if ne.Tags.String() != e.Tags.String() {
+			t.Fatal(e.Tags.String(), ne.Tags.String())
+		}
+
+	}
+
 }
 
 func TestUnmarshal(t *testing.T) {
