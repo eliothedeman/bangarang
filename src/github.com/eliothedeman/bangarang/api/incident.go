@@ -34,6 +34,10 @@ func (i *Incident) EndPoint() string {
 // return any incidnet that is greater than this value
 func reduceStatusAbove(level int, in []*event.Incident) []*event.Incident {
 	out := []*event.Incident{}
+
+	if in == nil {
+		return out
+	}
 	for _, i := range in {
 		if i.Status >= level {
 			out = append(out, i)
