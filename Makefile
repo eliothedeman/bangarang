@@ -12,6 +12,11 @@ test:
 race:
 	- export GOPATH=$(dir):$(dir)/vendor; go test -race -p=1 github.com/eliothedeman/bangarang/...
 
+ui: env
+	- cd src/github.com/eliothedeman/bangarang/cmd/ui && go-bindata -dev ./...
+	- gb build github.com/eliothedeman/bangarang/cmd/ui
+	- cp bin/ui src/github.com/eliothedeman/bangarang/cmd/ui/ui
+
 
 testing:
 	- cd src/github.com/eliothedeman/bangarang/cmd/ui && go-bindata -dev ./...

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Bangarang</title>
+	<link rel="stylesheet" type="text/css" href="css/header.css">
+	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+	<script type="text/javascript" src="bower_components/angular/angular.js"></script>
+	<script type="text/javascript" src="bower_components/angular-animate/angular-animate.js"></script>
+	<script type="text/javascript" src="bower_components/angular-cookies/angular-cookies.js"></script>
+	<script type="text/javascript" src="bower_components/angular-aria/angular-aria.js"></script>
+	<script type="text/javascript" src="bower_components/angular-route/angular-route.js"></script>
+	<script type="text/javascript" src="bower_components/angular-material/angular-material.js"></script>
+	<script type="text/javascript" src="bower_components/json-formatter/dist/json-formatter.min.js"></script>
+  	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.18/angular-sanitize.js"></script>
+
+	<link rel="stylesheet" href="bower_components/angular-material/angular-material.css"></script>
+	<link rel="stylesheet" href="bower_components/json-formatter/dist/json-formatter.css"></script>
+	<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.css">
+
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link href="favicon.ico" rel="icon" type="image/x-icon" />
+
+</head>
+<body ng-app="bangarang">
+
+	<script type="text/javascript">
+		angular.module("bangarang", ["ngMaterial", "ngAnimate", "ngCookies", "jsonFormatter", "ngSanitize"])
+		.config(function($httpProvider, $mdThemingProvider, $mdIconProvider, $cookiesProvider) {
+			$httpProvider.defaults.headers.common["Access-Control-Allow-Origin"] = "*";
+			$mdThemingProvider.theme("default").primaryPalette("brown");
+			$mdThemingProvider.theme("default").accentPalette("red");
+
+		});
+	</script>
+	<script type="text/javascript" src="js/policy.js"></script>
+	<script type="text/javascript" src="js/main.js"></script>
+	<script type="text/javascript" src="js/provider.js"></script>
+	<script type="text/javascript" src="js/dashboard.js"></script>
+	<script type="text/javascript" src="js/escalation.js"></script>	
+	<div ng-controller="Router as r" ng-init="r.init()">
+		<md-content layout-padding>
+			<md-toolbar layout="row" style="background: white;">
+				<div class="md-toolbar-tools">
+					<h1 style="color: black">
+						<span>Bangarang</span>
+					</h1>
+					<span flex></span>
+					<md-button class="md-warn" ng-if="logged_in" ng-click="r.logout()">
+						Logout
+					</md-button>
+					<md-button class="md-fab" href="https://github.com/eliothedeman/bangarang">
+						<md-icon ng-style="">help</md-icon>
+					</md-button>
+				</div>
+			</md-toolbar>
+		</md-content>
