@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -49,13 +50,9 @@ func templateName(name string) string {
 }
 
 func wrapHeader(w http.ResponseWriter, r *http.Request) {
-	buff, err := Asset(templateName("header"))
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	w.Write(buff)
+	t := template.Get("header")
+	compileTemplate(t)
+	t.Execute(w, r)
 }
 
 func wrapFooter(w http.ResponseWriter, r *http.Request) {
@@ -86,27 +83,39 @@ func compileTemplate(t template.Template) error {
 }
 
 func (s *Server) GetSelf(r *http.Request) (*config.User, error) {
+	r.RequestURI = ""
 	r.Method = "GET"
-	r.URL.Path = "api/user"
+	r.URL.Path = "/api/user"
 	r.URL.Host = *api_host
 	r.URL.Scheme = "http"
+
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
+		logrus.Error(err.Error())
 		return nil, err
 	}
+
+	log.Println(resp.Status)
 
 	buff, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		logrus.Error(err.Error())
 		return nil, err
 	}
 
-	u := &config.User{}
-	err = json.Unmarshal(buff, u)
+	u := []*config.User{}
+	err = json.Unmarshal(buff, &u)
 	if err != nil {
+		logrus.Error(string(buff))
+		logrus.Error(err.Error())
 		return nil, err
 	}
 
-	return u, nil
+	if len(u) == 0 {
+		return nil, errors.New("User Not found")
+	}
+
+	return u[0], nil
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -147,16 +156,15 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if t != nil {
 
 		// check to see if the user is loged in
-		u, err := s.GetSelf(r)
+		_, err := s.GetSelf(r)
 
 		// if not, redirect to the login page
-		if err != nil && path != "/login" {
+		if err != nil && path != "login" {
 			r.URL.Path = "/login"
 			r.Method = "GET"
 			s.ServeHTTP(w, r)
 			return
 		}
-		log.Println(u)
 
 		w.Header().Add("Content-Type", "text/html")
 		wrapHeader(w, r)

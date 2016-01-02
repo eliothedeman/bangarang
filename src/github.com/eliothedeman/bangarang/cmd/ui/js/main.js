@@ -1,3 +1,9 @@
+function Header($scope, $cookies) {
+    $scope.logout = function() {
+        $cookies.remove("BANG_SESSION");
+    }
+}
+angular.module("bangarang").controller("Header", Header);
 function Router($scope, $cookies, $http) {
 	this.selected = 0;
     this.auth_token = "";

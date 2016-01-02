@@ -20,7 +20,7 @@ func (d *Dashboard) Path() string {
 }
 
 func (d *Dashboard) Compile(src string) error {
-	t := html.New(d.Path())
+	t := newTemplate(d.Path())
 	var err error
 	t, err = t.Parse(src)
 	d.t = t

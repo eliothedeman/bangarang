@@ -20,7 +20,7 @@ func (l *Login) Path() string {
 }
 
 func (l *Login) Compile(src string) error {
-	t := html.New(l.Path())
+	t := newTemplate(l.Path())
 	var err error
 	t, err = t.Parse(src)
 	l.t = t

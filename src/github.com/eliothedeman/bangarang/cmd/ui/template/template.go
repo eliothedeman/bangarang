@@ -2,6 +2,7 @@ package template
 
 import (
 	"fmt"
+	html "html/template"
 	"net/http"
 )
 
@@ -9,6 +10,13 @@ var templates = make(map[string]Template)
 
 func registerTemplate(t Template) {
 	templates[t.Path()] = t
+}
+
+func newTemplate(name string) *html.Template {
+	t := html.New(name)
+	t.Delims("[[", "]]")
+
+	return t
 }
 
 func Get(path string) Template {

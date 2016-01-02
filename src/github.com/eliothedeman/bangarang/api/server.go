@@ -88,6 +88,14 @@ func authUser(confProvider config.Provider, r *http.Request) (*config.User, erro
 	// check for a session token
 	session := r.Header.Get(SESSION_HEADER_NAME)
 
+	if session == "" {
+		// attempt to get it form cookie
+		c, _ := r.Cookie(SESSION_HEADER_NAME)
+		if c != nil {
+			session = c.Value
+		}
+	}
+
 	// create user doesn't require auth
 	if r.URL.Path == "/api/user" && r.Method == "POST" {
 		return confProvider.GetUserByUserName("admin")

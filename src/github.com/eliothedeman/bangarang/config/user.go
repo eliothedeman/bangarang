@@ -2,6 +2,7 @@ package config
 
 import (
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -53,6 +54,24 @@ type User struct {
 	PasswordHash string          `json:"password_hash"`
 	Permissions  UserPermissions `json:"permissions"`
 	provider     *Provider
+}
+
+func (u *User) UnmarshalJSON(buff []byte) error {
+	m := make(map[string]string)
+	err := json.Unmarshal(buff, &m)
+	if err != nil {
+		return err
+	}
+
+	u.Name, _ = m["name"]
+	u.UserName, _ = m["user_name"]
+	u.PasswordHash, _ = m["password_hash"]
+	permStr, _ := m["permissions"]
+	if len(permStr) > 0 {
+		u.Permissions = NameToPermissions(permStr)
+	}
+
+	return nil
 }
 
 // CheckUserPassword compares a raw password against the the stored hash'ed password
