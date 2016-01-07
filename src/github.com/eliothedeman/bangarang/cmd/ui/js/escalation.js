@@ -1,14 +1,14 @@
 "use strict"
 class Escalation {
 	constructor(name) {
-		this.name = name
-		this.comment = ""
-		this.match = new Match([])
-		this.not_match = new Match([])
-		this.crit = false
-		this.warn = false
-		this.ok = false
-		this.configs = []
+		this.name = name;
+		this.comment = "";
+		this.match = new Match([]);
+		this.not_match = new Match([]);
+		this.crit = false;
+		this.warn = false;
+		this.ok = false;
+		this.configs = [];
 		this.type_list = [
 			{
 				title: "Pagerduty",
@@ -119,9 +119,20 @@ class Escalation {
 	}
 
 	addEscalation(conf) {
-		this.configs.push(conf)
+		this.configs.push(conf);
 	}
+}
 
+function parseEscalation(d) {
+	var e = new Escalation(d.name);
+	e.match = new Match(d.match);
+	e.not_match = new Match(d.not_match);
+	e.ok = d.ok;
+	e.warn = d.warn;
+	e.crit = d.crit;
+	e.configs = d.configs;
+
+	return e
 }
 
 function EscalationController($scope, $http, $cookies, $mdDialog) {
@@ -177,8 +188,47 @@ angular.module("bangarang").controller("EscalationController", EscalationControl
 function NewEscalationController($scope, $http, $interval) {
 	$scope.esc = new Escalation("");
 	$scope.tmp_type = "";
+	$scope.escalations = [];
 
-	this.submitNew = function() {
+	$scope.updateCurrent = function(name) {
+		for (var i = $scope.escalations.length - 1; i >= 0; i--) {
+			if($scope.escalations[i].name == name) {
+				$scope.esc = $scope.escalations[i];
+			}
+		};
+	}
+
+	$scope.fetchEscalations = function() {
+		$http.get("api/escalation/config/*").then(function(resp){
+			var data = resp.data;
+			if (typeof(data) == "object") {
+				$scope.escalations = [];
+				for (var key in data) {
+					$scope.escalations.push(parseEscalation(data[key]));
+				}
+			}
+
+		}, function(resp){
+			console.log(resp);
+		})
+
+	}
+
+	$scope.submitUpdated = function() {
+		console.log("update");
+		if (!$scope.validate()) {
+			alert("Escalation is not complete")
+			return
+		}
+
+		$http.delete("api/escalation/config/" + $scope.esc.name).then(function(data){
+			$scope.submitNew();
+		}, function(resp) {
+			alert(resp.data);
+		});
+	}
+
+	$scope.submitNew = function() {
 		if (!$scope.validate()) {
 			alert("Escalation is not complete")
 			return
