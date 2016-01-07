@@ -2,9 +2,11 @@ package template
 
 import (
 	html "html/template"
+	"log"
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/eliothedeman/bangarang/api/client"
 )
 
 func init() {
@@ -32,10 +34,15 @@ func (h *Header) Compiled() bool {
 }
 
 func (h *Header) Execute(w http.ResponseWriter, r *http.Request) {
+	c := client.NewClientWithAuthToken(tokenFromRequest(r))
+	u, err := c.GetSelf()
+	log.Println(u)
+
 	data := map[string]interface{}{
-		"logged_in": true,
+		"logged_in": err == nil,
+		"user":      u,
 	}
-	err := h.t.Execute(w, data)
+	err = h.t.Execute(w, data)
 	if err != nil {
 		logrus.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

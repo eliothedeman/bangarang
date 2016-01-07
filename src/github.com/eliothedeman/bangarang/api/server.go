@@ -161,6 +161,7 @@ func (s *Server) wrapAuth(h interface{}) http.HandlerFunc {
 	}
 
 	// check to see if this auther needs
+
 	if needsAuth, is := h.(NeedsAuther); is {
 		needs := needsAuth.NeedsAuth()
 

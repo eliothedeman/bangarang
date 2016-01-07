@@ -38,7 +38,7 @@
 		.config(function($httpProvider, $mdThemingProvider, $mdIconProvider, $cookiesProvider) {
 			$httpProvider.defaults.headers.common["Access-Control-Allow-Origin"] = "*";
 			$httpProvider.defaults.headers.common["BANG_SESSION"] = getCookie("BANG_SESSION");
-			$mdThemingProvider.theme("default").primaryPalette("brown");
+			$mdThemingProvider.theme("default").primaryPalette("grey");
 			$mdThemingProvider.theme("default").accentPalette("red");
 
 		});
@@ -48,26 +48,55 @@
 	<script type="text/javascript" src="js/provider.js"></script>
 	<script type="text/javascript" src="js/dashboard.js"></script>
 	<script type="text/javascript" src="js/escalation.js"></script>	
-	<md-content layout-padding>
-		<div>
-			<md-toolbar layout="row" style="background: white;">
-				<div class="md-toolbar-tools">
-					<h1 style="color: black">
-						<span>Bangarang</span>
-					</h1>
-					<span flex></span>
+	<div ng-controller="Header as h">
 
-					[[if .logged_in]]
-					<md-button class="md-warn" ng-click="logout()">
-							Logout
-					</md-button>
+		<md-content layout-padding>
+			<div>
+				<md-toolbar layout="row" style="background: white;">
+					<div class="md-toolbar-tools">
+						<h1 style="color: black">
+							<span>Bangarang</span>
+						</h1>
+						<span flex></span>
 
-					[[end]]
+						[[if .logged_in]]
+						<md-button class="md-warn" ng-click="logout()">
+								Logout
+						</md-button>
 
-					<md-button class="md-fab" href="https://github.com/eliothedeman/bangarang">
-						<md-icon ng-style="">help</md-icon>
-					</md-button>
-				</div>
-			</md-toolbar>
-		</div>
-	</md-content>
+						[[end]]
+
+						<md-button class="md-fab" href="https://github.com/eliothedeman/bangarang">
+							<md-icon ng-style="">help</md-icon>
+						</md-button>
+					</div>
+				</md-toolbar>
+			</div>
+		</md-content>
+		
+	</div>
+	[[if .logged_in]]
+	<div>
+		<md-button class="md-primary" ng-href="/dashboard">
+			Dashboard
+		</md-button>
+		<md-button class="md-primary" ng-href="/policy" >
+			Policy
+		</md-button>
+		<md-button class="md-primary" ng-href="/escalation" >
+			Escalation
+		</md-button>
+		<md-button class="md-primary" ng-href="/provider" >
+			Provider
+		</md-button>
+		<md-button class="md-primary" ng-href="/history" >
+			History
+		</md-button>
+		[[if eq .user.Permissions 2 ]]
+		<md-button class="md-primary" ng-href="/admin" >
+			Admin
+		</md-button>
+		[[end]]
+		<span flex></span>
+	</div>
+	[[end]]

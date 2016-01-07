@@ -8,6 +8,8 @@ function LoginController($scope, $http, $cookies) {
 
 		}, function(resp){
 			alert(resp.data);
+			$cookies.remove("BANG_SESSION");
+			window.location.reload();
 		});
 	}
 

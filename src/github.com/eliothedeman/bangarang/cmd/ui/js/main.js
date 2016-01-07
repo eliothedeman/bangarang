@@ -1,6 +1,9 @@
 function Header($scope, $cookies) {
     $scope.logout = function() {
         $cookies.remove("BANG_SESSION");
+        console.log("logged out");
+        // refresh
+        document.location.reload();
     }
 }
 angular.module("bangarang").controller("Header", Header);

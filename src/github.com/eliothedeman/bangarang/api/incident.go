@@ -63,7 +63,7 @@ func (i *Incident) Post(req *Request) {
 		return
 	}
 
-	in := &event.Incident{}
+	in := event.NewIncident("", event.OK, event.NewEvent())
 	err = json.Unmarshal(buff, in)
 	if err != nil {
 		http.Error(req.w, err.Error(), http.StatusBadRequest)

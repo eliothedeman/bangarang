@@ -74,6 +74,17 @@ func (u *User) UnmarshalJSON(buff []byte) error {
 	return nil
 }
 
+func (u *User) MarshalJSON() ([]byte, error) {
+	m := map[string]string{
+		"name":          u.Name,
+		"user_name":     u.UserName,
+		"password_hash": u.PasswordHash,
+		"permissions":   PermissionsToName(u.Permissions),
+	}
+
+	return json.Marshal(&m)
+}
+
 // CheckUserPassword compares a raw password against the the stored hash'ed password
 func CheckUserPassword(u *User, pass string) bool {
 	return HashUserPassword(u, pass) == u.PasswordHash

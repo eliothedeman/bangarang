@@ -36,3 +36,18 @@ type Template interface {
 func templatePath(path string) string {
 	return fmt.Sprintf("template/%s.gohtml")
 }
+
+func tokenFromRequest(r *http.Request) string {
+	// try to pull it out of the header
+	session := r.Header.Get("BANG_SESSION")
+	if len(session) != 0 {
+		return session
+	}
+
+	c, err := r.Cookie("BANG_SESSION")
+	if err != nil {
+		return ""
+	}
+
+	return c.Value
+}

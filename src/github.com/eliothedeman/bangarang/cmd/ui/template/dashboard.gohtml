@@ -1,0 +1,28 @@
+<div layout="column" layout-fill>
+<md-list>
+	[[range $index, $incident := .incidents]]
+		<div style="padding-left: 2%; padding-right: 5%; padding-bottom: 10px;">
+			<md-list-item   class="md-2-line md-whiteframe-z3"  layout layout-align="center center" style="border-style: solid; border-color: [[statusColor $incident.Status ]]">
+				<div class="md-list-item-text" style="padding: 12px;">
+					<h3 style="" >[[statusCode $incident.Status ]]</h3>
+					<p>[[$incident.Description]]</p>
+				</div>
+				<md-menu>
+					<md-button class="md-icon-button" ng-click="">
+						<md-icon>menu</md-icon>
+					</md-button>
+
+					<md-menu-content>
+						<md-menu-item>
+							<md-button ng-click="resolveIncident(i.key)">Resolve</md-button>
+						</md-menu-item>
+						<md-menu-item>
+							<md-button  ng-click="forgetHost(i.val.host)">Forget Host</md-button>
+						</md-menu-item>
+					</md-menu-content>
+				</md-menu>
+			</md-list-item>
+		</div>
+	[[end]]
+</md-list>
+</div>
