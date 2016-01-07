@@ -7,20 +7,12 @@
 					<h3 style="" >[[statusCode $incident.Status ]]</h3>
 					<p>[[$incident.Description]]</p>
 				</div>
-				<md-menu>
-					<md-button class="md-icon-button" ng-click="">
-						<md-icon>menu</md-icon>
+				<div>
+					<md-button class="md-raised" ng-click="resolveIncident('[[$incident.IndexName]]')">
+					Resolve
 					</md-button>
+				</div>
 
-					<md-menu-content>
-						<md-menu-item>
-							<md-button ng-click="resolveIncident(i.key)">Resolve</md-button>
-						</md-menu-item>
-						<md-menu-item>
-							<md-button  ng-click="forgetHost(i.val.host)">Forget Host</md-button>
-						</md-menu-item>
-					</md-menu-content>
-				</md-menu>
 			</md-list-item>
 		</div>
 	[[end]]
