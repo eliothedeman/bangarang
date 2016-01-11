@@ -143,6 +143,7 @@ func (c *Condition) TrackEvent(e *event.Event) bool {
 	return c.trackFunc(c, e)
 }
 
+// StateChanged returns true if the state of the incoming event is not the same as the last event
 func (c *Condition) StateChanged(e *event.Event) bool {
 	t := c.getTracker(e)
 	if t.count == 0 && t.states.Index(t.states.Len()-1) != 0 {
