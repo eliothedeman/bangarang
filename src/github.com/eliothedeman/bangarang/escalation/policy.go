@@ -164,6 +164,7 @@ func MatcherFromTagSet(t *event.TagSet) (Matcher, error) {
 				Value: match,
 			}
 		}
+		i += 1
 	})
 	return m, verr
 }
@@ -181,7 +182,7 @@ func (m Matcher) MatchesOne(t *event.TagSet) (matches bool) {
 }
 
 // MatchesAll returns true if the TagSet satisfies the entire matcher
-func (m *Matcher) MatchesAll(t *event.TagSet) (matches bool) {
+func (m Matcher) MatchesAll(t *event.TagSet) (matches bool) {
 	matches = true
 	m.ForEach(func(k string, v *regexp.Regexp) {
 		if !v.MatchString(t.Get(k)) {
