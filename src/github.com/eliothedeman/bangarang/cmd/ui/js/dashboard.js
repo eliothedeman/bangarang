@@ -114,7 +114,9 @@ function DashboardController($scope, $cookies, $http, $mdDialog) {
 			var ins = [];
 			for (var k in data) {
 				var i = data[k];
-				ins.push(new Incident(i.status, i.metric, i.policy, i.tags, i.time));
+				var x = new Incident(i.status, i.metric, i.policy, i.tags, i.time);
+				x.key = k;
+				ins.push(x);
 			}
 
 			ins.sort(function(x,y) {

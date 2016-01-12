@@ -149,6 +149,9 @@ func (i *Index) GetIncident(id []byte) *Incident {
 	if err != nil {
 		return nil
 	}
+	var x uint32
+
+	in.Event.state = &x
 
 	return in
 }

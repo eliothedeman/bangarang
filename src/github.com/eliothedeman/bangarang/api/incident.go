@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -84,6 +85,12 @@ func (i *Incident) Delete(req *Request) {
 
 	index := i.pipeline.GetIndex()
 	in := index.GetIncident([]byte(id))
+
+	if in == nil {
+		logrus.Errorf("Incident %s not found", id)
+		http.Error(req.w, fmt.Sprintf("Incident %s not found", id), http.StatusInternalServerError)
+		return
+	}
 
 	// fetch the callback channel to resolve this incident
 	res := i.pipeline.GetTracker().GetIncidentResolver(in)
