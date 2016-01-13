@@ -46,8 +46,12 @@ func NewTracker() *Tracker {
 		tagCounters:       make(map[string]map[string]*counter),
 		tagTimers:         make(map[string]map[string]time.Time),
 	}
-	go t.Start()
-
+	done := make(chan struct{})
+	go func() {
+		done <- struct{}{}
+		t.Start()
+	}()
+	<-done
 	return t
 }
 

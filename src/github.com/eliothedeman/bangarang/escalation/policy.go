@@ -206,7 +206,6 @@ func (p *Policy) Compile(next event.IncidentPasser) {
 	p.stop = make(chan struct{})
 	p.resolve = make(chan *event.Incident)
 	p.next = next
-	p.start()
 
 	if p.r_match == nil {
 
@@ -265,6 +264,8 @@ func (p *Policy) Compile(next event.IncidentPasser) {
 		logrus.Infof("Initializing warn for %s", p.Name)
 		p.Warn.init(p.GroupBy)
 	}
+
+	p.start()
 }
 
 // ActionCrit returns the state change and the current status of the event

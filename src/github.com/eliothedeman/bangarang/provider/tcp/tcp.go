@@ -82,13 +82,15 @@ func (t *TCPProvider) consume(c *net.TCPConn, p event.EventPasser) {
 	conn := newman.NewConn(c)
 	conn.SetWaiter(&newman.Backoff{})
 
-	// drain the connection for ever
-	in, _ := conn.Generate(func() newman.Message {
-		return event.NewEvent()
-	})
-	for raw := range in {
-		// convert it to an event because we know that is what we are getting
-		e := raw.(*event.Event)
+	var err error
+	var e *event.Event
+	for {
+		e = event.NewEvent()
+		err = conn.Next(e)
+		if err != nil {
+			logrus.Errorf("Newman error: %s", err.Error())
+			break
+		}
 
 		// pass it on to the next step
 		p.PassEvent(e)

@@ -117,6 +117,7 @@ func (e *Event) MarshalBinary() ([]byte, error) {
 	offset += 8
 
 	buff[offset] = uint8(len(*e.Tags))
+
 	offset += 1
 
 	// tags

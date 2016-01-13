@@ -75,14 +75,12 @@ func (c *Condition) newTracker() *eventTracker {
 }
 
 func (c *Condition) DoOnTracker(e *event.Event, dot func(*eventTracker)) {
-	// c.Lock()
 	et, ok := c.eventTrackers[e.IndexName()]
 	if !ok {
 		et = c.newTracker()
 		c.eventTrackers[e.IndexName()] = et
 	}
 	dot(et)
-	// c.Unlock()
 }
 
 func (c *Condition) getTracker(e *event.Event) *eventTracker {

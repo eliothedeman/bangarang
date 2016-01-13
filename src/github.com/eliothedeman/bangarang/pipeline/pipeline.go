@@ -42,7 +42,7 @@ func NewPipeline() *Pipeline {
 	p := &Pipeline{
 		in:                 make(chan *event.Event, 10),
 		policies:           make(map[string]*escalation.Policy),
-		incidentInput:      make(chan *event.Incident),
+		incidentInput:      make(chan *event.Incident, 10),
 		unpauseChan:        make(chan struct{}),
 		pauseChan:          make(chan struct{}),
 		tracker:            NewTracker(),
@@ -291,11 +291,13 @@ func (p *Pipeline) UpdateConfig(f func(c *config.AppConfig) error, u *config.Use
 func (p *Pipeline) Start() {
 	logrus.Info("Starting pipeline")
 
+	incidentPauseChan := make(chan struct{})
+	incidentUnpauseChan := make(chan struct{})
+
 	// fan in all of the providers and process them
 	go func() {
 		keepAliveCheckTime := time.After(p.keepAliveCheckTime)
 		var e *event.Event
-		var i *event.Incident
 		for {
 			select {
 			// recieve the event
@@ -311,14 +313,30 @@ func (p *Pipeline) Start() {
 				// reset the timer for the next check
 				keepAliveCheckTime = time.After(p.keepAliveCheckTime)
 
-			case i = <-p.incidentInput:
-				p.processIncident(i)
-
 			// handle pause
 			case <-p.pauseChan:
+				incidentPauseChan <- struct{}{}
 
 				// start the pause, and wait until it has been completed
 				p.pause()
+				incidentUnpauseChan <- struct{}{}
+			}
+		}
+	}()
+
+	// process all incidents
+	go func() {
+		var i *event.Incident
+
+		for {
+			select {
+			case i = <-p.incidentInput:
+				p.processIncident(i)
+
+			case <-incidentPauseChan:
+
+				// wait for the unpause
+				<-incidentUnpauseChan
 			}
 		}
 	}()

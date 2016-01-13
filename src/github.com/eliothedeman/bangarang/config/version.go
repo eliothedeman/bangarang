@@ -9,8 +9,8 @@ import (
 var (
 	Current = Version{
 		Major: 0,
-		Minor: 13,
-		Patch: 6,
+		Minor: 14,
+		Patch: 3,
 	}
 
 	First = Version{
