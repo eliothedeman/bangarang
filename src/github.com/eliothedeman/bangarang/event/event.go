@@ -30,7 +30,7 @@ type Event struct {
 	Tags      *TagSet   `json:"tags" msg:"tags"`
 	Time      time.Time `json:"time" msg: "time"`
 	indexName string
-	state     *uint32
+	state     uint32
 }
 
 func (e *Event) UnmarshalBinary(buff []byte) error {
@@ -187,12 +187,12 @@ func sizeOfMap(m map[string]string) int {
 
 // SetState atomically updates the event's state to the given number
 func (e *Event) SetState(s uint32) {
-	atomic.StoreUint32(e.state, s)
+	atomic.StoreUint32(&e.state, s)
 }
 
 // GetState returns the current state of the event at call time
 func (e *Event) GetState() uint32 {
-	return atomic.LoadUint32(e.state)
+	return atomic.LoadUint32(&e.state)
 }
 
 // WaitForState returns a function that will block until that state has been met or the timeout has been hit
@@ -225,10 +225,9 @@ type EventPasser interface {
 }
 
 func NewEvent() *Event {
-	var startState uint32 = StateStart
 	e := &Event{
 		Tags:  &TagSet{},
-		state: &startState,
+		state: StateStart,
 	}
 	return e
 }

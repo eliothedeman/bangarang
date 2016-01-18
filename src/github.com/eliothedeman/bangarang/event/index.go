@@ -135,6 +135,8 @@ func (i *Index) ListIncidents() []*Incident {
 // get an event from the index
 func (i *Index) GetIncident(id []byte) *Incident {
 	in := &Incident{}
+	e := NewEvent()
+	in.Event = *e
 	err := i.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(INCIDENT_BUCKET_NAME)
 		buff := b.Get(id)
@@ -149,9 +151,6 @@ func (i *Index) GetIncident(id []byte) *Incident {
 	if err != nil {
 		return nil
 	}
-	var x uint32
-
-	in.Event.state = &x
 
 	return in
 }
