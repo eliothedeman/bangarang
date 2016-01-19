@@ -385,29 +385,35 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 
 	$scope.addPolicy = function() {
 		var pol = $scope.np.data();
-
 		if (pol) {
 			console.log("Submitting new policy")
 			console.log(pol)
-			$http.post("api/policy/config/" + pol.name, pol).success(function() {
-				$scope.reset()
+			$http.post("api/policy/config/" + pol.name, pol).then(function() {
+				$scope.reset();
+			}, function(resp) {
+				alert(resp.data);
 			});
 		}
 	}
 
 	$scope.updatePolicy = function() {
-		var name = $scope.np.name
-		$scope.removePolicy($scope.np.name)
-		$scope.addPolicy()
-		$scope.fetchPolicies()
-		$scope.updateCurrent(name)
+		var name = $scope.np.name;
+		console.log("updating policy: " + name);
+		$http.delete("api/policy/config/" + name).then(function() {
+			$scope.addPolicy();
+			$scope.fetchPolicies();
+			$scope.updateCurrent(name);
+		}, function(resp) {
+			alert(resp.data)
+		});
+
 	}
 
 	$scope.removePolicy = function(name) {
 		$http.delete("api/policy/config/" + name).then(function() {
-			console.log("removed policy " + name)
+			console.log("removed policy " + name);
 		}, function(resp) {
-			alert(resp.data)
+			alert(resp.data);
 		})
 
 	}
