@@ -20,18 +20,10 @@ class Match {
 		return undefined;
 	}
 
-	del(key) {
-		console.log("Removing match with key: " + key)
-
-		// go though every "match" pair and look for the key
-		for (var i = this.matches.length - 1; i >= 0; i--) {
-			// if the key is found, remove it
-			if (this.matches[i].key == key) {
-
-				console.log("Found match with key: " + key)
-				this.matches.splice(i, 1);
-			}
-		};
+	del(index) {
+		var v = this.matches[index];
+		console.log("Removing match with key: " + v.key)
+		this.matches.splice(index, 1);
 	}
 
 	data() {
