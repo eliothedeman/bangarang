@@ -61,6 +61,59 @@ func (e *eventTracker) refresh() {
 
 type satisfier func(e *event.Event) bool
 
+func greaterThan(gt float64) satisfier {
+	return func(e *event.Event) bool {
+		return e.Metric > gt
+	}
+}
+
+func lessThan(lt float64) satisfier {
+	return func(e *event.Event) bool {
+		return e.Metric < lt
+	}
+}
+
+func exactly(ex float64) satisfier {
+	return func(e *event.Event) bool {
+		return e.Metric == ex
+	}
+}
+
+func stdDev(sigma float64, windowSize int, c *Condition) satisfier {
+	return func(e *event.Event) bool {
+		t := c.getTracker(e)
+
+		// only continue if we have seen more than 1/4 the window size
+		if t.count < windowSize/4 {
+			return false
+		}
+
+		df := t.df
+
+		// if we have seen less than the window size, take a sub slice of it
+		if t.count < windowSize {
+			df = df.Slice(0, t.count)
+		}
+
+		return math.Abs(e.Metric-df.Avg()) > (df.StdDev() * sigma)
+	}
+}
+
+func delta(d float64, windowSize int, c *Condition) satisfier {
+	return func(e *event.Event) bool {
+		t := c.getTracker(e)
+
+		// only continue if we have seen enough events to fill the dataframe
+		if t.count < windowSize {
+			return false
+		}
+
+		df := t.df
+
+	}
+
+}
+
 func (c *Condition) newTracker() *eventTracker {
 	et := &eventTracker{
 		df:     smoothie.NewDataFrameFromSlice(make([]float64, c.WindowSize)),
