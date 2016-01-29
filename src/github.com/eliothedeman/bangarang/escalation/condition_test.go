@@ -41,3 +41,18 @@ func TestConditionTrackEvent(t *testing.T) {
 	}
 
 }
+
+func TestNonNegativeDerivative(t *testing.T) {
+	c := newTestCondition(100, -100, 5)
+	no := newTestEvent("test", "service", 22)
+	yes := newTestEvent("test", "service", 1000)
+
+	if c.TrackEvent(no) {
+		t.Fail()
+	}
+
+	if !c.TrackEvent(yes) {
+		t.Fail()
+	}
+
+}

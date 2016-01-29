@@ -296,8 +296,13 @@ func (c *Condition) OccurencesHit(e *event.Event) bool {
 // check if an event satisfies a condition
 func (c *Condition) Satisfies(e *event.Event) bool {
 	t := c.getTracker(e)
+	df := t.df
+
+	for _, m := range c.modifierFuncs {
+		df = m(df)
+	}
 	for _, check := range c.checks {
-		if check(e, t.df, t.count) {
+		if check(e, df, t.count) {
 			return true
 		}
 	}
@@ -399,6 +404,7 @@ func (c *Condition) init(groupBy *event.TagSet) {
 		if !ok {
 			logrus.Errorf("Modifier function %s unknown", m)
 		} else {
+			logrus.Infof("Adding modifer %s to condition", m)
 			c.modifierFuncs = append(c.modifierFuncs, f)
 
 		}
