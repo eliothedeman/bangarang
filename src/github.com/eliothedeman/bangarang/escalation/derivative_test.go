@@ -95,7 +95,6 @@ func TestDerivativeWindow(t *testing.T) {
 				t.Fatalf("%d test: %s wanted %t got %t", i, tt.desc, tt.want[x], got)
 			}
 		}
-
 	}
 
 }

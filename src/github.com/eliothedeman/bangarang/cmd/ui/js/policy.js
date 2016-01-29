@@ -62,13 +62,14 @@ function parsePolicy(raw) {
 
 // Representation of a policy
 class Policy {
-	constructor(name) {
+constructor(name) {
 		this.name = name
 		this.comment = ""
 		this.match = new Match([])
 		this.not_match = new Match([])
 		this.crit = null
 		this.warn = null
+
 		this.modifiers = [
 			{
 				name: "simple",
@@ -202,14 +203,45 @@ class Condition {
 			"less",
 			"exactly"
 		]
-	}
+		this.modifier_funcs = []
+		this.modifier_func_descriptions = [
+			{
+				name: "derivative",
+				title: "Derivative"
+			},
+			{
+				name: "non_negative_derivative",
+				title: "Non-Negative Derivative"
+			},
+			{
+				name: "moving_average", 
+				title: "Moving Average"
+			},
+			{
+				name: "single_exponential_smoothing",
+				title: "Single Exponential Smoothing"
+			},
+			{
+				name: "holt_winters",
+				title: "Holt Winters"
+			}
+		]
 
+		this.append_func = function(name) {
+			this.modifier_funcs.push(name);
+		}
+
+		this.del_func = function(index) {
+			this.modifier_funcs.splice(index, 1); 
+		}
+	}
 
 	data() {
 		let d = {
 			escalation: this.escalation,
 			window_size: this.window_size,
-			occurences: this.occurences
+			occurences: this.occurences,
+			modifier_funcs: this.modifier_funcs
 		}
 		d[this.type] = this.value
 		return d

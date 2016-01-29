@@ -75,14 +75,28 @@ func (d *DataFrame) WeightedMovingAverage(windowSize int, wf WeightingFunc) *Dat
 	return ma
 }
 
+// inPlaceAverage calculates the average of the given slice without doing a heap allocation
+func inPlaceAvg(df *DataFrame, b, e int) float64 {
+	l := float64(e - b)
+	total := 0.0
+	for b < e {
+		total += df.Index(b)
+		b++
+	}
+
+	return total / l
+}
+
 // calculate the moving average of the dataframe
 func (d *DataFrame) MovingAverage(windowSize int) *DataFrame {
 	ma := NewDataFrame(d.Len())
+
+	// do the average without creating a new dataframe
 	for i := 0; i < d.Len(); i++ {
 		if i+windowSize > d.Len() {
-			ma.Insert(i, d.Slice(i, d.Len()).Avg())
+			ma.Insert(i, inPlaceAvg(d, i, d.Len()))
 		} else {
-			ma.Insert(i, d.Slice(i, i+windowSize).Avg())
+			ma.Insert(i, inPlaceAvg(d, i, i+windowSize))
 		}
 	}
 

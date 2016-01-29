@@ -276,6 +276,22 @@
 																<label>Value</label>
 																<input type="number" ng-model="np.crit.value">
 															</md-input-container>
+															<md-input-container>
+																<label>Functions</label>
+																<md-select ng-model="tmp_func_name" md-on-close="np.crit.append_func(tmp_func_name);tmp_func_name=''">
+																	<md-option ng-repeat="func in np.crit.modifier_func_descriptions" value="{{func.name}}">
+																	{{func.title}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-list ng>
+																<md-list-item class="md-2-line" ng-repeat="func in np.crit.modifier_funcs track by $index">
+																	{{func}}
+																	<md-button ng-click="np.crit.del_func($index)">
+																	<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
+																	<md-divider ng-inset></md-divider>
+																</md-list-item>
+															</md-list>
 														</div>
 													</div>
 												</md-card-content>
@@ -315,12 +331,27 @@
 																<label>Value</label>
 																<input type="number" ng-model="np.warn.value">
 															</md-input-container>
+															<md-input-container>
+																<label>Functions</label>
+																<md-select ng-model="tmp_func_name" md-on-close="np.warn.append_func(tmp_func_name);tmp_func_name=''">
+																	<md-option ng-repeat="func in np.warn.modifier_func_descriptions" value="{{func.name}}">
+																	{{func.title}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-list ng>
+																<md-list-item class="md-2-line" ng-repeat="func in np.warn.modifier_funcs track by $index">
+																	{{func}}
+																	<md-button ng-click="np.warn.del_func($index)">
+																	<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
+																	<md-divider ng-inset></md-divider>
+																</md-list-item>
+															</md-list>
 														</div>
 													</div>
 												</md-card-content>
 											</md-card>
 										</div>
-
 										<br>
 										<md-button class="md-raised md-primary" ng-click="addPolicy()">Submit</md-button>
 										<md-button class="md-raised md-warn" ng-click="cancelPolicy()">Cancel</md-button>
@@ -434,6 +465,22 @@
 																<label>Value</label>
 																<input type="number" ng-model="np.crit.value">
 															</md-input-container>
+															<md-input-container>
+																<label>Functions</label>
+																<md-select ng-model="tmp_func_name" md-on-close="np.crit.append_func(tmp_func_name);tmp_func_name=''">
+																	<md-option ng-repeat="func in np.crit.modifier_func_descriptions" value="{{func.name}}">
+																	{{func.title}}
+																	</md-option>
+																</md-select>
+															</md-input-container>
+															<md-list ng>
+																<md-list-item class="md-2-line" ng-repeat="func in np.crit.modifier_funcs track by $index">
+																	{{func}}
+																	<md-button ng-click="np.crit.del_func($index)">
+																	<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
+																	<md-divider ng-inset></md-divider>
+																</md-list-item>
+															</md-list>
 														</div>
 													</div>
 												</md-card-content>
@@ -473,7 +520,22 @@
 																<label>Value</label>
 																<input type="number" ng-model="np.warn.value">
 															</md-input-container>
+															<md-input-container>
+																<label>Functions</label>
+																<md-select ng-model="tmp_func_name" md-on-close="np.warn.append_func(tmp_func_name);tmp_func_name=''">
+																	<md-option ng-repeat="func in np.warn.modifier_func_descriptions" value="{{func.name}}">
+																	{{func.title}}
+																	</md-option>
+																</md-select>
 															</md-input-container>
+															<md-list ng>
+																<md-list-item class="md-2-line" ng-repeat="func in np.warn.modifier_funcs track by $index">
+																	{{func}}
+																	<md-button ng-click="np.warn.del_func($index)">
+																	<md-icon  md-font-set="material-icons" aria-label="remove">backspace</md-icon></md-button>
+																	<md-divider ng-inset></md-divider>
+																</md-list-item>
+															</md-list>
 														</div>
 													</div>
 												</md-card-content>
