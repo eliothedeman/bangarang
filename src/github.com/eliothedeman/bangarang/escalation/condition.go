@@ -16,6 +16,16 @@ const (
 	MIN_STD_DEV_WINDOW_SIZE = 5  // the smallets a window size can be for a standard deviation check
 )
 
+var (
+	modifierFuncs = map[string]modifier{
+		"derivative":                   derivative,
+		"non_negative_derivative":      nonNegativeDerivative,
+		"moving_average":               movingAverage,
+		"single_exponential_smoothing": singleExponentialSmooting,
+		"holt_winters":                 holtWinters,
+	}
+)
+
 // Condition holds conditional information to check events against
 type Condition struct {
 	Greater       *float64     `json:"greater"`
@@ -27,13 +37,41 @@ type Condition struct {
 	Simple        bool         `json:"simple"`
 	Occurences    int          `json:"occurences"`
 	WindowSize    int          `json:"window_size"`
+	ModifierFuncs []string     `json:"modifier_funcs"`
 	Aggregation   *Aggregation `json:"agregation"`
+	modifierFuncs []modifier
 	trackFunc     TrackFunc
 	checks        []satisfier
 	eventTrackers map[string]*eventTracker
 	sync.Mutex
 	ready bool
 }
+
+// Config for checks based on the aggrigation of data over a time window, instead of individual data points
+type Aggregation struct {
+	WindowLength int `json:"window_length"`
+}
+
+type aggregator struct {
+	nextCloseout time.Time
+}
+
+type eventTracker struct {
+	df         *smoothie.DataFrame
+	states     *smoothie.DataFrame
+	count      int
+	occurences int
+
+	// optional
+	agg *aggregator
+}
+
+func (e *eventTracker) refresh() {
+	e.states = smoothie.NewDataFrameFromSlice(make([]float64, STATUS_SIZE))
+	e.occurences = 0
+}
+
+type modifier func(df *smoothie.DataFrame) *smoothie.DataFrame
 
 func derivative(df *smoothie.DataFrame) *smoothie.DataFrame {
 	return df.Derivative()
@@ -66,101 +104,71 @@ func holtWinters(df *smoothie.DataFrame) *smoothie.DataFrame {
 	return df.HoltWinters(0.2, 0.3)
 }
 
-// Config for checks based on the aggrigation of data over a time window, instead of individual data points
-type Aggregation struct {
-	WindowLength int `json:"window_length"`
-}
-
-type aggregator struct {
-	nextCloseout time.Time
-}
-
-type eventTracker struct {
-	df         *smoothie.DataFrame
-	states     *smoothie.DataFrame
-	count      int
-	occurences int
-
-	// optional
-	agg *aggregator
-}
-
-func (e *eventTracker) refresh() {
-	e.states = smoothie.NewDataFrameFromSlice(make([]float64, STATUS_SIZE))
-	e.occurences = 0
-}
-
-type satisfier func(e *event.Event) bool
+type satisfier func(e *event.Event, df *smoothie.DataFrame, count int) bool
 
 func greaterThan(gt float64) satisfier {
-	return func(e *event.Event) bool {
+	return func(e *event.Event, df *smoothie.DataFrame, count int) bool {
 		return e.Metric > gt
 	}
 }
 
 func lessThan(lt float64) satisfier {
-	return func(e *event.Event) bool {
+	return func(e *event.Event, df *smoothie.DataFrame, count int) bool {
 		return e.Metric < lt
 	}
 }
 
 func exactly(ex float64) satisfier {
-	return func(e *event.Event) bool {
+	return func(e *event.Event, df *smoothie.DataFrame, count int) bool {
 		return e.Metric == ex
 	}
 }
 
 func stdDev(sigma float64, windowSize int, c *Condition) satisfier {
-	return func(e *event.Event) bool {
-		t := c.getTracker(e)
+	return func(e *event.Event, df *smoothie.DataFrame, count int) bool {
 
 		// only continue if we have seen more than 1/4 the window size
-		if t.count < windowSize/4 {
+		if count < windowSize {
 			return false
 		}
 
-		df := t.df
-
-		// if we have seen less than the window size, take a sub slice of it
-		if t.count < windowSize {
-			df = df.Slice(0, t.count)
+		s := df.StdDev() * sigma
+		if s < 2 {
 		}
 
-		return math.Abs(e.Metric-df.Avg()) > (df.StdDev() * sigma)
+		return math.Abs(e.Metric-df.Index(df.Len()-2)) > (df.StdDev() * sigma)
 	}
 }
 
 func nonNegativeDelta(d float64, windowSize int, c *Condition) satisfier {
-	return func(e *event.Event) bool {
-		t := c.getTracker(e)
+	return func(e *event.Event, df *smoothie.DataFrame, count int) bool {
 
 		// only continue if we have seen enough events to fill the dataframe
-		if t.count < windowSize {
+		if count < windowSize {
 			return false
 		}
 
-		diff := math.Abs(t.df.Index(0) - e.Metric)
+		diff := math.Abs(df.Index(0) - e.Metric)
 
 		return diff > d
 	}
 }
 
 const (
-	deltaModeGreater = iota
+	deltaModeGreater = 1 + iota
 	deltaModeLess
 	deltaModeExactly
 )
 
 func delta(d float64, mode uint8, windowSize int, c *Condition) satisfier {
-	return func(e *event.Event) bool {
-		t := c.getTracker(e)
+	return func(e *event.Event, df *smoothie.DataFrame, count int) bool {
 
 		// only continue if we have seen enough events to fill the dataframe
-		if t.count < windowSize {
+		if count < windowSize {
 			return false
 		}
 
-		diff := e.Metric - t.df.Index(0)
+		diff := e.Metric - df.Index(0)
 		switch mode {
 		case deltaModeGreater:
 			return diff > d
@@ -287,8 +295,9 @@ func (c *Condition) OccurencesHit(e *event.Event) bool {
 
 // check if an event satisfies a condition
 func (c *Condition) Satisfies(e *event.Event) bool {
+	t := c.getTracker(e)
 	for _, check := range c.checks {
-		if check(e) {
+		if check(e, t.df, t.count) {
 			return true
 		}
 	}
@@ -323,22 +332,8 @@ func (c *Condition) compileChecks() []satisfier {
 
 			logrus.Infof("Adding standard deviation check of %f sigma", sigma)
 
-			s = append(s, func(e *event.Event) bool {
-				t := c.getTracker(e)
+			s = append(s, stdDev(sigma, c.WindowSize, c))
 
-				// if the count is greater than 1/4 the window size, start checking
-				if t.count > t.df.Len()/4 {
-
-					// if the count is greater than the window size, use the whole df
-					if t.count >= t.df.Len() {
-						return math.Abs(e.Metric-t.df.Avg()) > (sigma * t.df.StdDev())
-					}
-
-					// take a sublslice of populated values
-					return math.Abs(e.Metric-t.df.Index(t.df.Len()-2)) > (sigma * t.df.StdDev())
-				}
-				return false
-			})
 			return s
 		}
 
@@ -347,13 +342,13 @@ func (c *Condition) compileChecks() []satisfier {
 			var kind uint8
 			// get the check value
 			if c.Greater != nil {
-				kind = 1
+				kind = deltaModeGreater
 				check = *c.Greater
 			} else if c.Less != nil {
-				kind = 2
+				kind = deltaModeLess
 				check = *c.Less
 			} else if c.Exactly != nil {
-				kind = 3
+				kind = deltaModeExactly
 				check = *c.Exactly
 			} else {
 				logrus.Error("No derivitive type supplied. >, <, == required")
@@ -361,27 +356,9 @@ func (c *Condition) compileChecks() []satisfier {
 
 			if kind != 0 {
 				logrus.Infof("Adding derivative check of %f", check)
-				s = append(s, func(e *event.Event) bool {
-					t := c.getTracker(e)
-
-					// we need to have seen at least enough events to
-					if t.count < t.df.Len() {
-						return false
-					}
-
-					diff := e.Metric - t.df.Index(0)
-					switch kind {
-					case 1:
-						return diff > check
-
-					case 2:
-						return diff < check
-
-					case 3:
-						return diff == check
-					}
-					return false
-				})
+				s = append(s, delta(check, kind, c.WindowSize, c))
+			} else {
+				logrus.Errorf("Invalid derivative type %d", kind)
 			}
 
 			return s
@@ -390,53 +367,22 @@ func (c *Condition) compileChecks() []satisfier {
 	} else {
 		if c.Greater != nil {
 			logrus.Info("Adding greater than check:", *c.Greater)
-			gt := *c.Greater
-			s = append(s, func(e *event.Event) bool {
-				return e.Metric > gt
-			})
+			s = append(s, greaterThan(*c.Greater))
 		}
 		if c.Less != nil {
 			logrus.Info("Adding less than check:", *c.Less)
-			lt := *c.Less
-			s = append(s, func(e *event.Event) bool {
-				return e.Metric < lt
-			})
+			s = append(s, lessThan(*c.Less))
 		}
 		if c.Exactly != nil {
 			logrus.Info("Adding exactly check:", *c.Exactly)
-			ex := *c.Exactly
-			s = append(s, func(e *event.Event) bool {
-				return e.Metric == ex
-			})
+			s = append(s, exactly(*c.Exactly))
 		}
 	}
 
-	// if we are using aggregation, replace all with the aggregation form
-	if c.Aggregation != nil {
-		logrus.Infof("Converting %d checks to using aggregation", len(s))
-		for i := range s {
-			s[i] = c.wrapAggregation(s[i])
-		}
-	}
 	return s
 }
 
-func (c *Condition) wrapAggregation(s satisfier) satisfier {
-	return func(e *event.Event) bool {
-		// create a new event with the aggregated value
-		ne := *e
-		c.DoOnTracker(e, func(t *eventTracker) {
-			ne.Metric = t.df.Index(0)
-		})
-
-		return s(&ne)
-	}
-}
-
 func getTrackingFunc(c *Condition) TrackFunc {
-	if c.Aggregation != nil {
-		return AggregationTrack
-	}
 
 	return SimpleTrack
 }
@@ -445,6 +391,18 @@ func getTrackingFunc(c *Condition) TrackFunc {
 func (c *Condition) init(groupBy *event.TagSet) {
 	c.checks = c.compileChecks()
 	c.eventTrackers = make(map[string]*eventTracker)
+
+	// add in the modifer functions
+	c.modifierFuncs = make([]modifier, 0, len(c.ModifierFuncs))
+	for _, m := range c.ModifierFuncs {
+		f, ok := modifierFuncs[m]
+		if !ok {
+			logrus.Errorf("Modifier function %s unknown", m)
+		} else {
+			c.modifierFuncs = append(c.modifierFuncs, f)
+
+		}
+	}
 
 	// fixes issue where occurences are hit, even when the event doesn't satisify the condition
 	if c.Occurences < 1 {
