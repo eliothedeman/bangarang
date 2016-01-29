@@ -35,6 +35,37 @@ type Condition struct {
 	ready bool
 }
 
+func derivative(df *smoothie.DataFrame) *smoothie.DataFrame {
+	return df.Derivative()
+}
+
+func nonNegativeDerivative(df *smoothie.DataFrame) *smoothie.DataFrame {
+	df = df.Derivative()
+	df.ForEach(func(f float64, i int) {
+		df.Insert(i, math.Abs(f))
+	})
+
+	return df
+}
+
+func movingAverage(df *smoothie.DataFrame) *smoothie.DataFrame {
+	// we want to default to a 5 point window size, but if the window size is below that
+	// set the window size to be 2
+	if df.Len() <= 5 {
+		return df.MovingAverage(2)
+	}
+
+	return df.MovingAverage(5)
+}
+
+func singleExponentialSmooting(df *smoothie.DataFrame) *smoothie.DataFrame {
+	return df.SingleExponentialSmooth(0.3)
+}
+
+func holtWinters(df *smoothie.DataFrame) *smoothie.DataFrame {
+	return df.HoltWinters(0.2, 0.3)
+}
+
 // Config for checks based on the aggrigation of data over a time window, instead of individual data points
 type Aggregation struct {
 	WindowLength int `json:"window_length"`
@@ -99,7 +130,7 @@ func stdDev(sigma float64, windowSize int, c *Condition) satisfier {
 	}
 }
 
-func delta(d float64, windowSize int, c *Condition) satisfier {
+func nonNegativeDelta(d float64, windowSize int, c *Condition) satisfier {
 	return func(e *event.Event) bool {
 		t := c.getTracker(e)
 
@@ -108,10 +139,41 @@ func delta(d float64, windowSize int, c *Condition) satisfier {
 			return false
 		}
 
-		df := t.df
+		diff := math.Abs(t.df.Index(0) - e.Metric)
 
+		return diff > d
 	}
+}
 
+const (
+	deltaModeGreater = iota
+	deltaModeLess
+	deltaModeExactly
+)
+
+func delta(d float64, mode uint8, windowSize int, c *Condition) satisfier {
+	return func(e *event.Event) bool {
+		t := c.getTracker(e)
+
+		// only continue if we have seen enough events to fill the dataframe
+		if t.count < windowSize {
+			return false
+		}
+
+		diff := e.Metric - t.df.Index(0)
+		switch mode {
+		case deltaModeGreater:
+			return diff > d
+
+		case deltaModeLess:
+			return diff < d
+
+		case deltaModeExactly:
+			return diff == d
+		}
+
+		return false
+	}
 }
 
 func (c *Condition) newTracker() *eventTracker {
