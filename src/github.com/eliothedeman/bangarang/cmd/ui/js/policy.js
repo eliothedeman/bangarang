@@ -80,7 +80,7 @@ constructor(name) {
 			},
 			{
 				name: "derivative",
-				title: "Derivative",
+				title: "Delta",
 				factory: function() {
 					return  new Derivative()
 				}
@@ -92,13 +92,6 @@ constructor(name) {
 					return new StdDev()
 				}
 
-			},
-			{
-				name: "holt_winters",
-				title: "Holt Winters",
-				factory: function() {
-					return new HoltWinters()
-				}
 			}
 		]
 	}
@@ -243,6 +236,11 @@ class Condition {
 			occurences: this.occurences,
 			modifier_funcs: this.modifier_funcs
 		}
+
+		if (this.run_full_window) {
+			d.run_full_window = true;
+		}
+		
 		d[this.type] = this.value
 		return d
 	}
@@ -255,18 +253,6 @@ class Simple extends Condition {
 	data() {
 		let d = super.data()
 		d.simple = true
-		return d
-	}
-}
-
-class HoltWinters extends Condition {
-	constructor() {
-		super()
-	}
-
-	data() {
-		let d = super.data()
-		d.holt_winters = true
 		return d
 	}
 }
@@ -363,11 +349,8 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 			case "Standard Deviation":
 				return new StdDev()
 
-			case "Derivative":
+			case "Delta":
 				return new Derivative()
-
-			case "Holt Winters":
-				return new HoltWinters()
 
 			default:
 				return new Simple()
