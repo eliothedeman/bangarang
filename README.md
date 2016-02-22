@@ -4,7 +4,6 @@ A stupid simple stream processor for monitoring applications.
 ![Imgur](http://i.imgur.com/oUQ4RDC.png)
 
 ## Install
-Building of bangarang is now done through [gb](https://getgb.io)
 
 To build and run bangarang from source, run...
 

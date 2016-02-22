@@ -1,8 +1,8 @@
 language: go
 go:
-    - 1.5
+    - 1.6
 
 script:
     - make install
     - make generate
-    - cd $HOME/gopath/src/github.com/eliothedeman/bangarang; export GOPATH=$(pwd):$(pwd)/vendor; go test -short -p=1 github.com/eliothedeman/bangarang/...
+    - make test

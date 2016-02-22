@@ -1,36 +1,28 @@
 dir = $(shell pwd)
 install:
-	- go get github.com/constabulary/gb/...
-	- go get -u github.com/jteeuwen/go-bindata/...
+	- go get -u -v github.com/jteeuwen/go-bindata/...
+	- go get -v github.com/eliothedeman/bangarang/cmd/bangarang/...
+	- go get -u -v github.com/eliothedeman/randutil/...
 	- export PATH=$PATH:$HOME/gopath/bin
-env:
-	- export GOPATH=$(dir):$(dir)/vendor
-
-test:
-	- export GOPATH=$(dir):$(dir)/vendor; go test -cover -p=1 github.com/eliothedeman/bangarang/...
-
-race:
-	- export GOPATH=$(dir):$(dir)/vendor; go test -race -p=1 github.com/eliothedeman/bangarang/...
-
-
-testing:
-	- cd src/github.com/eliothedeman/bangarang/cmd/ui && go-bindata -dev ./...
-	- gb build
-	- cp bin/ui src/github.com/eliothedeman/bangarang/cmd/ui/ui
 
 generate:
-	- gb generate
-	- cd src/github.com/eliothedeman/bangarang/cmd/ui && go-bindata ./...
+	- go generate ./...
+	- cd cmd/ui && go-bindata ./...
 
 build: generate
-	- gb build
+
+	- go build -o bin/bangarang github.com/eliothedeman/bangarang/cmd/bangarang 
+	- go build -o bin/ui github.com/eliothedeman/bangarang/cmd/ui
+
+test:
+	go test --cover ./...
 
 deb: build 
 	mkdir -p opt/bangarang
 	mkdir -p etc/bangarang
-	cp bin/bangarang opt/bangarang/bangarang
-	cp bin/ui opt/bangarang/ui
+	cp bin/bangarang opt/bangarang/bangarang-server
+	cp bin/ui opt/bangarang/bangarang-ui
 
 	fpm -s dir -t deb --name bangarang -v $(shell bin/bangarang -version) etc opt
 	
-	rm -r opt etc
+	rm -r opt etc bin
