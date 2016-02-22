@@ -374,17 +374,17 @@ func TestResolve(t *testing.T) {
 		e.WaitForState(event.StateComplete, time.Millisecond)
 
 		// TODO get rid of waiting for things to pass through the pipeline
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 		if len(ta.Incidents) != 1 {
 			t.Error(ta.Incidents)
 		}
 
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 
 		e.Metric = 0
 		p.PassEvent(e)
 		e.WaitForState(event.StateComplete, time.Millisecond)
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 		if len(ta.Incidents) != 2 {
 			t.Error(ta.Incidents[0])
 		}
