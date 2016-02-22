@@ -1,7 +1,8 @@
 dir = $(shell pwd)
 install:
 	- go get -u -v github.com/jteeuwen/go-bindata/...
-	- go get -u -v github.com/eliothedeman/bangarang/cmd/bangarang
+	- go get -v github.com/eliothedeman/bangarang/cmd/bangarang/...
+	- go get -u -v github.com/eliothedeman/randutil/...
 	- export PATH=$PATH:$HOME/gopath/bin
 
 generate:
