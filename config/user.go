@@ -4,6 +4,8 @@ import (
 	"crypto/md5"
 	"fmt"
 	"strings"
+
+	"github.com/jinzhu/gorm"
 )
 
 // UserPermissions describes what a user is allowed to do
@@ -48,9 +50,10 @@ const (
 
 // User holds information about who a user is, and what they are allowed to do
 type User struct {
-	Name         string          `json:"name"`
-	UserName     string          `json:"user_name"`
-	PasswordHash string          `json:"password_hash"`
+	gorm.Model
+	Name         string          `sql:"not null" json:"name"`
+	UserName     string          `sql:"not null;unique" json:"user_name"`
+	PasswordHash string          `sql:"not null" json:"password_hash"`
 	Permissions  UserPermissions `json:"permissions"`
 	provider     *Provider
 }

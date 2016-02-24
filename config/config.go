@@ -8,6 +8,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/eliothedeman/bangarang/escalation"
 	"github.com/eliothedeman/bangarang/provider"
+	"github.com/jinzhu/gorm"
 )
 
 // A Configer provides an interface to dynamicaly load configuration
@@ -64,6 +65,7 @@ const (
 
 // AppConfig provides configuration options for setting up the application
 type AppConfig struct {
+	gorm.Model
 	EscalationsDir  string                                  `json:"escalations_dir"`
 	KeepAliveAge    time.Duration                           `json:"-"`
 	RawKeepAliveAge string                                  `json:"keep_alive_age"`
