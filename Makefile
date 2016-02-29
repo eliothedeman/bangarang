@@ -15,6 +15,12 @@ build: generate
 	- go build -o bin/bangarang github.com/eliothedeman/bangarang/cmd/bangarang 
 	- go build -o bin/ui github.com/eliothedeman/bangarang/cmd/ui
 
+testing:
+	- cd cmd/ui && go-bindata -dev ./...
+	- go build -o bin/bangarang github.com/eliothedeman/bangarang/cmd/bangarang 
+	- go build -o bin/ui github.com/eliothedeman/bangarang/cmd/ui
+	- cp bin/ui cmd/ui/ui
+
 test:
 	go test --cover ./...
 

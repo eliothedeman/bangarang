@@ -56,6 +56,7 @@ function parsePolicy(raw) {
 	if (isObject(raw.warn)) {
 		p.warn = parseCondition(raw.warn)
 	}
+	console.log(raw)
 
 	return p
 }
@@ -418,8 +419,6 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 	$scope.addPolicy = function() {
 		var pol = $scope.np.data();
 		if (pol) {
-			console.log("Submitting new policy")
-			console.log(pol)
 			$http.post("api/policy/config/" + pol.name, pol).then(function() {
 				$scope.reset();
 			}, function(resp) {
