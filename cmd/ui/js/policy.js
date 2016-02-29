@@ -56,7 +56,6 @@ function parsePolicy(raw) {
 	if (isObject(raw.warn)) {
 		p.warn = parseCondition(raw.warn)
 	}
-	console.log(raw)
 
 	return p
 }
@@ -143,6 +142,7 @@ constructor(name) {
 		if (this.warn) {
 			d.warn = this.warn.data()
 		}
+		console.log(d);
 
 		return d
 	}
@@ -164,6 +164,8 @@ function parseCondition(raw) {
 
 		return "greater"
 	}
+	console.log(raw);
+
 
 	var cond = null
 
@@ -189,6 +191,7 @@ function parseCondition(raw) {
 	cond.escalation = raw.escalation
 	cond.occurences = raw.occurences
 	cond.window_size = raw.window_size
+	cond.modifier_funcs = raw.modifier_funcs
 	return cond
 }
 
@@ -315,7 +318,6 @@ function NewPolicyController($scope, $http, $timeout, $mdDialog) {
 		for (var i = 0; i < $scope.policies.length; i++) {
 			if ($scope.policies[i].name == name) {
 				$scope.np = $scope.policies[i]
-				console.log($scope.np)
 			}
 		}
 	}
